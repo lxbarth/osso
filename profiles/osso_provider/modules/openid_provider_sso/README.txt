@@ -12,6 +12,10 @@ Note: this module does not provide true *Single* Sign-On functionality but a
 largely simplified sign on experience for webs of trusted sites. Hence the name
 *Simple* Sign-On.
 
+It is strongly recommended to install this module on a fresh Drupal OpenID 
+Provider. Installing it on an existing OpenID provider will lead to undefined
+results.
+
 Installation
 ============
 

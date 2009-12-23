@@ -22,6 +22,10 @@ Note: this module does not provide true *Single* Sign-On functionality but a
 largely simplified sign on experience for webs of trusted sites. Hence the name
 *Simple* Sign-On.
 
+It is strongly recommended to install this module on a fresh Drupal site. 
+Installing it on a site with existing users (other than user 1) will lead to
+undefined results.
+
 
 Installation
 ============
