@@ -169,9 +169,9 @@ function osso_provider_block_login_message() {
   $output = '<div class="sso-message">';
   if (isset($_SESSION['openid_provider']['request']['openid.realm']) && $relying_party = openid_provider_sso_relying_party($_SESSION['openid_provider']['request']['openid.realm'])) {
     drupal_set_title(t('Sign in to @relying_party', array('@relying_party' => $relying_party['name'])));
-    $output .= t('@relying_party is part of @site_name. ', array('@site_name' => variable_get('site_name', 'Drupal'), '@relying_party' => $relying_party['name']));
+    $output .= '<p>'. t('@relying_party is part of @site_name. ', array('@site_name' => variable_get('site_name', 'Drupal'), '@relying_party' => $relying_party['name'])) .'</p>';
   }
-  $output .= t('An account on @site_name gives you easy access to a series of sites with a single username and password.', array('@site_name' => variable_get('site_name', 'Drupal')));
+  $output .= '<p>'. t('An account on @site_name gives you easy access to a series of sites with a single username and password.', array('@site_name' => variable_get('site_name', 'Drupal'))) .'</p>';
   $output .= '</div>';
   return array(
     'content' => $output,

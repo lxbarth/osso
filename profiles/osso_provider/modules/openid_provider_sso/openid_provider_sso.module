@@ -39,12 +39,20 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
   }
   if ($form_id == 'openid_provider_form') {
     // If RP is known take decisions that simplify the user's choices.
+    // Otherwise deny access. This only denies new RPs access. If there has been
+    // an RP in the past that has been set to auto_release=TRUE, the 
+    // openid_provider_form won't be called at all and this access check won't
+    // be effective.
     if ($rp = openid_provider_sso_relying_party($form_state['storage']['realm'])) {
       drupal_set_title('');
       global $user;
       unset($form['submit_always']);
       $form['submit_once']['#value'] = t('Log in');
       $form['intro']['#value'] = '<div class="sso-message">'. t('Log in to @relying_party as @user?', array('@relying_party' => $rp['name'], '@user' => $user->name)) .'</div>';
+    }
+    else {
+      drupal_access_denied();
+      exit();
     }
   }
 }
