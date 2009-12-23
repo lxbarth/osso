@@ -1,0 +1,13 @@
+<?php
+
+include_once('simple_blog.features.inc');
+
+/**
+ * Implementation of hook_views_data().
+ */
+function simple_blog_views_api() {
+  return array(
+    'api' => '2.0',
+    'path' => drupal_get_path('module', 'simple_blog') .'/views',
+  );
+}

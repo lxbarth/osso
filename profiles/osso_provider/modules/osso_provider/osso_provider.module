@@ -1,0 +1,203 @@
+<?php
+
+/**
+ * Implementation of hook_block().
+ */
+function osso_provider_block($op = 'list', $delta = '') {
+  switch ($op) {
+    case 'list':
+      return array(
+        'dummy_profile' => array(
+          'info' => t('Dummy user profile'),
+        ),
+        'login_message' => array(
+          'info' => t('Login page message'),
+        ),
+        'welcome_message' => array(
+          'info' => t('Welcome message'),
+        ),
+      );
+    case 'view':
+      if (function_exists('osso_provider_block_'. $delta)) {
+        return call_user_func('osso_provider_block_'. $delta);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function osso_provider_user($op, &$edit, &$account) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      // Set an alias for this user.
+      path_set_alias('user/'. $account->uid, 'user/'. $account->name);
+      break;
+    case 'delete':
+      path_set_alias('user/'. $account->uid);
+      break;
+    case 'view':
+      // Remove all default content from the user page.
+      $account->content = array();
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_strongarm().
+ */
+function osso_provider_strongarm() {
+  return array (
+    'user_email_verification' => 0,
+    'site_frontpage' => 'activity',
+  );
+}
+
+/**
+ * Implementation hook_menu_alter().
+ */
+function osso_provider_menu_alter(&$items) {
+  $items['user']['title callback'] = 'osso_provider_user_menu_title';
+  $items['user/register']['title callback'] = 'osso_provider_register_menu_title';
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function osso_provider_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'user_register' || $form_id == 'user_login' || $form_id == 'user_pass') {
+    $links = array(
+      l(t('Log in'), 'user/login'),
+      l(t('Sign up'), 'user/register'),
+      l(t('Forgot password?'), 'user/password')
+    );
+    $form['links']['#value'] = theme('item_list', $links, NULL, 'ul', array('class' => 'links osso-tabs'));
+    $form['links']['#weight'] = -40;
+  }
+}
+
+/**
+ * Custom title callback.
+ */
+function osso_provider_user_menu_title() {
+  global $user;
+  if ($user->uid) {
+    return t('Hello @user', array('@user' => $user->name));
+  }
+  return t('Log in / Sign up');
+}
+
+/**
+ * Custom title callback.
+ */
+function osso_provider_register_menu_title() {
+  return t('Sign up');
+}
+
+/**
+ * Generate hub bar.
+ */
+function osso_hub_bar() {
+  global $user;
+
+  // Generate links to relying parties.
+  $items = array();
+  $items[] = array(
+    'data' => l(check_plain(variable_get('site_name', 'Drupal')), ''),
+    'class' => 'provider',
+  );
+  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+    $items[] = array(
+      'data' => l(check_plain($rp['name']), $rp['realm']),
+      'class' => 'relying',
+    );
+  }
+  $output = theme('item_list', $items, NULL, 'ul', array('class' => 'links hub-links'));
+
+  // Generate user links.
+  $items = array();
+  if ($user->uid) {
+    $items[] = array(
+      'data' => l(t('Hello, @user', array('@user' => $user->name)), 'user/'. $user->uid),
+      'class' => 'username',
+    );
+    $items[] = array(
+      'data' => l(t('Log out'), 'logout'),
+      'class' => 'logout',
+    );
+  }
+  else {
+    $items[] = array(
+      'data' => l(t('Log in / Sign up'), 'user/login'),
+      'class' => 'login',
+    );
+  }
+  $output .= theme('item_list', $items, NULL, 'ul', array('class' => 'links user-links'));
+
+  return $output;
+}
+
+/**
+ * User profile block.
+ */
+function osso_provider_block_dummy_profile() {
+  $name = 'John Smith';
+  if (arg(0) == 'user' && is_numeric(arg(1))) {
+    if ($account = user_load(array('uid' => arg(1)))) {
+      $name = check_plain($account->name);
+    }
+  }
+  $items = array(
+    '<span class="user-profile-picture"></span>',
+    '<span class="item-title">Name:</span> <span class="item-content">'. $name .'</span>',
+    '<span class="item-title">Location:</span> <span class="item-content">Ohio</span>',
+    '<span class="item-title">Bio:</span> <span class="item-content">One-hundred and forty characters about the user would be a good thing to put in this area. Of course, that number is completely arbitrary.</span>',
+  );
+  $content = theme('item_list', $items, NULL, 'ul', array('class' => 'user-profile'));
+  return array(
+    'title' => t('Profile'),
+    'content' => $content,
+  );
+}
+
+/**
+ * Login page message.
+ */
+function osso_provider_block_login_message() {
+  $output = '<div class="sso-message">';
+  if (isset($_SESSION['openid_provider']['request']['openid.realm']) && $relying_party = openid_provider_sso_relying_party($_SESSION['openid_provider']['request']['openid.realm'])) {
+    drupal_set_title(t('Sign in to @relying_party', array('@relying_party' => $relying_party['name'])));
+    $output .= t('@relying_party is part of @site_name. ', array('@site_name' => variable_get('site_name', 'Drupal'), '@relying_party' => $relying_party['name']));
+  }
+  $output .= t('An account on @site_name gives you easy access to a series of sites with a single username and password.', array('@site_name' => variable_get('site_name', 'Drupal')));
+  $output .= '</div>';
+  return array(
+    'content' => $output,
+  );
+}
+
+/**
+ * Welcome page message.
+ */
+function osso_provider_block_welcome_message() {
+  $relying_parties = array();
+
+  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+    $relying_parties[] = $rp['name'];
+  }
+
+  $examples = array_pop($relying_parties);
+  if ($relying_parties = implode(', ', $relying_parties)) {
+    $examples = $relying_parties .' or '. $examples;
+  }
+
+  $content = t('<p>@site_name is your key to a host of Sandusky sites.</p>',  array('@site_name' => variable_get('site_name', 'Drupal')));
+  $content .= t('<p>Create an account once, and gain easy access with one username and password to sites like !examples.</p>',  array('!examples' => $examples));
+
+  return array(
+    'title' => t('Welcome'),
+    'content' => $content,
+  );
+}

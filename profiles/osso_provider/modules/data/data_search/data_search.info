@@ -1,0 +1,7 @@
+; $Id: data_search.info,v 1.1.2.1 2009/09/17 14:20:47 alexb Exp $
+name = "Data Search"
+description = "Provides search and views search integration for Data tables."
+package = Data
+dependencies[] = data
+dependencies[] = search
+core = 6.x

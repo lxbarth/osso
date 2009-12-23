@@ -1,0 +1,4 @@
+; $Id: xrds_simple.info,v 1.1 2008/06/03 06:07:33 walkah Exp $
+name = XRDS Simple
+description = Implements the XRDS-Simple spec for discovering services
+core = 6.x

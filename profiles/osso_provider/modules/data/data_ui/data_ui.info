@@ -1,0 +1,7 @@
+; $Id: data_ui.info,v 1.2.2.1 2009/08/18 19:52:00 alexb Exp $
+name = Data Admin UI
+description = Admin UI for Data Module
+package = Data
+dependencies[] = data
+dependencies[] = schema
+core = 6.x

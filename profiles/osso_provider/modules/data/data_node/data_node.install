@@ -1,0 +1,67 @@
+<?php
+// $Id: data_node.install,v 1.1.2.3 2009/10/15 20:08:37 alexb Exp $
+/**
+ * @file
+ * Install hooks for Data Node module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function data_node_schema() {
+  $schema = array();
+  $schema['data_table_node'] = array(
+    'description' => 'Relate data records to nodes',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'data_table_name' => array(
+        'type' => 'varchar',
+        'size' => 'normal',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'id' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'data_table_name' => array('data_table_name'),
+      'id' => array('id'),
+      'name_id' => array('data_table_name', 'id'),
+    ),
+    'primary key' => array('nid', 'data_table_name', 'id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function data_node_install() {
+  drupal_install_schema('data_node');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function data_node_uninstall() {
+  drupal_uninstall_schema('data_node');
+}
+
+/**
+ * Add an index to id and name.
+ */
+function data_node_update_6001() {
+  $ret = array();
+  db_add_index($ret, 'data_table_node', 'name_id', array('data_table_name', 'id'));
+  return $ret;
+}

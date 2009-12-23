@@ -1,0 +1,294 @@
+<?php
+// $Id: feeds.install,v 1.4 2009/10/20 20:59:04 alexb Exp $
+
+/**
+ * @file
+ * Schema definitions install/update/uninstall hooks.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function feeds_schema() {
+  $schema = array();
+
+  $schema['feeds_importer'] = array(
+    'description' => 'Configuration of feeds objects.',
+    'export' => array(
+      'key' => 'id',
+      'identifier' => 'feeds_importer',
+      'default hook' => 'feeds_importer_default',  // Function hook name.
+      'api' => array(
+        'owner' => 'feeds',
+        'api' => 'feeds_importer_default',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Id of the fields object.',
+      ),
+      'config' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Configuration of the feeds object.',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  $schema['feeds_source'] = array(
+    'description' => 'Source definitions for feeds.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Id of the feed configuration.',
+      ),
+      'feed_nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+        'description' => 'Node nid if this particular source is attached to a feed node.',
+      ),
+      'config' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Configuration of the source.',
+        'serialize' => TRUE,
+      ),
+      'source' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('Main source resource identifier. E. g. a path or a URL.'),
+      ),
+    ),
+    'primary key' => array('id', 'feed_nid'),
+    'indexes' => array(
+      'id' => array('id'),
+      'feed_nid' => array('feed_nid'),
+      'id_source' => array('id', array('source', 128)),
+    ),
+  );
+  $schema['feeds_schedule'] = array(
+    'description' => t('Contains feeds scheduled for refresh.'),
+    'fields' => array(
+      'feed_nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+        'description' => 'Node nid if this particular source is attached to a feed node.',
+      ),
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Id of the feed configuration.',
+      ),
+      'callback' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Callback to be invoked.',
+      ),
+      'last_scheduled_time' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'Timestamp when this feed was last scheduled to be refreshed.',
+      ),
+      'scheduled' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'size' => 'tiny',
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'Flags whether a feed is scheduled to be refreshed or not.',
+      ),
+    ),
+    'indexes' => array(
+      'feed_nid' => array('feed_nid'),
+      'id' => array('id'),
+      'id_callback' => array('id', 'callback'),
+      'last_scheduled_time' => array('last_scheduled_time'),
+      'scheduled' => array('scheduled'),
+    ),
+  );
+  $schema['feeds_node_item'] = array(
+    'description' => t('Stores additional information about feed item nodes. Used by FeedsNodeProcessor.'),
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("Primary Key: The feed item node's nid."),
+      ),
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The id of the fields object that is the producer of this item.',
+      ),
+      'feed_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("Node id of the owner feed, if available."),
+      ),
+      'imported' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Import date of the feed item, as a Unix timestamp.'),
+      ),
+      'url' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('Link to the feed item.'),
+      ),
+      'guid' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('Unique identifier for the feed item.'),
+      ),
+    ),
+    'primary key' => array('nid'),
+    'indexes' => array(
+      'id' => array('id'),
+      'feed_nid' => array('feed_nid'),
+      'imported' => array('imported'),
+      'url' => array(array('url', 255)),
+      'guid' => array(array('guid', 255)),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function feeds_install() {
+  // Create tables.
+  drupal_install_schema('feeds');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function feeds_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('feeds');
+}
+
+/**
+ * Remove class field on feeds_config.
+ */
+function feeds_update_6001() {
+  $ret = array();
+  db_drop_field($ret, 'feeds_config', 'class');
+  return $ret;
+}
+
+/**
+ * Rename table.
+ */
+function feeds_update_6002() {
+  $ret = array();
+  db_rename_table($ret, 'feeds_config', 'feeds_importer');
+  return $ret;
+}
+
+/**
+ * Add primary keys to feeds_importer and feeds_source.
+ */
+function feeds_update_6003() {
+  $ret = array();
+  db_drop_index($ret, 'feeds_importer', 'id');
+  db_add_primary_key($ret, 'feeds_importer', array('id'));
+  db_add_primary_key($ret, 'feeds_source', array('id', 'feed_nid'));
+  return $ret;
+}
+
+/**
+ * Add source field to feeds_source, make fields part of PKs not null.
+ */
+function feeds_update_6004() {
+  $ret = array();
+
+  $spec = array(
+    'type' => 'text',
+    'not null' => TRUE,
+    'description' => t('Main source resource identifier. E. g. a path or a URL.'),
+  );
+  db_add_field($ret, 'feeds_source', 'source', $spec);
+  db_add_index($ret, 'feeds_source', 'id_source', array('id', array('source', 255)));
+
+  // Make feed_nid not null, default 0. It is part of the primary key.
+  $spec = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'unsigned' => TRUE,
+    'description' => 'Node nid if this particular source is attached to a feed node.',
+  );
+  db_change_field($ret, 'feeds_schedule', 'feed_nid', 'feed_nid', $spec);
+
+
+  // Same thing for feeds_source table.
+  $spec = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'unsigned' => TRUE,
+    'description' => 'Node nid if this particular source is attached to a feed node.',
+  );
+  db_change_field($ret, 'feeds_source', 'feed_nid', 'feed_nid', $spec);
+
+  return $ret;
+}
+
+/**
+ * Add callback column to feeds_schedule.
+ */
+function feeds_update_6005() {
+  $ret = array();
+
+  // Add a callback column and an index.
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Callback to be invoked.',
+  );
+  db_add_field($ret, 'feeds_schedule', 'callback', $spec);
+
+  db_add_index($ret, 'feeds_schedule', 'id_callback', array('id', 'callback'));
+
+  return $ret;
+}
+
+/**
+ * Remove primary key from feeds_schedule and replace it by an index.
+ */
+function feeds_update_6006() {
+  $ret = array();
+
+  db_drop_primary_key($ret, 'feeds_schedule');
+  db_add_index($ret, 'feeds_schedule', 'feed_nid', array('feed_nid'));
+
+  return $ret;
+}

@@ -1,0 +1,6 @@
+; $Id: openid_provider.info,v 1.4 2008/09/07 03:39:57 walkah Exp $
+name = "Openid Provider"
+description = "OpenID Provider (or server) support allows you to login to other OpenID enabled sites using your local account."
+core = 6.x
+php = 5.2
+dependencies[] = xrds_simple

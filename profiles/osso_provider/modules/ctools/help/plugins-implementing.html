@@ -1,0 +1,73 @@
+<!-- $Id: plugins-implementing.html,v 1.3 2009/01/22 01:57:18 merlinofchaos Exp $ -->
+To implement plugins, you need to implement a single hook in your module to tell the system where your plugins live, and then you need to implement one or more .inc files that contain the plugin data.
+
+<h3>Telling it where your plugins live</h3>
+To implement any plugins at all, you must implement a single function for all plugins: <strong>hook_ctools_plugin_directory</strong>. Every time a module loads plugins, this hook will be called to see which modules implement those plugins and in what directory those plugins will live.
+
+<pre>
+function hook_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'panels' && $plugin == 'content_types') {
+    return 'plugins/content_types';
+  }
+}
+</pre>
+
+The directory returned should be relative to your module. Another common usage is to simply return that you implement all plugins owned by a given module (or modules):
+
+<pre>
+function hook_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'panels') {
+    return 'plugins/' . $plugin;
+  }
+}
+</pre>
+
+Typically, it is recommended that all plugins be placed into the 'plugins' directory for clarity and maintainability. Inside the directory, any number of subdirectories can be used. For plugins that require extra files, such as templates, css, javascript or image files, this is highly recommended:
+<pre>
+mymodule.module
+mymodule.info
+plugins/
+    content_types/
+        my_content_type.inc
+    layouts/
+        my_layout.inc
+        my_laout.css
+        my_layout.tpl.php
+        my_layout_image.png
+</pre>
+
+<h3>How a theme can implement plugins</h3>
+Themes can implement plugins if the plugin owner specified that it's possible in its hook_ctools_api_TYPE() call. If so, it is generally exactly the same as modules, except for one important difference: themes don't get hook_ctools_plugin_directory(). Instead, themes add a line to their info file:
+
+<pre>
+plugins[module][type] = directory
+</pre>
+
+<h3>How to structure the .inc file</h3>
+
+The actual plugin .inc file must be named carefully; the name of the file will conform to the name of the plugin. This name must be unique, so you should try to include your module name at the beginning to make sure you don't bump into other modules trying to create a plugin with the same name.
+
+This file must contain a specially named function: 
+
+<pre>
+function YOURMODULE_PLUGINNAME_OWNERMODULE_PLUGINTYPE()
+</pre>
+
+So for example, for module 'example' to implement a 'layout' named 'mine' for the 'panels' module:
+<pre>
+  function example_mine_panels_layouts() {
+
+  }
+</pre>
+
+Finally, your plugin should return an array of data, like this:
+
+<pre>
+function YOURMODULE_PLUGINNAME_OWNERMODULE_PLUGINTYPE() {
+  return array(
+    'key' => 'value',
+  );
+}
+</pre>
+
+Several values will be filled in for you automatically, but you can override them if necessary. They include 'name', 'path', 'file' and 'module'. Additionally, the plugin can owner can provide other defaults as well.

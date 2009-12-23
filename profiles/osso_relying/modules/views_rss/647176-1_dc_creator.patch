@@ -1,0 +1,244 @@
+? 647176-1_dc_creator.patch
+Index: views/views-view-views-rss-fields.tpl.php
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/views_rss/views/views-view-views-rss-fields.tpl.php,v
+retrieving revision 1.1
+diff -u -p -r1.1 views-view-views-rss-fields.tpl.php
+--- views/views-view-views-rss-fields.tpl.php	22 Sep 2009 16:49:55 -0000	1.1
++++ views/views-view-views-rss-fields.tpl.php	30 Nov 2009 22:56:52 -0000
+@@ -1,7 +1,7 @@
+ <?php // $Id: views-view-views-rss-fields.tpl.php,v 1.1 2009/09/22 16:49:55 rsoden Exp $ ?>
+ <?php print "<?xml"; ?> version="1.0" encoding="utf-8" <?php print "?>"; ?>
+ 
+-<rss version="2.0"<?php if($georss){ print ' xmlns:georss="http://www.georss.org/georss"'; }?>>
++<rss version="2.0" <?php print $namespaces ?>>
+   <channel>
+     <title><?php print $viewtitle; ?></title>
+     <description><?php print $description; ?></description>
+Index: views/views_plugin_style_rss_fields.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/views_rss/views/views_plugin_style_rss_fields.inc,v
+retrieving revision 1.1
+diff -u -p -r1.1 views_plugin_style_rss_fields.inc
+--- views/views_plugin_style_rss_fields.inc	22 Sep 2009 16:49:55 -0000	1.1
++++ views/views_plugin_style_rss_fields.inc	30 Nov 2009 22:56:52 -0000
+@@ -1,5 +1,5 @@
+ <?php
+-// $Id: views_plugin_style_rss_fields.inc,v 1.1 2009/09/22 16:49:55 rsoden Exp $ 
++// $Id: views_plugin_style_rss_fields.inc,v 1.1 2009/09/22 16:49:55 rsoden Exp $
+ 
+ /**
+  * @file
+@@ -7,7 +7,7 @@
+  */
+ 
+ class views_plugin_style_rss_fields extends views_plugin_style {
+-  
++
+     /**
+      * Initialize plugin.
+      *
+@@ -17,7 +17,7 @@ class views_plugin_style_rss_fields exte
+       parent::init($view, $display, $options = NULL);
+       $this->feed_image = drupal_get_path('module', 'views_kml') . '/images/kml.png';
+     }
+-    
++
+     /**
+      * Attach this view to another display as a feed.
+      *
+@@ -29,17 +29,17 @@ class views_plugin_style_rss_fields exte
+       $image = theme('image', $this->feed_image);
+       $this->view->feed_icon .= l($image, $path, $url_options);
+     }
+-    
++
+     /**
+      * Provide a form for setting options.
+      *
+      * @param array $form
+      * @param array $form_state
+      */
+-    function options_form(&$form, &$form_state) { 
+-      parent::options_form($form, $form_state);                  
++    function options_form(&$form, &$form_state) {
++      parent::options_form($form, $form_state);
+       $options = parent::option_definition();
+-                             
++
+       $handlers = $this->display->handler->get_handlers('field');
+       if (empty($handlers)) {
+         $form['error_markup'] = array(
+@@ -52,7 +52,7 @@ class views_plugin_style_rss_fields exte
+         // Feed Description
+         $form['description'] = array(
+           '#type' => 'fieldset',
+-          '#title' => t('Feed Description'), 
++          '#title' => t('Feed Description'),
+           '#collapsible' => TRUE,
+           '#collapsed' => TRUE,
+           '#weight' => -5,
+@@ -73,26 +73,52 @@ class views_plugin_style_rss_fields exte
+           }
+         }
+         $field_options = array(
+-          'title' => t('Title'),
+-          'description' => t('Description'),
+-          'link' => t('Link'),
+-          'author' => t('Author'),
+-          'category' => t('category'),
+-          'guid' => t('guid'),
+-          'pubDate' => t('pubDate'),
++          'title' => array(
++            'title' => t('Title'),
++            'description' => t('RSS 2.0 title element'),
++          ),
++          'description' => array(
++            'title' => t('Description'),
++            'description' => t('RSS 2.0 description element'),
++          ),
++          'link' => array(
++            'title' => t('Link'),
++            'description' => t('RSS 2.0 link element'),
++          ),
++          'author' => array(
++            'title' => t('Author e-mail'),
++            'description' => t('RSS 2.0 author element'),
++          ),
++          'author_name' => array(
++            'title' => t('Author name'),
++            'description' => t('Dublin core creator element'),
++          ),
++          'category' => array(
++            'title' => t('category'),
++            'description' => t('RSS 2.0 category element'),
++          ),
++          'guid' => array(
++            'title' => t('guid'),
++            'description' => t('RSS 2.0 guid element'),
++          ),
++          'pubDate' => array(
++            'title' => t('pubDate'),
++            'description' => t('RSS 2.0 pubDate element'),
++          ),
+         );
+         $form['fields'] = array(
+           '#type' => 'fieldset',
+           '#title' => 'Field usage',
+-          '#description' => t('Select the fields that relevant data for each element of the feed'),
++          '#description' => t('Each RSS 2.0 item is composed of various of elements. Select here which fields should be used to populate these elements.'),
+           '#collapsible' => TRUE,
+           '#collapsed' => TRUE,
+           '#weight' => 0,
+         );
+-        foreach ($field_options as $k => $v) {
++        foreach ($field_options as $k => $option) {
+           $form['fields'][$k] = array(
+             '#type' => 'select',
+-            '#title' => $v,
++            '#title' => $option['title'],
++            '#description' => isset($option['description']) ? $option['description'] : '',
+             '#options' => $field_names,
+             '#default_value' => $this->options['fields'][$k],
+           );
+@@ -100,7 +126,7 @@ class views_plugin_style_rss_fields exte
+         // GeoRSS
+         $form['georss'] = array(
+           '#type' => 'fieldset',
+-          '#title' => t('GeoRSS'), 
++          '#title' => t('GeoRSS'),
+           '#collapsible' => TRUE,
+           '#collapsed' => TRUE,
+           '#weight' => 5,
+@@ -113,7 +139,7 @@ class views_plugin_style_rss_fields exte
+           '#title' => t('Latitude'),
+           '#options' => $field_names,
+           '#default_value' => $this->options['georss']['lat'],
+-        ); 
++        );
+         $form['georss']['lon'] = array(
+           '#type' => 'select',
+           '#title' => t('Longitude'),
+@@ -122,7 +148,7 @@ class views_plugin_style_rss_fields exte
+         );
+       }
+     }
+-    
++
+     function map_rows($rows) {
+       // Fields must be rendered in order as of Views 2.3, so we will pre-render everything.
+       $renders = array();
+@@ -132,8 +158,8 @@ class views_plugin_style_rss_fields exte
+         foreach ($keys as $id) {
+           $renders[$count][$id] = $this->view->field[$id]->theme($row);
+         }
+-      }  
+-      
++      }
++
+       // @TODO: The following seems ridiculous and should probably be improved.
+       $items = array();
+       foreach ($renders as $id => $row) {
+@@ -151,6 +177,9 @@ class views_plugin_style_rss_fields exte
+           elseif ($key == $this->options['fields']['author']) {
+             $item['author'] = $row[$key];
+           }
++          elseif ($key == $this->options['fields']['author_name']) {
++            $item['author_name'] = $row[$key];
++          }
+           elseif ($key == $this->options['fields']['category']) {
+             $item['category'] = $row[$key];
+           }
+Index: views/views_rss_views_fields.theme.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/views_rss/views/views_rss_views_fields.theme.inc,v
+retrieving revision 1.1
+diff -u -p -r1.1 views_rss_views_fields.theme.inc
+--- views/views_rss_views_fields.theme.inc	22 Sep 2009 16:49:55 -0000	1.1
++++ views/views_rss_views_fields.theme.inc	30 Nov 2009 22:56:52 -0000
+@@ -3,7 +3,10 @@
+ 
+ function template_preprocess_views_view_views_rss_fields(&$vars) {
+   $view = $vars['view'];
+-      
++
++  // Initialize namespaces array.
++  $vars['ns'] = array();
++
+   // Set basic info - title, description - about the feed
+   $vars['viewtitle'] = variable_get('site_name', array()) . ' | ' . $view->display[$view->current_display]->display_title;
+     
+@@ -25,11 +28,17 @@ function template_preprocess_views_view_
+     $rows .= theme('views_rss_fields_item', $item);
+   }
+   $vars['rows'] = $rows;
+-  
+-  //GeoRSS
++
++  // Render namespace definitions.
++  $namespaces = array();
+   if ($view->style_options['georss']['lat'] && $view->style_options['georss']['lon']) {
+-   $vars['georss'] = TRUE;
++    $namespaces[] = 'xmlns:georss="http://www.georss.org/georss"';
+   }
++  if ($view->style_options['fields']['author_name']) {
++    $namespaces[] = 'xmlns:dc="http://purl.org/dc/elements/1.1/"';
++  }
++  // error_log(print_r($view->style_options, true));
++  $vars['namespaces'] = implode(' ', $namespaces);
+ }
+ 
+ /**
+@@ -45,6 +54,12 @@ function template_preprocess_views_rss_f
+     unset($item['lon']);
+   }
+   
++  // dc:creator
++  if ($item['author_name']) {
++    $item['dc:creator'] = check_plain($item['author_name']);
++    unset($item['author_name']);
++  }
++  
+   // Loop through key=>value pairs
+   foreach ($item as $key => $value) {
+     if ($value) {

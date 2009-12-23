@@ -1,0 +1,33 @@
+<?php
+/**
+ * @file
+ * Schema deployment and schema changes.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function activity_feeds_install() {
+  drupal_install_schema('activity_feeds');
+}
+
+/**
+ * Implementation of hook_uninstall();
+ */
+function activity_feeds_uninstall() {
+  drupal_uninstall_schema('activity_feeds');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function activity_feeds_schema() {
+  // Install data tables.
+  include_once('activity_feeds.features.inc');
+  $tables = activity_feeds_data_default();
+  $schema = array();
+  foreach ($tables as $name => $table) {
+    $schema[$name] = $table->table_schema;
+  }
+  return $schema;
+}

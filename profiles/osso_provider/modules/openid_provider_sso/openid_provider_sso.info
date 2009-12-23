@@ -1,0 +1,4 @@
+name = "OpenID Provider SSO"
+description = "Set up a trusted web of sites and use OpenID to provide simple Sign-On."
+core = 6.x
+dependencies[] = openid_provider

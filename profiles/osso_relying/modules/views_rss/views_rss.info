@@ -1,0 +1,6 @@
+; $Id: views_rss.info,v 1.1 2009/09/22 16:49:55 rsoden Exp $
+name = "Views RSS"
+description = "Provides views plugin for that allows RSS Feeds from Views to be use fields"
+package = "Views Bonus Pack"
+dependencies[] = views
+core = "6.x"

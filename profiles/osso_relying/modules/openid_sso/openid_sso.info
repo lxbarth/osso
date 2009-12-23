@@ -1,0 +1,5 @@
+name = "OpenID SSO"
+description = "Force Simple Sign-On from a trusted OpenID Provider."
+core = 6.x
+dependencies[] = openid
+dependencies[] = strongarm

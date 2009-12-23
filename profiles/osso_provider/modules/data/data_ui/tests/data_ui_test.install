@@ -1,0 +1,23 @@
+<?php
+// $Id: data_ui_test.install,v 1.1.2.2 2009/10/08 16:48:29 alexb Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function data_ui_test_install() {
+  drupal_install_schema('data_ui_test');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function data_ui_test_schema() {
+  // Pull defaults and expose schema to Drupal.
+  drupal_load('module', 'data_ui_test');
+  $data_tables = data_ui_test_data_default();
+  $schema = array();
+  foreach ($data_tables as $name => $table) {
+    $schema[$name] = $table->table_schema;
+  }
+  return $schema;
+}

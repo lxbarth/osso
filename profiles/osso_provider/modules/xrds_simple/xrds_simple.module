@@ -1,0 +1,104 @@
+<?php
+// $Id: xrds_simple.module,v 1.1 2008/06/03 06:07:33 walkah Exp $
+
+function xrds_simple_menu() {
+  $items = array();
+  
+  $items['xrds'] = array(
+    'page callback' => 'xrds_simple_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['user/%user/xrds'] = array(
+    'page callback' => 'xrds_simple_page',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK    
+  );
+  
+  return $items;
+}
+
+function xrds_simple_init() {
+  if (arg(0) == 'user' && is_numeric(arg(1))) {
+    $path = 'user/'. arg(1) .'/xrds';
+  }
+  else {
+    $path = 'xrds';
+  }
+  
+  $url = url($path, array('absolute' => TRUE));
+  drupal_set_header('X-XRDS-Location: '. $url);
+  drupal_set_header('X-Yadis-Location: '. $url);
+  drupal_set_html_head('<meta http-equiv="X-XRDS-Location" content="' . $url . '" />');
+  drupal_set_html_head('<meta http-equiv="X-Yadis-Location" content="' . $url . '" />');
+}
+
+function xrds_simple_page($account = NULL) {
+  $output = xrds_simple_document($account);
+  if ($output) {
+    drupal_set_header('Content-type: application/xrds+xml');
+    print $output;
+  }
+}
+
+/**
+ * Generates an XRDS document
+ *
+ * @param object $account A user account object to generate the XRDS for.
+ */
+function xrds_simple_document($account = NULL) {
+  $xrds = module_invoke_all('xrds', $account);
+  
+  if (empty($xrds)) {
+    return FALSE;
+  }
+  
+  $output = '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
+	$output .= '<XRDS xmlns="xri://$xrds">' . "\n";
+
+  foreach ($xrds as $xrd) {
+		$output .= '  <XRD xmlns="xri://$xrd*($v*2.0)" version="2.0" xmlns:simple="http://xrds-simple.net/core/1.0"';
+    $output .= drupal_attributes($xrd['namespaces']);
+    $output .= ">\n";
+		$output .= '    <Type>xri://$xrds*simple</Type>'."\n";
+
+    if (is_array($xrd['type'])) { 
+      foreach($xrd['type'] as $type) {
+        $output .= '    <Type>' . check_plain($type) . '</Type>'."\n";
+      }
+    }
+
+    if (is_array($xrd['expires'])) { 
+      foreach($xrd['expires'] as $expires) {
+        $output .= '    <Expires>' . check_plain($expires) . '</Expires>'."\n";
+      }
+    }
+
+		foreach($xrd['services'] as $service) {
+			$output .= '    <Service priority="'.floor($service['priority']).'">'."\n";
+			foreach($service['data'] as $element => $values) {
+				foreach($values as $value) {
+          if (!is_array($value)) {
+            $data = $value;
+            $value = array();
+            $value['data'] = $data;
+            $value['attributes'] = array();
+          }
+          
+          $output .= '      <'. check_plain($element);
+          $output .= drupal_attributes($value['attributes']);
+          $output .= '>';          
+          $output .= check_plain($value['data']) . '</'. check_plain($element) . ">\n";
+				}
+			}
+			$output .= '    </Service>'."\n";
+    }
+		$output .= '  </XRD>'."\n";
+    
+  }
+  $output .= '</XRDS>';
+  
+  return $output;
+}

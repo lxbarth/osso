@@ -1,0 +1,15 @@
+<?php
+// $Id: data_search.install,v 1.1.2.1 2009/09/17 14:20:47 alexb Exp $
+
+/**
+ * Implementation of hook_install().
+ * 
+ * @todo: Should use db_change_field()
+ * @todo: What happens if data_search and search are installed at the same time?
+ */
+function data_search_install() {
+  // Adjust length of type columns for data tables with names of a max length of 64.
+  db_query("ALTER TABLE {search_dataset} CHANGE COLUMN type type VARCHAR(64)");
+  db_query("ALTER TABLE {search_index} CHANGE COLUMN type type VARCHAR(64)");
+  db_query("ALTER TABLE {search_node_links} CHANGE COLUMN type type VARCHAR(64)");
+}

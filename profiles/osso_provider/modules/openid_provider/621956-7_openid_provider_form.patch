@@ -1,0 +1,42 @@
+--- openid_provider.inc
++++ openid_provider.inc
+@@ -142,6 +142,9 @@ function openid_provider_authentication_response($request) {
+     return openid_redirect_http($response['openid.return_to'], $response); 
+   }
+   else {
++    // Unset global post variable, otherwise FAPI will assume it has been 
++    // submitted against openid_provider_form.
++    unset($_POST);
+     return drupal_get_form('openid_provider_form', $response, $realm);
+   }
+ }
+--- openid_provider.module
++++ openid_provider.module
+@@ -200,7 +200,7 @@ function openid_provider_xrds($account = NULL) {
+ function openid_provider_form(&$form_state, &$response = array(), $realm = NULL) {
+   global $user;
+ 
+-  // Use form_state to store the $response and $realm values 
++  // Use form_state to store the $response and $realm values.
+   if (count($response)) {
+     $form_state['storage']['response'] = $response;
+   }
+@@ -216,14 +216,14 @@ function openid_provider_form(&$form_state, &$response = array(), $realm = NULL)
+   }
+   
+   $form = array();
+-  
++  // Force FAPI to cache this form so that $form_state['storage'] is available 
++  // in submit handler.
++  $form['#cache'] = TRUE;
++  $form['#action'] = url('openid/provider/send');
+   $form['intro'] = array(
+     '#type' => 'markup',
+     '#value' => '<p>'. t('You are being logged into %site, would you like to continue?', array('%site' => $realm)) . '</p>'
+   );
+-  
+-  $form['#action'] = url('openid/provider/send');
+-
+   $form['submit_once'] = array(
+     '#type' => 'submit',
+     '#value' => t('Yes; just this once'),

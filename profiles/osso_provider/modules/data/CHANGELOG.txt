@@ -1,0 +1,14 @@
+// $Id: CHANGELOG.txt,v 1.1.2.4 2009/11/18 21:26:48 alexb Exp $
+
+Data 6.x 1.0 Alpha 9, 2009-11-18
+--------------------------------
+
+- #625092 phayes: Geometry support.
+- #623974 phayes: Big text support.
+- #615078 bec: Fix creating table with varchar field + size.
+- #616324 bec: adopt tables.
+
+Data 6.x 1.0 Alpha 8, 2009-10-20
+---------------------------------
+
+- Initial release.

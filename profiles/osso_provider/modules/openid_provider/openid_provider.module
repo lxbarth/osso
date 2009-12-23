@@ -1,0 +1,327 @@
+<?php
+// $Id: openid_provider.module,v 1.3.2.3 2009/03/11 18:15:02 walkah Exp $
+
+/**
+ * @file
+ * OpenID 2.0 Provider implementation for Drupal.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function openid_provider_menu() {
+  $items['admin/settings/openid_provider'] = array(
+    'title' => 'OpenID Provider',
+    'description' => 'Configure settings for the OpenID Provider.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('openid_provider_admin_settings'),
+    'access arguments' => array('administer openid provider'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  $items['openid/provider'] = array(
+    'title' => 'OpenID login',
+    'page callback' => 'openid_provider_endpoint',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'openid_provider.pages.inc'
+  );
+  
+  $items['openid/provider/send'] = array(
+    'title' => 'OpenID login',
+    'page callback' => 'openid_provider_send',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'openid_provider.pages.inc'
+  );
+
+  $items['openid/provider/continue'] = array(
+    'title' => 'OpenID login',
+    'page callback' => 'openid_provider_continue',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'openid_provider.pages.inc'
+  );
+  
+  $items[openid_provider_user_url('%user')] = array(
+    'title' => 'OpenID Page',
+    'page callback' => 'openid_provider_page',
+    'page arguments' => array(1),
+    'description' => 'Menu callback with full access so no forbiddens are given from server requests',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'openid_provider.pages.inc'
+  );
+
+  $items['user/%user/openid_sites'] = array(
+    'title' => 'OpenID sites',
+    'page callback' => 'openid_provider_sites',
+    'page arguments' => array(1),
+    'access callback' => 'openid_provider_sites_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'openid_provider.pages.inc'
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function openid_provider_perm() {
+  return array('administer openid provider');
+}
+
+/**
+ * Implementation of hook_init()
+ *
+ * Add appropriate HTML headers for XRDS and Link discovery.
+ */
+function openid_provider_init() {
+  // Not all OpenID clients may be smart enough to do XRDS.
+  drupal_add_link(array('rel' => 'openid2.provider', 'href' => url('openid/provider', array('absolute' => TRUE))));
+  drupal_add_link(array('rel' => 'openid.server', 'href' => url('openid/provider', array('absolute' => TRUE))));
+
+}
+
+/**
+ * Menu access callback. Only allow access to current user and administrators.
+ */
+function openid_provider_sites_access($account) {
+  global $user;
+  return ($account->uid == $user->uid) || user_access('administer openid provider');
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function openid_provider_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      if (module_exists('pathauto')) {
+        _pathauto_include();
+        // Use the username to automatically create an alias
+        $pathauto_user = (object) array_merge((array) $account, $edit);
+        if ($account->name) {
+          $placeholders = pathauto_get_placeholders('user', $pathauto_user);
+          $src = openid_provider_user_url($account->uid);
+          $alias = pathauto_create_alias('openid_provider', $op, $placeholders, $src, $account->uid);
+        }
+      }
+      break;
+    case 'delete':
+      // If the user is deleted, remove the path aliases
+      if (module_exists('pathauto')) {
+        $account = (object) $account;
+       	path_set_alias(openid_provider_user_url($account->uid));
+      }
+      break;
+    case 'view':
+      if ($user->uid == $account->uid) {
+        $account->content['openid'] = array(
+          '#title' => t('OpenID'),
+          '#weight' => 10,
+        );
+        $account->content['openid']['identity'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('Identity'),
+          '#value' => t('You may login to other OpenID enabled sites using %url', array('%url' => url(openid_provider_user_url($account->uid), array('absolute' => TRUE)))),
+          '#class' => 'openid',
+        );
+      }
+      break;
+  }
+}
+
+/**
+ * Return the canonical OpenID URL for this user id
+ */
+function openid_provider_user_url($uid) {
+  if (is_object($uid)) {
+    $uid = $uid->uid;
+  }
+  return sprintf('user/%s/identity', $uid);
+}
+
+/**
+ * Settings form.
+ */
+function openid_provider_admin_settings() {
+  $form = array();
+  $form['openid_provider_assoc_expires_in'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Associations expire in this many seconds'),
+    '#default_value' => variable_get('openid_provider_assoc_expires_in', '3600'),
+    '#size' => 10,
+    '#maxlength' => 10
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Return a XRDS for this server to discover it based on the root url
+ */
+function openid_provider_xrds($account = NULL) {
+  module_load_include('inc', 'openid');
+  
+  if ($account) {
+    $types = array(OPENID_NS_2_0 .'/signon');
+  }
+  else {
+    $types = array(OPENID_NS_2_0 .'/server');
+  }
+
+  $data = array(
+    'Type' => $types,
+    'URI' => array(url('openid/provider', array('absolute'=> TRUE))),
+  );
+  if ($account->uid) {
+    $data['LocalID'] = array(url(openid_provider_user_url($account->uid), array('absolute' => TRUE)));
+  }
+  
+  $xrds['openid_provider'] = array(
+    'services' => array(
+      array('priority' => 10,
+            'data' => $data
+      )
+    )
+  );
+
+  return $xrds;
+}
+
+/**
+ * Main OpenID Provider form
+ */
+function openid_provider_form(&$form_state, &$response = array(), $realm = NULL) {
+  global $user;
+
+  // Use form_state to store the $response and $realm values.
+  if (count($response)) {
+    $form_state['storage']['response'] = $response;
+  }
+  else {
+    $response = $form_state['storage']['response'];
+  }
+  
+  if ($realm) {
+    $form_state['storage']['realm'] = $realm;
+  }
+  else {
+    $realm = $form_state['storage']['realm'];
+  }
+  
+  $form = array();
+  // Force FAPI to cache this form so that $form_state['storage'] is available 
+  // in submit handler.
+  $form['#cache'] = TRUE;
+  $form['#action'] = url('openid/provider/send');
+  $form['intro'] = array(
+    '#type' => 'markup',
+    '#value' => '<p>'. t('You are being logged into %site, would you like to continue?', array('%site' => $realm)) . '</p>'
+  );
+  $form['submit_once'] = array(
+    '#type' => 'submit',
+    '#value' => t('Yes; just this once'),
+  );
+  $form['submit_always'] = array(
+    '#type' => 'submit',
+    '#value' => t('Yes; always'),
+    '#submit' => array('openid_provider_form_submit_always')
+  );
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('openid_provider_form_submit_cancel')
+  );
+
+  return $form;
+}
+
+/**
+ * Once submit handler
+ */
+function openid_provider_form_submit(&$form, $form_state, $auto_release = FALSE) {
+  global $user;
+
+  module_load_include('inc', 'openid');
+  module_load_include('inc', 'openid_provider');
+  
+  $response = _openid_provider_sign($form_state['storage']['response']);
+  _openid_provider_rp_save($user->uid, $form_state['storage']['realm'], $auto_release);
+  openid_redirect_http($response['openid.return_to'], $response);
+}
+
+/**
+ * Always submit handler
+ */
+function openid_provider_form_submit_always(&$form, $form_state) {
+  return openid_provider_form_submit($form, $form_state, TRUE);
+}
+ 
+/**
+ * Cancel submit handler
+ */
+function openid_provider_form_submit_cancel(&$form, $form_state) {
+  module_load_include('inc', 'openid_provider');
+  module_load_include('inc', 'openid');
+  
+  $return_to = $form_state['storage']['response']['openid.return_to'];  
+  $response = openid_provider_cancel_authentication_response($form_state['openid.mode']);
+  openid_redirect($return_to, $response);
+}
+
+/**
+ * Implementation of hook_pathauto() for OpenID Provider aliases.
+ */
+function openid_provider_pathauto($op) {
+  switch ($op) {
+    case 'settings':
+      $settings = array();
+      $settings['module'] = 'openid_provider';
+      $settings['token_type'] = 'user';
+      $settings['groupheader'] = t('OpenID Provider settings');
+      $settings['patterndescr'] = t('Pattern for OpenID provider identity paths');
+      $settings['patterndefault'] = t('users/[user-raw]/openid');
+      $patterns = token_get_list('user');
+      foreach ($patterns as $type => $pattern_set) {
+        if ($type != 'global') {
+          foreach ($pattern_set as $pattern => $description) {
+            $settings['placeholders']['['. $pattern .']'] = $description;
+          }
+        }
+      }
+
+      $settings['bulkname'] = t('Bulk generate aliases for identity paths that are not aliased');
+      $settings['bulkdescr'] = t('Generate aliases for all existing identity paths which do not already have aliases.');
+      return (object) $settings;
+    default:
+      break;
+  }
+}
+
+/**
+ * Bulk generate aliases for all Open ID identity paths without aliases.
+ */
+function openid_provider_pathauto_bulkupdate() {
+  $query = "SELECT uid, name, src, dst FROM {users} LEFT JOIN {url_alias} ON CONCAT('user/', CAST(uid AS CHAR) ,'/openid') = src WHERE uid > 0 AND src IS NULL";
+  $result = db_query_range($query, 0, variable_get('pathauto_max_bulk_update', 50));
+
+  $count = 0;
+  $placeholders = array();
+  while ($user = db_fetch_object($result)) {
+    $placeholders = pathauto_get_placeholders('user', $user);
+    $src = openid_provider_user_url($user->uid);
+    if ($alias = pathauto_create_alias('openid_provider', 'bulkupdate', $placeholders, $src, $user->uid)) {
+      $count++;
+    }
+  }
+
+  drupal_set_message(format_plural($count,
+    'Bulk generation of OpenID Provider paths completed, one alias generated.',
+    'Bulk generation of OpenID Provider paths completed, @count aliases generated.'));
+}

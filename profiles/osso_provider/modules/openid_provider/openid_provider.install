@@ -1,0 +1,110 @@
+<?php
+// $Id: openid_provider.install,v 1.2.2.1 2009/03/11 18:15:02 walkah Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function openid_provider_install() {
+  // Create tables.
+  drupal_install_schema('openid_provider');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function openid_provider_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('openid_provider');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function openid_provider_schema() {
+  $schema['openid_provider_relying_party'] = array(
+    'description' => t('Tracks relying parties a give user has authenticated.'),
+    'fields' => array(
+      'rpid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('The {users}.uid that has authenticated this relying party.'),
+      ),
+      'realm' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('The OpenID realm of the authenticated relying party.'),
+      ),
+      'first_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Timestamp of the first time this relying party was accessed.')
+      ),
+      'last_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Timestamp of the most recent access'),
+      ),
+      'auto_release' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Whether or not to automatically release this relying party.')
+      ),
+    ),
+    'indexes' => array('uid' => array('uid')),
+    'primary key' => array('rpid')
+  );
+
+  $schema['openid_provider_association'] = array(
+    'description' => t('Stores current associaitons with relying parties.'),
+    'fields' => array(
+      'assoc_handle' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'assoc_type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'session_type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'mac_key' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,        
+      ),
+      'expires_in' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      )
+    ),
+    'primary key' => array('assoc_handle')
+  );
+
+  return $schema;
+}

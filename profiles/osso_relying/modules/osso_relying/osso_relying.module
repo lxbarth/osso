@@ -1,0 +1,155 @@
+<?php
+
+/**
+ * Implementation of hook_init().
+ */
+function osso_relying_init() {
+  // Replace button with a link, make it look like on Provider.
+  if (arg(0) != 'user') {
+    drupal_add_js(drupal_get_path('module', 'osso_relying') .'/osso_relying.js');
+  }
+}
+
+/**
+ * Implementation of hook_strongarm().
+ */
+function osso_relying_strongarm() {
+  return array (
+    'menu_primary_links_source' => 'features',
+  );
+}
+
+/**
+ * Implementation hook_menu_alter().
+ */
+function osso_relying_menu_alter(&$items) {
+  $items['user/%user_uid_optional']['page callback'] = 'osso_relying_user_view';
+  $items['user']['title callback'] = 'osso_relying_user_menu_title';
+}
+
+/**
+ * Custom user callback, redirect to OP.
+ */
+function osso_relying_user_view($account) {
+  $provider = variable_get('openid_sso_provider', '');
+  // Do not redirect to provider if identifier is set - in that case we just
+  // came back from the provider.
+  if ($provider['url'] && !empty($account->name) && !isset($_GET['identifier'])) {
+    drupal_goto($provider['url'] .'user/'. urlencode($account->name));
+  }
+  else {
+    drupal_goto('');
+  }
+}
+
+/**
+ * Custom title callback.
+ */
+function osso_relying_user_menu_title() {
+  global $user;
+  if ($user->uid) {
+    return t('Hello @user', array('@user' => $user->name));
+  }
+  $provider = variable_get('openid_sso_provider', array());
+  return t('Log in with your !provider ID', array('!provider' => $provider['name']));
+}
+
+/**
+ * Generate hub bar.
+ */
+function osso_hub_bar() {
+  global $user;
+
+  $provider = variable_get('openid_sso_provider', array());
+
+  // @todo: needs caching.
+  $result = drupal_http_request($provider['url'] .'sso/trusted-sites');
+  if ($result->code == 200) {
+    try {
+      $data = osso_relying_parse_opml($result->data);
+    }
+    catch (Exception $e) {
+      drupal_set_message(t('Error retrieving list of Relying Parties from OpenID Provider at @url', array('@url' => $provider['url'])), 'error');
+    }
+  }
+  else {
+    drupal_set_message($result->error, 'error');
+  }
+
+  // Generate links to hub and other relying parties.
+  $items = array();
+  $items[] = array(
+    'data' => l(check_plain($provider['name']), $provider['url']),
+    'class' => 'provider',
+  );
+  foreach ($data['items'] as $rp) {
+    $items[] = array(
+      'data' => l(check_plain($rp['title']), $rp['htmlurl']),
+      'class' => 'relying',
+    );
+  }
+  $output = theme('item_list', $items, NULL, 'ul', array('class' => 'links hub-links'));
+
+  // Generate user links.
+  $items = array();
+  if ($user->uid) {
+    $items[] = array(
+      'data' => l(t('Hello, @user', array('@user' => $user->name)), 'user/'. $user->uid),
+      'class' => 'username',
+    );
+    $items[] = array(
+      'data' => l(t('Log out'), 'sso/logout'),
+      'class' => 'logout',
+    );
+  }
+  elseif (arg(0) != 'user') {
+    $items[] = array(
+      'data' => drupal_get_form('openid_sso_form', TRUE),
+      'class' => 'login',
+    );
+  }
+  $output .= theme('item_list', $items, NULL, 'ul', array('class' => 'links user-links'));
+
+  return $output;
+}
+
+/**
+ * Parse OPML file.
+ *
+ * @param $raw
+ *   File contents.
+ * @return
+ *   An array of the parsed OPML file.
+ */
+function osso_relying_parse_opml($raw) {
+  $feeds = $items = array();
+  $xml = new SimpleXMLElement($raw);
+
+  $feeds['title'] = (string)current($xml->xpath('//head/title'));
+
+  // @todo: Make xpath case insensitive.
+  $outlines = $xml->xpath('//outline[@htmlUrl]');
+  foreach ($outlines as $outline) {
+    $item = array();
+    foreach ($outline->attributes() as $k => $v) {
+      if (in_array(strtolower($k), array('title', 'text', 'htmlurl'))) {
+        $item[strtolower($k)] = (string) $v;
+      }
+    }
+
+    // If no title, forge it from text.
+    if (!isset($item['title']) && isset($item['text'])) {
+      if (strlen($item['text']) < 40) {
+        $item['title'] = $item['text'];
+      }
+      else {
+        $item['title'] = trim(substr($item['text'], 0, 30)) .' ...';
+      }
+    }
+    if (isset($item['title']) && isset($item['htmlurl'])) {
+      $items[] = $item;
+    }
+  }
+  $feeds['items'] = $items;
+  return $feeds;
+}

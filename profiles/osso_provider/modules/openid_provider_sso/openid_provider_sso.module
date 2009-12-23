@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file
+ * Hooks, callbacks for OpenID Provider SSO.
+ *
+ * @todo
+ * - Storing Known Relying Parties in Drupal variable does not scale.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function openid_provider_sso_menu() {
+  $items = array();
+  $items['sso/trusted-sites'] = array(
+    'page callback' => 'openid_provider_sso_relying_parties_opml',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['sso/logout'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('openid_provider_sso_logout'),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
+  if (in_array($form_id, array('user_register', 'user_login', 'user_pass'))) {
+    if ($_GET['destination'] == 'openid/provider/continue') {
+      drupal_add_js(drupal_get_path('module', 'openid_provider_sso') .'/openid_provider_sso.js');
+      drupal_add_js('Drupal.settings.destination='. drupal_to_js($_GET['destination']) .';', 'inline');
+    }
+  }
+  if ($form_id == 'openid_provider_form') {
+    // If RP is known take decisions that simplify the user's choices.
+    if ($rp = openid_provider_sso_relying_party($form_state['storage']['realm'])) {
+      drupal_set_title('');
+      global $user;
+      unset($form['submit_always']);
+      $form['submit_once']['#value'] = t('Log in');
+      $form['intro']['#value'] = '<div class="sso-message">'. t('Log in to @relying_party as @user?', array('@relying_party' => $rp['name'], '@user' => $user->name)) .'</div>';
+    }
+  }
+}
+
+/**
+ * Returns a relying party by its realm. Returns FALSE if no relying party of
+ * given realm is known. $realm may be URL encoded.
+ */
+function openid_provider_sso_relying_party($realm) {
+  $realm = trim(urldecode($realm), '/');
+  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+    if (trim($rp['realm'], '/') == $realm) {
+      return $rp;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Logout form.
+ */
+function openid_provider_sso_logout() {
+  if ($rp = openid_provider_sso_relying_party($_GET['realm'])) {
+    $form = array();
+    $form['#rp'] = $rp;
+    $form['message']['#value'] = '<div class="sso-message">'. t('You logged out of @relying_party, would you also like to log out of @provider?', array('@relying_party' => $rp['name'], '@provider' => variable_get('site_name', 'Drupal'))) .'</div>';
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Log out'),
+      '#submit' => array('openid_provider_sso_logout_logout'),
+    );
+    $form['cancel'] = array(
+      '#type' => 'submit',
+      '#value' => t('Keep me logged in'),
+      '#submit' => array('openid_provider_sso_logout_cancel'),
+    );
+    return $form;
+  }
+  return array();
+}
+
+/**
+ * Submit handler for openid_provider_sso_logout().
+ */
+function openid_provider_sso_logout_logout($form, &$form_state) {
+  // +++ Begin from user_logout().
+  global $user;
+
+  watchdog('user', 'Session closed for %name.', array('%name' => $user->name));
+
+  // Destroy the current session:
+  session_destroy();
+  // Only variables can be passed by reference workaround.
+  $null = NULL;
+  user_module_invoke('logout', $null, $user);
+
+  // Load the anonymous user
+  $user = drupal_anonymous_user();
+  // +++ End from user_logout().
+
+  // Redirect user to the RP where she came from.
+  $provider = variable_get('openid_sso_provider', array());
+  drupal_goto($form['#rp']['realm']);
+}
+
+/**
+ * Submit handler for openid_provider_sso_logout().
+ */
+function openid_provider_sso_logout_cancel($form, &$form_state) {
+  drupal_goto($form['#rp']['realm']);
+}
+
+/**
+ * Page callback for rendering a list of trusted sites.
+ */
+function openid_provider_sso_relying_parties_opml() {
+
+  // Generate an OPML of trusted sites.
+  $output = '<?xml version="1.0" encoding="utf-8"?>'."\n";
+  $output .= '<opml version="2.0">'."\n";
+  $output .= '<head>'."\n";
+  $output .= '  <title>'. t('Trusted relying parties for !site', array('!site' => variable_get('site_name', 'Drupal'))) .'</title>'."\n";
+  $output .= '  <dateCreated>'. format_date(time(), 'custom', 'r', 0) .'</dateCreated>'."\n";
+  $output .= '</head>'."\n";
+  $output .= '<body>'."\n";
+  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+    $output .= '  <outline text="'. check_plain($rp['name']) .'" htmlUrl="'. check_url($rp['realm']) .'"/>'."\n";
+  }
+  $output .= '</body>'."\n";
+  $output .= '</opml>';
+
+  drupal_set_header('Content-Type=text/x-opml');
+  print $output;
+}

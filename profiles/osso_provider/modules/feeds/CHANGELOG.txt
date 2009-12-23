@@ -1,0 +1,40 @@
+// $Id: CHANGELOG.txt,v 1.14 2009/11/24 23:28:30 alexb Exp $
+
+Feeds 6.x 1.0 xxxx, 200x-xx-xx
+------------------------------
+
+- #623452 mongolito404: Port basic test infrastructure for mappers, test for
+  basic CCK mapper.
+
+Feeds 6.x 1.0 Alpha 8, 2009-11-18
+---------------------------------
+
+- #634886 Kars-T, EugenMayer: Add vid to node process functions.
+- #613494 miasma: Remove length limit from URL.
+- #631050 z.stolar: Add feed_nid on node_load of a feed item.
+- #631248 velosol: Set log message when creating a node in FeedsNodeProcessor.
+
+Feeds 6.x 1.0 Alpha 7, 2009-11-04
+---------------------------------
+
+- #622654 Don't show body as option for mapper when body is disabled
+- Allow cURL only to download via http or https
+- Throw an exception in FeedsHTTPFetcher if result is not 200
+
+Feeds 6.x 1.0 Alpha 6, 2009-11-03
+---------------------------------
+
+- Split number of items to queue on cron from feeds_schedule_num variable
+  (see README.txt)
+- #619110 Fix node_delete() in FeedsNodeProcessor
+- Add descriptions to all mapping sources and targets
+
+Feeds 6.x 1.0 Alpha 5, 2009-10-23
+---------------------------------
+
+- #584500 Add Feeds default module
+
+Feeds 6.x 1.0 Alpha 4, 2009-10-21
+---------------------------------
+
+- Initial release

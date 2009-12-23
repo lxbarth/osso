@@ -1,0 +1,124 @@
+<?php
+
+/**
+ * @file
+ * Hook implementations, callbacks form OpenID SSO.
+ */
+
+/**
+ * Implementation of hook_strongarm().
+ */
+function openid_sso_strongarm() {
+  return array (
+    // No email verification as users can only sign in from trusted provider.
+    'user_email_verification' => 0,
+    // We must allow user registration otherwise OpenID will refuse to register
+    // user. We will suppress user/register in hook_menu_alter().
+    'user_register' => '1',
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function openid_sso_menu() {
+  $items = array();
+  // Move log in page to login/direct. See how openid_sso_menu_alter() replaces
+  // log in.
+  $items['login/direct'] = array(
+    'title' => 'Direct log in',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('user_login'),
+    'access callback' => 'user_is_anonymous',
+    'type' => MENU_CALLBACK,
+  );
+  $items['sso/logout'] = array(
+    'page callback' => 'openid_sso_logout',
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * Redirect user to front page after login, otherwise she will be pushed to OP
+ * when using the login/direct form.
+ */
+function openid_sso_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'user_login') {
+    $form['#redirect'] = '';
+  }
+}
+
+/**
+ * Implementation of hook_menu_alter().
+ */
+function openid_sso_menu_alter(&$items) {
+  $items['user/register']['page callback'] = 'openid_sso_user_page';
+  $items['user']['page callback'] = 'openid_sso_user_page';
+}
+
+/**
+ * Simple sign in / sign up form triggering authentication with OP.
+ */
+function openid_sso_form($only_button = FALSE) {
+  $form = array();
+  if (!$only_button) {
+    $provider = variable_get('openid_sso_provider', '');
+    $form['help']['#value'] = '<div class="help">'. t('Log in / sign up via !provider.', array('!provider' => $provider['name'])) .'</div>';
+  }
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Log in / Sign up'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for openid_sso_form().
+ */
+function openid_sso_form_submit($form, &$form_state) {
+  $provider = variable_get('openid_sso_provider', array());
+  $values = array(
+    'openid_identifier' => $provider['url'],
+    'openid.return_to' => url('openid/authenticate', array('absolute' => TRUE, 'query' => 'destination=')),
+  );
+  openid_begin($values['openid_identifier'], $values['openid.return_to'], $values);
+}
+
+/**
+ * Custom menu callback for user/page.
+ */
+function openid_sso_user_page() {
+  global $user;
+  if ($user->uid) {
+    return user_page();
+  }
+  return drupal_get_form('openid_sso_form');
+}
+
+/**
+ * Custom logout callback, redirects to hub.
+ */
+function openid_sso_logout() {
+  
+  // +++ Begin from user_logout().
+  global $user;
+
+  watchdog('user', 'Session closed for %name.', array('%name' => $user->name));
+
+  // Destroy the current session:
+  session_destroy();
+  // Only variables can be passed by reference workaround.
+  $null = NULL;
+  user_module_invoke('logout', $null, $user);
+
+  // Load the anonymous user
+  $user = drupal_anonymous_user();
+  // +++ End from user_logout().
+
+  $provider = variable_get('openid_sso_provider', array());
+  drupal_goto($provider['url'] .'sso/logout/', 'realm='. urlencode(url(NULL, array('absolute' => TRUE))));
+}

@@ -1,0 +1,13 @@
+core = "6.x"
+description = "A simple theme with configurable colors to demonstrate OpenID Single Sign-On."
+engine = "phptemplate"
+name = "Hubnet"
+
+regions[right] = "Right sidebar"
+regions[content] = "Content"
+regions[header] = "Header"
+regions[footer] = "Footer"
+
+stylesheets[screen][] = "style.css"
+
+base theme = "tao"
