@@ -21,7 +21,7 @@ function openid_provider_sso_menu() {
   $items['sso/logout'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('openid_provider_sso_logout'),
-    'access callback' => 'user_is_logged_in',
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -64,24 +64,30 @@ function openid_provider_sso_relying_party($realm) {
 }
 
 /**
- * Logout form.
+ * Logout form. This form is being visited by an RP after logging out the user.
+ * The user is presented with an option to log out on the OP (this site) as
+ * well or stay logged in. In both cases the final destination is the RP where
+ * the user departed.
  */
 function openid_provider_sso_logout() {
   if ($rp = openid_provider_sso_relying_party($_GET['realm'])) {
-    $form = array();
-    $form['#rp'] = $rp;
-    $form['message']['#value'] = '<div class="sso-message">'. t('You logged out of @relying_party, would you also like to log out of @provider?', array('@relying_party' => $rp['name'], '@provider' => variable_get('site_name', 'Drupal'))) .'</div>';
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Log out'),
-      '#submit' => array('openid_provider_sso_logout_logout'),
-    );
-    $form['cancel'] = array(
-      '#type' => 'submit',
-      '#value' => t('Keep me logged in'),
-      '#submit' => array('openid_provider_sso_logout_cancel'),
-    );
-    return $form;
+    if (user_is_logged_in()) {
+      $form = array();
+      $form['#rp'] = $rp;
+      $form['message']['#value'] = '<div class="sso-message">'. t('You logged out of @relying_party, would you also like to log out of @provider?', array('@relying_party' => $rp['name'], '@provider' => variable_get('site_name', 'Drupal'))) .'</div>';
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Log out'),
+        '#submit' => array('openid_provider_sso_logout_logout'),
+      );
+      $form['cancel'] = array(
+        '#type' => 'submit',
+        '#value' => t('Keep me logged in'),
+        '#submit' => array('openid_provider_sso_logout_cancel'),
+      );
+      return $form;
+    }
+    drupal_goto($rp['realm']);
   }
   return array();
 }
