@@ -77,7 +77,7 @@ function openid_sso_user_page() {
 }
 
 /**
- * Page callback for initiating an authentication request. Logs user out before
+ * Page callback for initiating an authentication request. Logs out user before
  * initiation.
  */
 function openid_sso_init_page() {
