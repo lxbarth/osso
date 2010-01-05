@@ -102,9 +102,9 @@ function osso_hub_bar() {
       'class' => 'logout',
     );
   }
-  elseif (arg(0) != 'user') {
+  else {
     $items[] = array(
-      'data' => drupal_get_form('openid_sso_form', TRUE),
+      'data' => l(t('Log in / Sign up'), 'user'),
       'class' => 'login',
     );
   }
