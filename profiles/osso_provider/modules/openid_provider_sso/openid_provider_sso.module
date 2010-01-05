@@ -57,10 +57,12 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
   elseif (in_array($form_id, array('user_register', 'user_login', 'user_pass'))) {
     if ($_GET['destination'] == 'openid/provider/continue') {
       drupal_add_js(drupal_get_path('module', 'openid_provider_sso') .'/openid_provider_sso.js');
-      drupal_add_js('Drupal.settings.destination='. drupal_to_js($_GET['destination']) .';', 'inline');
+      drupal_add_js('Drupal.settings.openid_provider_sso_destination='. drupal_to_js($_GET['destination']) .';', 'inline');
     }
     if ($rp = openid_provider_sso_relying_party($_GET['realm'])) {
       $form['#redirect'] = $rp['realm'] .'sso/init';
+      drupal_add_js(drupal_get_path('module', 'openid_provider_sso') .'/openid_provider_sso.js');
+      drupal_add_js('Drupal.settings.openid_provider_sso.realm='. drupal_to_js($_GET['realm']) .';', 'inline');
     }
   }
   // If RP is known take decisions that simplify the user's choices.
