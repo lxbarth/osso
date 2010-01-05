@@ -66,6 +66,19 @@ function openid_sso_menu_alter(&$items) {
 }
 
 /**
+ * Page callback for initiating an authentication request. Logs out user before
+ * initiation.
+ *
+ * This page is requested rather than the user/ page because it makes sure that
+ * a user is NOT authenticated when initiating the OpenID authentication
+ * request.
+ */
+function openid_sso_init_page() {
+  openid_sso_logout();
+  drupal_goto('user');
+}
+
+/**
  * Custom menu callback for user/page.
  */
 function openid_sso_user_page() {
@@ -74,15 +87,6 @@ function openid_sso_user_page() {
     return user_page();
   }
   return openid_sso_request();
-}
-
-/**
- * Page callback for initiating an authentication request. Logs out user before
- * initiation.
- */
-function openid_sso_init_page() {
-  openid_sso_logout();
-  openid_sso_request();
 }
 
 /**
