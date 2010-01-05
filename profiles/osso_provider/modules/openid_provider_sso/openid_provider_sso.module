@@ -91,7 +91,6 @@ function openid_provider_sso_mail_alter(&$message) {
       $variables['!login_uri'] = url('user', array('query' => 'realm='. urlencode($rp['realm']), 'absolute' => TRUE, 'language' => $language));
       $variables['!login_url'] = user_pass_reset_url($message['params']['account']) .'?realm='. urlencode($rp['realm']);
       $message['body'][0] = _user_mail_text(substr($message['id'], 5) .'_body', $message['language'], $variables);
-      error_log(var_export($message, true));
     }
   }
 }
