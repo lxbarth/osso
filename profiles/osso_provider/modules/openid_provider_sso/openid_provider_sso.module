@@ -85,14 +85,14 @@ function openid_provider_sso_user_pass_submit($form, &$form_state) {
  */
 function openid_provider_sso_mail_alter(&$message) {
   if (in_array($message['id'], array('user_register_no_approval_required', 'user_register_pending_approval', 'user_password_reset'))) {
-    module_load_include('inc', 'openid');
-//    error_log(var_export(_openid_response(), true));
-    $variables = user_mail_tokens($message['params']['account'], $message['language']);
-    $variables['!login_uri'] = url('user', array('query' => 'realm=http%3A%2F%2Flocalhost%2Frp%2F', 'absolute' => TRUE, 'language' => $language));
-    $variables['!login_url'] = user_pass_reset_url($message['params']['account']) .'?realm=http%3A%2F%2Flocalhost%2Frp%2F';
-    $message['body'][0] = _user_mail_text(substr($message['id'], 5) .'_body', $message['language'], $variables);
-
-    error_log(var_export($message, true));
+    if ($rp = openid_provider_sso_relying_party($_SESSION['openid_provider']['request']['openid.realm'])) {
+      module_load_include('inc', 'openid');
+      $variables = user_mail_tokens($message['params']['account'], $message['language']);
+      $variables['!login_uri'] = url('user', array('query' => 'realm='. urlencode($rp['realm']), 'absolute' => TRUE, 'language' => $language));
+      $variables['!login_url'] = user_pass_reset_url($message['params']['account']) .'?realm='. urlencode($rp['realm']);
+      $message['body'][0] = _user_mail_text(substr($message['id'], 5) .'_body', $message['language'], $variables);
+      error_log(var_export($message, true));
+    }
   }
 }
 
