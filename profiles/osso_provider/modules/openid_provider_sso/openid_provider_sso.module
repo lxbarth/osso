@@ -30,6 +30,9 @@ function openid_provider_sso_menu() {
 /**
  * Implementation of hook_form_alter().
  *
+ * - Keep destinations spanning different sessions.
+ * - Simplify openid_provider_form.
+ *
  * @todo Support non-clean URLs in redirects.
  */
 function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
@@ -37,6 +40,11 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
   // On user_pass_reset stick redirect into session variable and redirect on
   // submission of user_profile_form form - this is where user_pass_reset
   // redirects to. Otherwise simply add redirect to $form variable.
+  // When a destination is set, make sure it is kept on certain forms so that
+  // the user always winds up at the RP where she started out.
+  // The fundamental difference between the destination 'destination' and the
+  // destination 'realm' is that 'destination' is an internal destination of
+  // this site, while 'realm' is a relying party that requested authentication.
   if ($form_id == 'user_pass_reset' && $rp = openid_provider_sso_relying_party($_GET['realm'])) {
     $_SESSION['openid_provider_sso_redirect'] = $rp['realm'] .'sso/init';
   }
@@ -47,7 +55,7 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
     }
   }
   elseif (in_array($form_id, array('user_register', 'user_login', 'user_pass'))) {
-    if ($_GET['destination'] == 'openid/provider/continue') { // Keep destination.
+    if ($_GET['destination'] == 'openid/provider/continue') {
       drupal_add_js(drupal_get_path('module', 'openid_provider_sso') .'/openid_provider_sso.js');
       drupal_add_js('Drupal.settings.destination='. drupal_to_js($_GET['destination']) .';', 'inline');
     }
