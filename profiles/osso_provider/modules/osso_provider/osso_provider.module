@@ -50,7 +50,6 @@ function osso_provider_user($op, &$edit, &$account) {
  */
 function osso_provider_strongarm() {
   return array (
-    'user_email_verification' => 0,
     'site_frontpage' => 'activity',
   );
 }

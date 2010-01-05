@@ -311,6 +311,7 @@ function drupal_get_destination() {
  */
 function drupal_goto($path = '', $query = NULL, $fragment = NULL, $http_response_code = 302) {
 
+// Extract is killing us here - it makes every URL a local path :P
   if (isset($_REQUEST['destination'])) {
     extract(parse_url(urldecode($_REQUEST['destination'])));
   }

@@ -29,18 +29,34 @@ function openid_provider_sso_menu() {
 
 /**
  * Implementation of hook_form_alter().
+ *
+ * @todo Support non-clean URLs in redirects.
  */
 function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
-  if (in_array($form_id, array('user_register', 'user_login', 'user_pass'))) {
+  if ($form_id == 'user_pass_reset' && $rp = openid_provider_sso_relying_party($_GET['realm'])) {
+    // On user_pass_reset stick redirect into session variable and redirect on
+    // submission of user form - this is where user_pass_reset redirects to.
+    $_SESSION['openid_provider_sso_redirect'] = $rp['realm'] .'sso/init';
+  }
+  elseif ($form_id == 'user_profile_form' && isset($_SESSION['openid_provider_sso_redirect'])) {
+    $form['#redirect'] = $_SESSION['openid_provider_sso_redirect'];
+    if (!empty($form_state['post'])) { // Only unset if post is set.
+      unset($_SESSION['openid_provider_sso_redirect']);
+    }
+  }
+  elseif (in_array($form_id, array('user_register', 'user_login', 'user_pass'))) {
     if ($_GET['destination'] == 'openid/provider/continue') {
       drupal_add_js(drupal_get_path('module', 'openid_provider_sso') .'/openid_provider_sso.js');
       drupal_add_js('Drupal.settings.destination='. drupal_to_js($_GET['destination']) .';', 'inline');
     }
+    if ($rp = openid_provider_sso_relying_party($_GET['realm'])) {
+      $form['#redirect'] = $rp['realm'] .'sso/init';
+    }
   }
-  if ($form_id == 'openid_provider_form') {
+  elseif ($form_id == 'openid_provider_form') {
     // If RP is known take decisions that simplify the user's choices.
     // Otherwise deny access. This only denies new RPs access. If there has been
-    // an RP in the past that has been set to auto_release=TRUE, the 
+    // an RP in the past that has been set to auto_release=TRUE, the
     // openid_provider_form won't be called at all and this access check won't
     // be effective.
     if ($rp = openid_provider_sso_relying_party($form_state['storage']['realm'])) {
@@ -54,6 +70,29 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
       drupal_access_denied();
       exit();
     }
+  }
+}
+
+/**
+ * Custom submit handler for user_profile form. Compare with user_pass_submit().
+ */
+function openid_provider_sso_user_pass_submit($form, &$form_state) {
+  $form_state['redirect'] = $form['#redirect'];
+}
+
+/**
+ * Implementation of hook_mail_alter().
+ */
+function openid_provider_sso_mail_alter(&$message) {
+  if (in_array($message['id'], array('user_register_no_approval_required', 'user_register_pending_approval', 'user_password_reset'))) {
+    module_load_include('inc', 'openid');
+//    error_log(var_export(_openid_response(), true));
+    $variables = user_mail_tokens($message['params']['account'], $message['language']);
+    $variables['!login_uri'] = url('user', array('query' => 'realm=http%3A%2F%2Flocalhost%2Frp%2F', 'absolute' => TRUE, 'language' => $language));
+    $variables['!login_url'] = user_pass_reset_url($message['params']['account']) .'?realm=http%3A%2F%2Flocalhost%2Frp%2F';
+    $message['body'][0] = _user_mail_text(substr($message['id'], 5) .'_body', $message['language'], $variables);
+
+    error_log(var_export($message, true));
   }
 }
 

@@ -43,7 +43,7 @@ function user_pass() {
 
 function user_pass_validate($form, &$form_state) {
   $name = trim($form_state['values']['name']);
-  
+
   // Blocked accounts cannot request a new password,
   // check provided username and email against access rules.
   if (drupal_is_denied('user', $name) || drupal_is_denied('mail', $name)) {
