@@ -20,7 +20,12 @@ function openid_provider_sso_menu() {
   );
   $items['sso/logout'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('openid_provider_sso_logout'),
+    'page arguments' => array('openid_provider_sso_logout_form'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['sso/logout/redirect'] = array(
+    'page callback' => 'openid_provider_sso_logout_page',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -77,6 +82,7 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
       unset($form['submit_always']);
       $form['submit_once']['#value'] = t('Log in');
       $form['intro']['#value'] = '<div class="sso-message">'. t('Log in to @relying_party as @user?', array('@relying_party' => $rp['name'], '@user' => $user->name)) .'</div>';
+      $form['other_user']['#value'] = l(t('Not @user?', array('@user' => $user->name)), 'sso/logout/redirect', array('query' => 'realm='. urlencode($rp['realm'])));
     }
     else {
       drupal_access_denied();
@@ -120,12 +126,24 @@ function openid_provider_sso_relying_party($realm) {
 }
 
 /**
+ * Logout page callback. Logs out and initiates new authentication request if
+ * a RP realm is present in $_GET.
+ */
+function openid_provider_sso_logout_page() {
+  openid_provider_sso_logout();
+  if ($rp = openid_provider_sso_relying_party($_GET['realm'])) {
+    drupal_goto($rp['realm'] .'sso/init');
+  }
+  drupal_goto();
+}
+
+/**
  * Logout form. This form is being visited by an RP after logging out the user.
  * The user is presented with an option to log out on the OP (this site) as
  * well or stay logged in. In both cases the final destination is the RP where
  * the user departed.
  */
-function openid_provider_sso_logout() {
+function openid_provider_sso_logout_form() {
   if ($rp = openid_provider_sso_relying_party($_GET['realm'])) {
     if (user_is_logged_in()) {
       $form = array();
@@ -134,7 +152,7 @@ function openid_provider_sso_logout() {
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Log out'),
-        '#submit' => array('openid_provider_sso_logout_logout'),
+        '#submit' => array('openid_provider_sso_logout_submit'),
       );
       $form['cancel'] = array(
         '#type' => 'submit',
@@ -149,10 +167,28 @@ function openid_provider_sso_logout() {
 }
 
 /**
- * Submit handler for openid_provider_sso_logout().
+ * Submit handler for openid_provider_sso_logout_form().
  */
-function openid_provider_sso_logout_logout($form, &$form_state) {
-  // +++ Begin from user_logout().
+function openid_provider_sso_logout_submit($form, &$form_state) {
+  openid_provider_sso_logout();
+  // Redirect user to the RP where she came from.
+  drupal_goto($form['#rp']['realm']);
+}
+
+/**
+ * Submit handler for openid_provider_sso_logout_form().
+ */
+function openid_provider_sso_logout_cancel($form, &$form_state) {
+  drupal_goto($form['#rp']['realm']);
+}
+
+/**
+ * Log out - taken from user_logout(). Difference: no redirect at the end of the
+ * function.
+ *
+ * @see user_logout()
+ */
+function openid_provider_sso_logout() {
   global $user;
 
   watchdog('user', 'Session closed for %name.', array('%name' => $user->name));
@@ -165,18 +201,6 @@ function openid_provider_sso_logout_logout($form, &$form_state) {
 
   // Load the anonymous user
   $user = drupal_anonymous_user();
-  // +++ End from user_logout().
-
-  // Redirect user to the RP where she came from.
-  $provider = variable_get('openid_sso_provider', array());
-  drupal_goto($form['#rp']['realm']);
-}
-
-/**
- * Submit handler for openid_provider_sso_logout().
- */
-function openid_provider_sso_logout_cancel($form, &$form_state) {
-  drupal_goto($form['#rp']['realm']);
 }
 
 /**
