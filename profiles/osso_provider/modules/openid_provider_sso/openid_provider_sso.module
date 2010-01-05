@@ -33,9 +33,11 @@ function openid_provider_sso_menu() {
  * @todo Support non-clean URLs in redirects.
  */
 function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
+  // Add redirects to Relying Party if there is a given realm.
+  // On user_pass_reset stick redirect into session variable and redirect on
+  // submission of user_profile_form form - this is where user_pass_reset
+  // redirects to. Otherwise simply add redirect to $form variable.
   if ($form_id == 'user_pass_reset' && $rp = openid_provider_sso_relying_party($_GET['realm'])) {
-    // On user_pass_reset stick redirect into session variable and redirect on
-    // submission of user form - this is where user_pass_reset redirects to.
     $_SESSION['openid_provider_sso_redirect'] = $rp['realm'] .'sso/init';
   }
   elseif ($form_id == 'user_profile_form' && isset($_SESSION['openid_provider_sso_redirect'])) {
@@ -45,7 +47,7 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
     }
   }
   elseif (in_array($form_id, array('user_register', 'user_login', 'user_pass'))) {
-    if ($_GET['destination'] == 'openid/provider/continue') {
+    if ($_GET['destination'] == 'openid/provider/continue') { // Keep destination.
       drupal_add_js(drupal_get_path('module', 'openid_provider_sso') .'/openid_provider_sso.js');
       drupal_add_js('Drupal.settings.destination='. drupal_to_js($_GET['destination']) .';', 'inline');
     }
@@ -53,12 +55,12 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
       $form['#redirect'] = $rp['realm'] .'sso/init';
     }
   }
+  // If RP is known take decisions that simplify the user's choices.
+  // Otherwise deny access. This only denies new RPs access. If there has been
+  // an RP in the past that has been set to auto_release=TRUE, the
+  // openid_provider_form won't be called at all and this access check won't
+  // be effective.
   elseif ($form_id == 'openid_provider_form') {
-    // If RP is known take decisions that simplify the user's choices.
-    // Otherwise deny access. This only denies new RPs access. If there has been
-    // an RP in the past that has been set to auto_release=TRUE, the
-    // openid_provider_form won't be called at all and this access check won't
-    // be effective.
     if ($rp = openid_provider_sso_relying_party($form_state['storage']['realm'])) {
       drupal_set_title('');
       global $user;
@@ -74,14 +76,12 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Custom submit handler for user_profile form. Compare with user_pass_submit().
- */
-function openid_provider_sso_user_pass_submit($form, &$form_state) {
-  $form_state['redirect'] = $form['#redirect'];
-}
-
-/**
  * Implementation of hook_mail_alter().
+ *
+ * On user / login forms replace login uri and login url with urls that contain
+ * the requesting RP's realm as destination.
+ *
+ * @see openid_provider_sso_form_alter().
  */
 function openid_provider_sso_mail_alter(&$message) {
   if (in_array($message['id'], array('user_register_no_approval_required', 'user_register_pending_approval', 'user_password_reset'))) {
