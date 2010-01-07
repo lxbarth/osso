@@ -37,6 +37,15 @@ function openid_sso_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
+  $items['admin/settings/openid-sso'] = array(
+    'title' => 'OpenID Simple Sign-On',
+    'description' => 'Configure a designated OpenID provider for simplified OpenID-based sign-on.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('openid_sso_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
   return $items;
 }
 
@@ -92,6 +101,33 @@ function openid_sso_logout_page() {
   openid_sso_logout();
   $provider = variable_get('openid_sso_provider', array());
   drupal_goto($provider['url'] .'sso/logout/', 'realm='. urlencode(url(NULL, array('absolute' => TRUE))));
+}
+
+/**
+ * Settings form.
+ */
+function openid_sso_settings() {
+  $provider = variable_get('openid_sso_provider', array());
+  $form = array();
+  $form['openid_sso_provider'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('OpenID Provider'),
+    '#description' => t('A designated OpenID Provider with Simple Sign-On support. This must be another Drupal site with OpenID Provider module and OpenID Provider SSO module installed and configured.'),
+    '#tree' => TRUE,
+  );
+  $form['openid_sso_provider']['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#description' => t('The site name of the provider.'),
+    '#default_value' => $provider['name'],
+  );
+  $form['openid_sso_provider']['url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL'),
+    '#description' => t('The full URL of the provider, must contain a trailing slash.'),
+    '#default_value' => $provider['url'],
+  );
+  return system_settings_form($form);
 }
 
 /**
