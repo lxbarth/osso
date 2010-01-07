@@ -37,11 +37,6 @@ function openid_sso_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
-  $items['sso/logout'] = array(
-    'page callback' => 'openid_sso_logout_page',
-    'access callback' => 'user_is_logged_in',
-    'type' => MENU_CALLBACK,
-  );
   return $items;
 }
 
@@ -63,6 +58,7 @@ function openid_sso_form_alter(&$form, $form_state, $form_id) {
 function openid_sso_menu_alter(&$items) {
   $items['user/register']['page callback'] = 'openid_sso_user_page';
   $items['user']['page callback'] = 'openid_sso_user_page';
+  $items['logout']['page callback'] = 'openid_sso_logout_page';
 }
 
 /**
