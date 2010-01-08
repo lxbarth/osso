@@ -9,6 +9,20 @@
  */
 
 /**
+ * Implementation of hook_help().
+ */
+function openid_provider_sso_help($path) {
+  switch ($path) {
+    case 'admin/settings/openid-provider-sso':
+      return t('Relying Parties that are authorized to use this Drupal site as Simple Sign-On OpenID Provider. Users signing in to these sites will be able to use this OpenID Provider with a simplified workflow.');case 'admin/settings/openid-provider-sso/add':
+    case 'admin/settings/openid-provider-sso/add':
+      return t('Add a Relying Party with OpenID Simple Sign-On support - a Drupal site with OpenID and OpenID SSO module installed and configured.');case 'admin/settings/openid-provider-sso/add':
+    case 'admin/settings/openid-provider-sso/edit':
+      return t('Modify a Relying Party with OpenID Simple Sign-On support - a Drupal site with OpenID and OpenID SSO module installed and configured.');
+  }
+}
+
+/**
  * Implementation of hook_menu().
  */
 function openid_provider_sso_menu() {
@@ -39,13 +53,18 @@ function openid_provider_sso_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'openid_provider_sso.admin.inc',
   );
+  $items['admin/settings/openid-provider-sso/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
   $items['admin/settings/openid-provider-sso/add'] = array(
     'title' => 'Add Relying Party',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('openid_provider_sso_rp_edit_form'),
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_LOCAL_TASK,
     'file' => 'openid_provider_sso.admin.inc',
   );
   $items['admin/settings/openid-provider-sso/edit'] = array(

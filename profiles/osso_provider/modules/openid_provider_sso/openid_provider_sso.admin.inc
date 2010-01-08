@@ -3,24 +3,26 @@
 /**
  * Edit form callback.
  */
-function openid_provider_sso_rp_edit_form($realm = NULL) {
-  $form['relying_party'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Add new Relying Party',
-    '#description' => 'Add a Relying Party with OpenID Simple Sign-On support - a Drupal site with OpenID and OpenID SSO module installed and configured.',
-  );
-  $form['relying_party']['name'] = array(
+function openid_provider_sso_rp_edit_form() {
+  if ($_GET['realm']) {
+    $rp = openid_provider_sso_relying_party($_GET['realm']);
+  }
+  $form = array();
+  $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Name'),
+    '#default_value' => empty($rp) ? '' : $rp['name'],
   );
-  $form['relying_party']['realm'] = array(
+  $form['realm'] = array(
     '#type' => 'textfield',
     '#title' => t('Realm (URL)'),
+    '#default_value' => empty($rp) ? '' : $rp['realm'],
   );
-  $form['relying_party']['add'] = array(
+  $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Add'),
+    '#value' => t('Save'),
   );
+  return $form;
 }
 
 /**
@@ -50,6 +52,7 @@ function openid_provider_sso_rp_remove_form_submit($form, &$form_state) {
 function openid_provider_sso_rps_form() {
   $rps = openid_provider_sso_relying_parties();
   $form = array();
+  $form['add']['#value'] = l(t('Add Relying Party'), 'admin/settings/openid-provider-sso/add');
   $form['existing']['#tree'] = TRUE;
   foreach ($rps as $rp) {
     $form['existing'][$rp['realm']]['realm']['#value'] =$rp['realm'];
