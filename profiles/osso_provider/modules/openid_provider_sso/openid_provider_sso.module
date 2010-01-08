@@ -46,8 +46,7 @@ function openid_provider_sso_menu() {
   $items['admin/settings/openid-provider-sso'] = array(
     'title' => 'OpenID Provider Simple Sign-On',
     'description' => 'Configure allowed OpenID Relying Parties for simplified OpenID-based sign-on.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('openid_provider_sso_rps_form'),
+    'page callback' => 'openid_provider_sso_rps_page',
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,

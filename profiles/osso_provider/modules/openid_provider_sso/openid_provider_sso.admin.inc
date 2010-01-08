@@ -47,20 +47,22 @@ function openid_provider_sso_rp_remove_form_submit($form, &$form_state) {
 }
 
 /**
- * Admin settings form callback.
+ * Admin settings page callback.
  */
-function openid_provider_sso_rps_form() {
+function openid_provider_sso_rps_page() {
   $rps = openid_provider_sso_relying_parties();
-  $form = array();
-  $form['add']['#value'] = l(t('Add Relying Party'), 'admin/settings/openid-provider-sso/add');
-  $form['existing']['#tree'] = TRUE;
+  $rows = array(
+    'value' => l(t('Add Relying Party'), 'admin/settings/openid-provider-sso/add'),
+    'attributes' => array('colspan' => 3),
+  );
   foreach ($rps as $rp) {
-    $form['existing'][$rp['realm']]['realm']['#value'] =$rp['realm'];
-    $form['existing'][$rp['realm']]['name']['#value'] =$rp['name'];
     $edit = l(t('edit'), 'admin/settings/openid-provider-sso/edit', array('query' => 'realm='. urlencode($rp['realm'])));
     $remove = l(t('remove'), 'admin/settings/openid-provider-sso/remove', array('query' => 'realm='. urlencode($rp['realm'])));
-    $form['existing'][$rp['realm']]['operations']['#value'] = $edit .' | '. $remove;
+    $rows[] = array(
+      l(check_plain($rp['realm']), $rp['realm']),
+      check_plain($rp['name']),
+      $edit .' | '. $remove,
+    );
   }
-  return $form;
+  return theme_table(array(t('Realm'), t('Name')), $rows);
 }
-
