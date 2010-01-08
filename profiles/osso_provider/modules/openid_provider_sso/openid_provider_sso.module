@@ -37,6 +37,34 @@ function openid_provider_sso_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
+    'file' => 'openid_provider_sso.admin.inc',
+  );
+  $items['admin/settings/openid-provider-sso/add'] = array(
+    'title' => 'Add Relying Party',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('openid_provider_sso_rp_edit_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'openid_provider_sso.admin.inc',
+  );
+  $items['admin/settings/openid-provider-sso/edit'] = array(
+    'title' => 'Edit Relying Party',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('openid_provider_sso_rp_edit_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'openid_provider_sso.admin.inc',
+  );
+  $items['admin/settings/openid-provider-sso/remove'] = array(
+    'title' => 'Remove Relying Party',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('openid_provider_sso_rp_remove_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'openid_provider_sso.admin.inc',
   );
   return $items;
 }
@@ -114,66 +142,6 @@ function openid_provider_sso_mail_alter(&$message) {
       $variables['!login_uri'] = url('user', array('query' => 'realm='. urlencode($rp['realm']), 'absolute' => TRUE, 'language' => $language));
       $variables['!login_url'] = user_pass_reset_url($message['params']['account']) .'?realm='. urlencode($rp['realm']);
       $message['body'][0] = _user_mail_text(substr($message['id'], 5) .'_body', $message['language'], $variables);
-    }
-  }
-}
-
-
-/**
- * Admin settings form callback.
- */
-function openid_provider_sso_rps_form() {
-  $rps = openid_provider_sso_relying_parties();
-  $form = array();
-  $form['relying_party'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Add new Relying Party',
-    '#description' => 'Add a Relying Party with OpenID Simple Sign-On support - a Drupal site with OpenID and OpenID SSO module installed and configured.',
-    '#tree' => TRUE,
-  );
-  $form['relying_party']['name'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Name'),
-  );
-  $form['relying_party']['realm'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Realm (URL)'),
-  );
-  $form['relying_party']['add'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add'),
-    '#submit' => array('openid_provider_sso_rps_add_submit'),
-  );
-  $form['delete'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete selected'),
-    '#submit' => array('openid_provider_sso_rps_delete_submit'),
-  );
-  $form['existing']['#tree'] = TRUE;
-  foreach ($rps as $rp) {
-    $form['existing'][$rp['realm']]['realm']['#value'] =$rp['realm'];
-    $form['existing'][$rp['realm']]['name']['#value'] =$rp['name'];
-    $form['existing'][$rp['realm']]['check'] = array(
-      '#type' => 'checkbox',
-    );
-  }
-  return $form;
-}
-
-/**
- * Submit handler for openid_provider_sso_rps_form().
- */
-function openid_provider_sso_rps_add_submit($form, &$form_state) {
-  openid_provider_sso_rp_add($form_state['values']['relying_party']['realm'], $form_state['values']['relying_party']['name']);
-}
-
-/**
- * Submit handler for openid_provider_sso_rps_form().
- */
-function openid_provider_sso_rps_delete_submit($form, &$form_state) {
-  foreach ($form_state['values']['existing'] as $realm => $value) {
-    if ($value['check']) {
-      openid_provider_sso_rp_delete($realm);
     }
   }
 }
@@ -287,7 +255,7 @@ function openid_provider_sso_rp_add($realm, $name) {
 /**
  * Remove a relying party.
  */
-function openid_provider_sso_rp_delete($realm) {
+function openid_provider_sso_rp_remove($realm) {
   dsm('remove '. $realm);
 }
 
