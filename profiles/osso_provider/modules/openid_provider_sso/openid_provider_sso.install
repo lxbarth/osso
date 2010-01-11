@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function openid_provider_sso_schema() {
+  $schema = array();
+  $schema['openid_provider_sso_rps'] = array(
+    'description' => 'Relying Parties accepted by this OpenID Provider.',
+    'export' => array(
+      'key' => 'realm',
+      'identifier' => 'relying_party',
+      'default hook' => 'openid_provider_sso_rps',  // Function hook name.
+      'api' => array(
+        'owner' => 'openid_provider_sso',
+        'api' => 'openid_provider_sso_rps',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'realm' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The realm URL of the Relying Party.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The site name of the Relying Party.',
+      ),
+    ),
+    'indexes' => array(
+      'realm' => array('realm'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function openid_provider_sso_install() {
+  drupal_install_schema('openid_provider_sso');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function openid_provider_sso_uninstall() {
+  drupal_uninstall_schema('openid_provider_sso');
+}

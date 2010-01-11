@@ -107,7 +107,7 @@ function osso_hub_bar() {
     'data' => l(check_plain(variable_get('site_name', 'Drupal')), ''),
     'class' => 'provider',
   );
-  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+  foreach (openid_provider_sso_relying_parties() as $rp) {
     $items[] = array(
       'data' => l(check_plain($rp['name']), $rp['realm']),
       'class' => 'relying',

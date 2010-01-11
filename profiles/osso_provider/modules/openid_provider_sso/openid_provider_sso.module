@@ -248,7 +248,7 @@ function openid_provider_sso_logout() {
  */
 function openid_provider_sso_relying_party($realm) {
   $realm = trim(urldecode($realm), '/');
-  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+  foreach (openid_provider_sso_relying_parties() as $rp) {
     if (trim($rp['realm'], '/') == $realm) {
       return $rp;
     }
@@ -260,21 +260,32 @@ function openid_provider_sso_relying_party($realm) {
  * Returns all known relying parties.
  */
 function openid_provider_sso_relying_parties() {
-  return variable_get('openid_provider_sso_rps', array());
+  $result = db_query('SELECT realm, name FROM {openid_provider_sso_rps}');
+  $rps = array();
+  while ($rp = db_fetch_array($result)) {
+    $rps[$rp['realm']] = $rp;
+  }
+  return $rps;
 }
 
 /**
  * Add a relying party.
  */
 function openid_provider_sso_rp_add($realm, $name) {
-  dsm('add '. $realm .' '. $name);
+  $rp = array(
+    'realm' => trim($realm, '/') .'/',
+    'name' => $name,
+  );
+  if (drupal_write_record('openid_provider_sso_rps', $rp, 'realm')) {
+    drupal_write_record('openid_provider_sso_rps', $rp);
+  }
 }
 
 /**
  * Remove a relying party.
  */
 function openid_provider_sso_rp_remove($realm) {
-  dsm('remove '. $realm);
+  db_query('DELETE FROM {openid_provider_sso_rps} WHERE realm = "%s"', $realm);
 }
 
 /**
@@ -290,7 +301,7 @@ function openid_provider_sso_relying_parties_opml() {
   $output .= '  <dateCreated>'. format_date(time(), 'custom', 'r', 0) .'</dateCreated>'."\n";
   $output .= '</head>'."\n";
   $output .= '<body>'."\n";
-  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+  foreach (openid_provider_sso_relying_parties() as $rp) {
     $output .= '  <outline text="'. check_plain($rp['name']) .'" htmlUrl="'. check_url($rp['realm']) .'"/>'."\n";
   }
   $output .= '</body>'."\n";
