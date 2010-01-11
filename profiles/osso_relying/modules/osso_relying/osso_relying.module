@@ -98,7 +98,7 @@ function osso_hub_bar() {
       'class' => 'username',
     );
     $items[] = array(
-      'data' => l(t('Log out'), 'sso/logout'),
+      'data' => l(t('Log out'), 'logout'),
       'class' => 'logout',
     );
   }
