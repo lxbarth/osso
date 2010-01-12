@@ -151,7 +151,7 @@ function osso_provider_block_dummy_profile() {
   $items = array(
     '<span class="user-profile-picture"></span>',
     '<span class="item-title">Name:</span> <span class="item-content">'. $name .'</span>',
-    '<span class="item-title">Location:</span> <span class="item-content">Ohio</span>',
+    '<span class="item-title">Location:</span> <span class="item-content">Washington, DC</span>',
     '<span class="item-title">Bio:</span> <span class="item-content">One-hundred and forty characters about the user would be a good thing to put in this area. Of course, that number is completely arbitrary.</span>',
   );
   $content = theme('item_list', $items, NULL, 'ul', array('class' => 'user-profile'));
@@ -168,7 +168,7 @@ function osso_provider_block_login_message() {
   $output = '<div class="sso-message">';
   if (isset($_SESSION['openid_provider']['request']['openid.realm']) && $relying_party = openid_provider_sso_relying_party($_SESSION['openid_provider']['request']['openid.realm'])) {
     drupal_set_title(t('Sign in to @relying_party', array('@relying_party' => $relying_party['name'])));
-    $output .= '<p>'. t('@relying_party is part of @site_name. ', array('@site_name' => variable_get('site_name', 'Drupal'), '@relying_party' => $relying_party['name'])) .'</p>';
+    $output .= '<p>'. t('<strong>@relying_party</strong> is part of <strong>@site_name</strong>. ', array('@site_name' => variable_get('site_name', 'Drupal'), '@relying_party' => $relying_party['name'])) .'</p>';
   }
   $output .= '<p>'. t('An account on @site_name gives you easy access to a series of sites with a single username and password.', array('@site_name' => variable_get('site_name', 'Drupal'))) .'</p>';
   $output .= '</div>';

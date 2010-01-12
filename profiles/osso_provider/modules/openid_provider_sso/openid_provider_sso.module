@@ -134,7 +134,7 @@ function openid_provider_sso_form_alter(&$form, $form_state, $form_id) {
       global $user;
       unset($form['submit_always']);
       $form['submit_once']['#value'] = t('Log in');
-      $form['intro']['#value'] = '<div class="sso-message">'. t('Log in to @relying_party as @user?', array('@relying_party' => $rp['name'], '@user' => $user->name)) .'</div>';
+      $form['intro']['#value'] = '<div class="sso-message">'. t('Log in to <strong>@relying_party</strong> as @user?', array('@relying_party' => $rp['name'], '@user' => $user->name)) .'</div>';
       $form['other_user']['#value'] = l(t('Not @user?', array('@user' => $user->name)), 'sso/logout/redirect', array('query' => 'realm='. urlencode($rp['realm'])));
     }
     else {
@@ -187,7 +187,7 @@ function openid_provider_sso_logout_form() {
     if (user_is_logged_in()) {
       $form = array();
       $form['#rp'] = $rp;
-      $form['message']['#value'] = '<div class="sso-message">'. t('You logged out of @relying_party, would you also like to log out of @provider?', array('@relying_party' => $rp['name'], '@provider' => variable_get('site_name', 'Drupal'))) .'</div>';
+      $form['message']['#value'] = '<div class="sso-message">'. t('You logged out of <strong>@relying_party</strong>, would you also like to log out of <strong>@provider</strong>?', array('@relying_party' => $rp['name'], '@provider' => variable_get('site_name', 'Drupal'))) .'</div>';
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Log out'),
