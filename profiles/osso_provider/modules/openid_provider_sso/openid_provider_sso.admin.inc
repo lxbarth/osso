@@ -15,12 +15,20 @@ function openid_provider_sso_rp_edit_form() {
     '#default_value' => empty($rp) ? '' : $rp['name'],
     '#required' => TRUE,
   );
-  $form['realm'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Realm (URL)'),
-    '#default_value' => empty($rp) ? '' : $rp['realm'],
-    '#required' => TRUE,
-  );
+  if (isset($rp)) {
+    $form['realm'] = array(
+      '#type' => 'hidden',
+      '#default_value' => empty($rp) ? '' : $rp['realm'],
+    );
+  }
+  else {
+    $form['realm'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Realm (URL)'),
+      '#default_value' => empty($rp) ? '' : $rp['realm'],
+      '#required' => TRUE,
+    );
+  }
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
