@@ -192,7 +192,7 @@ function osso_provider_block_welcome_message() {
     $examples = $relying_parties .' or '. $examples;
   }
 
-  $content = t('<p>@site_name is your key to a host of Sandusky sites.</p>',  array('@site_name' => variable_get('site_name', 'Drupal')));
+  $content = t('<p>@site_name is your key to a host of sites.</p>',  array('@site_name' => variable_get('site_name', 'Drupal')));
   $content .= t('<p>Create an account once, and gain easy access with one username and password to sites like !examples.</p>',  array('!examples' => $examples));
 
   return array(
