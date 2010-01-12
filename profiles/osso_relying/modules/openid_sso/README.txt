@@ -22,7 +22,7 @@ Note: this module does not provide true *Single* Sign-On functionality but a
 largely simplified sign on experience for webs of trusted sites. Hence the name
 *Simple* Sign-On.
 
-It is strongly recommended to install this module on a fresh Drupal site. 
+It is strongly recommended to install this module on a fresh Drupal site.
 Installing it on a site with existing users (other than user 1) will lead to
 undefined results.
 
@@ -32,12 +32,13 @@ Installation
 
 Install this module and dependencies.
 
-In your site's settings.php file, define a trusted OpenID Provider. OpenID
-Provider must have OpenID Provider SSO enabled.
+Go to admin/settings/openid-sso and enter a trusted OpenID Provider. The
+Provider must be a Drupal site with the module OpenID Provider SSO enabled and
+configured.
 
-$conf['openid_sso_provider'] = array(
-  'url' => 'http://localhost/op/', // Must have trailing slashes
-  'name' => 'SSO Web', // Mostly always the Provider's site name.
-);
+Example:
 
+Name: The Hub
+URL: http://thehub.com/
 
+Note that the URL requires a trailing slash.

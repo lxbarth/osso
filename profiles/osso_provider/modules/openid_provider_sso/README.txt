@@ -12,24 +12,23 @@ Note: this module does not provide true *Single* Sign-On functionality but a
 largely simplified sign on experience for webs of trusted sites. Hence the name
 *Simple* Sign-On.
 
-It is strongly recommended to install this module on a fresh Drupal OpenID 
+It is strongly recommended to install this module on a fresh Drupal OpenID
 Provider. Installing it on an existing OpenID provider will lead to undefined
 results.
 
 Installation
 ============
 
-Install this module and dependencies. In your site's settings.php file, define a
-list of trusted Relying Parties:
+Install this module and dependencies. Go to admin/settings/openid-provider-sso
+and enter known Relying Parties, for example:
 
-// URL must have trailing slashes.
-$conf['openid_provider_sso_rps'] = array(
-  array(
-    'realm' => 'http://example1.com/',
-    'name' => 'The Example 1 Blog',
-  ),
-  array(
-    'realm' => 'http://example2.com/',
-    'name' => 'The Example 2 Blog',
-  ),
-);
+Realm: http://example1.com/
+Name: The Example 1 Blog
+
+Realm: http://example2.com/
+Name: The Example 2 Blog
+
+All relying parties must be Drupal sites with the module OpenID SSO enabled and
+configured.
+
+Note that the realm requires a trailing slash.
