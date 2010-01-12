@@ -50,6 +50,15 @@ function openid_sso_menu() {
 }
 
 /**
+ * Implementation of hook_menu_alter().
+ */
+function openid_sso_menu_alter(&$items) {
+  $items['user/register']['page callback'] = 'openid_sso_user_page';
+  $items['user']['page callback'] = 'openid_sso_user_page';
+  $items['logout']['page callback'] = 'openid_sso_logout_page';
+}
+
+/**
  * Implementation of hook_form_alter().
  *
  * Redirect user to front page after login, otherwise she will be pushed to OP
@@ -59,15 +68,6 @@ function openid_sso_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'user_login') {
     $form['#redirect'] = '';
   }
-}
-
-/**
- * Implementation of hook_menu_alter().
- */
-function openid_sso_menu_alter(&$items) {
-  $items['user/register']['page callback'] = 'openid_sso_user_page';
-  $items['user']['page callback'] = 'openid_sso_user_page';
-  $items['logout']['page callback'] = 'openid_sso_logout_page';
 }
 
 /**
