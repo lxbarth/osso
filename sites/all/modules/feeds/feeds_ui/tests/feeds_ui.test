@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_ui.test,v 1.3 2009/10/22 02:43:22 alexb Exp $
+// $Id: feeds_ui.test,v 1.4 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -134,6 +134,6 @@ class FeedsUIUserInterfaceTestCase extends FeedsWebTestCase {
     $this->drupalPost('node/add/page', $edit, 'Save');
     $this->assertText('Page Development Seed has been created.');
 
-    // @todo: refreshing/deleting feed items. Needs to live in feeds.test
+    // @todo Refreshing/deleting feed items. Needs to live in feeds.test
   }
 }

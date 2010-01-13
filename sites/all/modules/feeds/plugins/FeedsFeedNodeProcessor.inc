@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsFeedNodeProcessor.inc,v 1.4 2009/11/18 16:53:48 alexb Exp $
+// $Id: FeedsFeedNodeProcessor.inc,v 1.7 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -15,12 +15,12 @@ class FeedsFeedNodeProcessor extends FeedsProcessor {
   /**
    * Implementation of FeedsProcessor::process().
    */
-  public function process(FeedsParserResult $parserResult, FeedsSource $source) {
+  public function process(FeedsImportBatch $batch, FeedsSource $source) {
 
     // Count number of created and updated nodes.
     $created  = $updated = 0;
 
-    foreach ($parserResult->value['items'] as $item) {
+    while ($item = $batch->shiftItem()) {
 
       // If the target item does not exist OR if update_existing is enabled,
       // map and save.
@@ -89,7 +89,7 @@ class FeedsFeedNodeProcessor extends FeedsProcessor {
 
     /*
     Assign an aggregated node always to current user.
-    @todo: this won't work in all cases as the assumption here is that
+    @todo This won't work in all cases as the assumption here is that
     import is happening one off when user is logged in. Assumption breaks if
     feed node processor is being used for aggregation on cron time and a
     specific user should still be the owner of the imported feed nodes.
@@ -125,8 +125,6 @@ class FeedsFeedNodeProcessor extends FeedsProcessor {
     }
     if (empty($types)) {
       $types[''] = t('No feed node content type available');
-      // @todo: configForm() is executed 4 times - why?
-      // drupal_set_message(t('There is no feed content type available. In order to import feed nodes, you must first create at least configuration that is attached to a content type.'), 'error');
     }
     else {
       $types = array(
@@ -217,8 +215,8 @@ class FeedsFeedNodeProcessor extends FeedsProcessor {
    * Helper for retrieving the importer object for the feed nodes to produce.
    */
   protected function feedNodeImporter() {
-   if ($importer = feeds_importer_by_content_type($this->config['content_type'])) {
-      return $importer;
+   if ($id = feeds_get_importer_id($this->config['content_type'])) {
+      return feeds_importer($id);
     }
     else {
       throw new Exception(t('Content type to be created is not a valid Feed content type.'));

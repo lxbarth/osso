@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsUserProcessor.inc,v 1.2 2009/11/02 20:26:57 alexb Exp $
+// $Id: FeedsUserProcessor.inc,v 1.4 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -14,12 +14,12 @@ class FeedsUserProcessor extends FeedsProcessor {
   /**
    * Implementation of FeedsProcessor::process().
    */
-  public function process(FeedsParserResult $parserResult, FeedsSource $source) {
+  public function process(FeedsImportBatch $batch, FeedsSource $source) {
 
     // Count number of created and updated nodes.
     $created  = $updated = $failed = 0;
 
-    foreach ($parserResult->value['items'] as $item) {
+    while ($item = $batch->shiftItem()) {
 
       if (!($uid = $this->existingItemId($item, $source)) || $this->config['update_existing']) {
 
@@ -38,7 +38,7 @@ class FeedsUserProcessor extends FeedsProcessor {
         }
 
         // Save the user.
-        // @todo: is this really the best way to use this function?
+        // @todo Is this really the best way to use this function?
         user_save($account, (array) $account);
 
         if ($uid) {

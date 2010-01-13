@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsCSVParser.inc,v 1.2 2009/10/20 20:59:04 alexb Exp $
+// $Id: FeedsCSVParser.inc,v 1.5 2009/12/20 23:54:44 alexb Exp $
 
 /**
  * Parses a given file as a CSV file.
@@ -7,20 +7,13 @@
 class FeedsCSVParser extends FeedsParser {
 
   /**
-   * Parses a raw string and returns a Feed object from it.
+   * Implementation of FeedsParser::parse().
    */
-  public function parse(FeedsFetcherResult $fetcherResult, FeedsSource $source) {
-    feeds_include_library('ParserCSV.inc', 'ParserCSV');
-
-    if ($fetcherResult->type == 'text/filepath') {
-      $iterator = new ParserCSVIterator(realpath($fetcherResult->value));
-    }
-    // @todo: write string buffer iterator.
-    else {
-      throw new Exception(t('You must use CSV Parser with File Fetcher.'));
-    }
+  public function parse(FeedsImportBatch $batch, FeedsSource $source) {
 
     // Parse.
+    feeds_include_library('ParserCSV.inc', 'ParserCSV');
+    $iterator = new ParserCSVIterator(realpath($batch->getFilePath()));
     $source_config = $source->getConfigFor($this);
     $parser = new ParserCSV();
     $parser->setDelimiter($source_config['delimiter']);
@@ -29,7 +22,7 @@ class FeedsCSVParser extends FeedsParser {
     unset($parser);
 
     // Apply titles in lower case.
-    // @todo: push this functionality into ParserCSV.
+    // @todo Push this functionality into ParserCSV.
     $header = array_shift($rows);
     foreach ($header as $i => $title) {
       $header[$i] = strtolower($title); // Use lower case only.
@@ -44,12 +37,12 @@ class FeedsCSVParser extends FeedsParser {
     }
     unset($rows);
 
-    // Return result.
-    return new FeedsParserResult(array('items' => $result_rows));
+    // Populate batch.
+    $batch->setItems($result_rows);
   }
 
   /**
-   * Override parent::getSourceElement to use only lower keys.
+   * Override parent::getSourceElement() to use only lower keys.
    */
   public function getSourceElement($item, $element_key) {
     $element_key = strtolower($element_key);

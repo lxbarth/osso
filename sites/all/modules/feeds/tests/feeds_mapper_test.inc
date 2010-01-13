@@ -1,10 +1,13 @@
 <?php
-// $Id: feeds_mapper_test.inc,v 1.1 2009/11/24 23:20:26 alexb Exp $
+// $Id: feeds_mapper_test.inc,v 1.2 2009/12/22 19:49:57 alexb Exp $
 
 /**
  * @file
  * Helper class with auxiliary functions for feeds mapper module tests.
  */
+
+// Require FeedsWebTestCase class definition.
+require_once(dirname(__FILE__) .'/feeds.test.inc');
 
 /**
  * Base class for implementing Feeds Mapper test cases.

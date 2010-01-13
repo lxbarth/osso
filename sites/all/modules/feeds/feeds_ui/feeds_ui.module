@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_ui.module,v 1.8 2009/10/21 22:49:47 alexb Exp $
+// $Id: feeds_ui.module,v 1.9 2009/12/10 21:55:28 alexb Exp $
 /**
  * @file
  */
@@ -10,7 +10,7 @@
 function feeds_ui_help($path, $arg) {
   switch ($path) {
     case 'admin/build/feeds':
-      $output = '<p>'. t('Create one or more configurations for importing content into Drupal. You can use these configurations from the !import page or - if you attach them to a content type - simply by creating a node from that content type.', array('!import' => l(t('Import'), 'import'))) .'</p>';
+      $output = '<p>'. t('Create one or more Feed importers for pulling content into Drupal. You can use these importers from the !import page or - if you attach them to a content type - simply by creating a node from that content type.', array('!import' => l(t('Import'), 'import'))) .'</p>';
       return $output;
     case 'admin/content/feeds':
       $output = '<p>'. t('Import content into Drupal.') .'</p>';
@@ -24,7 +24,7 @@ function feeds_ui_help($path, $arg) {
 function feeds_ui_menu() {
   $items = array();
   $items['admin/build/feeds'] = array(
-    'title' => 'Feeds',
+    'title' => 'Feed importers',
     'description' => 'Configure feeds to import or aggregate RSS and Atom feeds, import CSV files or more.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feeds_ui_overview_form'),
@@ -36,7 +36,7 @@ function feeds_ui_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/build/feeds/create'] = array(
-    'title' => t('New configuration'),
+    'title' => t('New importer'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feeds_ui_create_form'),
     'access arguments' => array('administer feeds'),

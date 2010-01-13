@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsOPMLParser.inc,v 1.2 2009/11/02 20:22:03 alexb Exp $
+// $Id: FeedsOPMLParser.inc,v 1.4 2009/12/20 23:54:44 alexb Exp $
 
 /**
  * @file
@@ -12,17 +12,13 @@
 class FeedsOPMLParser extends FeedsParser {
 
   /**
-   * Parses a raw string and returns a Feed object from it.
+   * Implementation of FeedsParser::parse().
    */
-  public function parse(FeedsFetcherResult $fetcherResult, FeedsSource $source) {
-    if ($fetcherResult->type == 'text/filepath') {
-      $string = file_get_contents($fetcherResult->value);
-    }
-    else {
-      $string = $fetcherResult->value;
-    }
+  public function parse(FeedsImportBatch $batch, FeedsSource $source) {
     feeds_include_library('opml_parser.inc', 'opml_parser');
-    return new FeedsParserResult(opml_parser_parse($string), 'syndication');
+    $result = opml_parser_parse($batch->getRaw());
+    $batch->setTitle($result['title']);
+    $batch->setItems($result['items']);
   }
 
   /**

@@ -1,46 +1,63 @@
 <?php
-// $Id: FeedsParser.inc,v 1.1 2009/10/20 21:03:08 alexb Exp $
+// $Id: FeedsParser.inc,v 1.5 2010/01/12 16:28:02 alexb Exp $
 
 /**
- * Defines the object a Parser returns on parser().
+ * Defines an element of a parsed result. Such an element can be a simple type,
+ * a complex type (derived from FeedsElement) or an array of either.
+ *
+ * @see FeedsEnclosure
  */
-class FeedsParserResult extends FeedsResult {
-  // Define valid types.
-  // @todo: does this distinction make sense? We may be able to run with
-  // 'simple' and no special case for 'syndication'.
-  protected $valid_types = array('simple', 'syndication');
+class FeedsElement {
+  // The standard value of this element. This value can contain be a simple type,
+  // a FeedsElement or an array of either.
+  protected $value;
 
   /**
-   * Override constructor to define a default type.
+   * Constructor.
    */
-  public function __construct($value, $type = 'simple') {
-    parent::__construct($value, $type);
+  public function __construct($value) {
+    $this->value = $value;
+  }
+
+  /**
+   * @return
+   *   Standard value of this FeedsElement.
+   */
+  public function getValue() {
+    return $this->value;
+  }
+
+  /**
+   * @return
+   *   A string representation of this element.
+   */
+  public function __toString() {
+    if (is_array($this->value)) {
+      return 'Array';
+    }
+    if (is_object($this->value)) {
+      return 'Object';
+    }
+    return (string) $this->value;
   }
 }
 
 /**
  * Abstract class, defines interface for parsers.
- *
- * @todo: make implement FeedsSourceInterface
  */
 abstract class FeedsParser extends FeedsPlugin {
 
   /**
    * Parse content fetched by fetcher.
    *
-   * Stub method. Extending classes must implement this method.
+   * Extending classes must implement this method.
    *
-   * @param $fetcherResult
-   *   Content returned by fetcher.
+   * @param $batch
+   *   FeedsImportBatch returned by fetcher.
    * @param FeedsSource $source
    *   Source information.
-   * @return
-   *   A parsed array.
-   *   @todo: define this array (object?).
-   *
-   * @todo: Should it be execute() ?
    */
-  public abstract function parse(FeedsFetcherResult $fetcherResult, FeedsSource $source);
+  public abstract function parse(FeedsImportBatch $batch, FeedsSource $source);
 
   /**
    * Clear all caches for results for given source.

@@ -1,11 +1,11 @@
 <?php
-// $Id: FeedsDataHandler.inc,v 1.1 2009/10/20 21:01:35 alexb Exp $
+// $Id: FeedsDataHandler.inc,v 1.2 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
  * Data handler used in FeedsDataProcessor.
  *
- * @todo: Move to data module?
+ * @todo Move to data module?
  */
 
 /**
@@ -69,7 +69,7 @@ class FeedsDataHandler extends DataHandler {
     static $handlers;
     if (!isset($handlers[$table][$key])) {
       $class = 'FeedsDataHandler';
-      // @todo: this is an undocumented stop gap until data modules supports
+      // @todo This is an undocumented stop gap until Data module supports
       // handler plugins.
       if ($info = variable_get($table .'_handler', NULL)) {
         $class = $info['class'];
@@ -173,7 +173,7 @@ class FeedsDataHandler extends DataHandler {
    *     ),
    *   );
    *
-   * @todo: push this functionality into DataHandler.
+   * @todo Push this functionality into DataHandler.
    */
   public function delete($clause) {
 
@@ -237,7 +237,7 @@ class FeedsDataHandler extends DataHandler {
   }
 
   /**
-   * @todo: support save().
+   * @todo Support save().
    */
   public function save(&$record, $update) {
     throw new Exception(t('Not implemented.'));

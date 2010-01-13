@@ -1,5 +1,5 @@
 <?php
-// $Id: opml_parser.inc,v 1.1 2009/10/20 21:01:35 alexb Exp $
+// $Id: opml_parser.inc,v 1.2 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -20,7 +20,7 @@ function opml_parser_parse($raw) {
 
   $feeds['title'] = (string)current($xml->xpath('//head/title'));
 
-  // @todo: Make xpath case insensitive.
+  // @todo Make xpath case insensitive.
   $outlines = $xml->xpath('//outline[@xmlUrl]');
   foreach ($outlines as $outline) {
     $item = array();

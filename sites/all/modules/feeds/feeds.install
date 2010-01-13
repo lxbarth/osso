@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.install,v 1.4 2009/10/20 20:59:04 alexb Exp $
+// $Id: feeds.install,v 1.5 2009/12/03 20:55:05 alexb Exp $
 
 /**
  * @file
@@ -164,6 +164,13 @@ function feeds_schema() {
         'not null' => TRUE,
         'description' => t('Unique identifier for the feed item.'),
       ),
+      'hash' => array(
+        'type' => 'varchar',
+        'length' => 32, // The length of an MD5 hash.
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('The hash of the item.'),
+      ),
     ),
     'primary key' => array('nid'),
     'indexes' => array(
@@ -289,6 +296,24 @@ function feeds_update_6006() {
 
   db_drop_primary_key($ret, 'feeds_schedule');
   db_add_index($ret, 'feeds_schedule', 'feed_nid', array('feed_nid'));
+
+  return $ret;
+}
+
+/**
+ * Add hash column to feeds_node_item.
+ */
+function feeds_update_6007() {
+  $ret = array();
+
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 32,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => t('The hash of the item.'),
+  );
+  db_add_field($ret, 'feeds_node_item', 'hash', $spec);
 
   return $ret;
 }

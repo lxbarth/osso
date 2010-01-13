@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_ui.admin.inc,v 1.23 2009/11/02 20:32:00 alexb Exp $
+// $Id: feeds_ui.admin.inc,v 1.26 2009/12/20 23:48:37 alexb Exp $
 
 /**
  * @file
@@ -70,7 +70,7 @@ function feeds_ui_overview_form(&$form_status) {
     }
     else {
       if (!$importer->disabled) {
-        $importer_form['attached']['#value'] = l(node_get_types('name', $importer->config['content_type']), 'node/add/'. $importer->config['content_type']);
+        $importer_form['attached']['#value'] = l(node_get_types('name', $importer->config['content_type']), 'node/add/'. str_replace('_', '-', $importer->config['content_type']));
       }
       else {
         $importer_form['attached']['#value'] = node_get_types('name', $importer->config['content_type']);
@@ -388,8 +388,6 @@ function feeds_ui_edit_page($importer, $active = 'help', $plugin_key = '') {
   if (feeds_get_config_form($importer->processor)) {
     $actions[] = l(t('Settings'), $path .'/settings/'. $config['processor']['plugin_key']);
   }
-  // @todo: We assume that every processor supports mapping - that's not
-  // necessarily the case.
   $actions[] = l(t('Mapping'), $path .'/mapping');
   $info['title'] = t('Processor');
   $info['body'] = array(
@@ -451,7 +449,6 @@ function feeds_ui_plugin_form_submit($form, &$form_state) {
   $form['#importer']->setPlugin($form_state['values']['plugin_key']);
   $form['#importer']->save();
   drupal_set_message(t('Changed !type plugin.', array('!type' => $form['#plugin_type'])));
-  // @todo: redirect to plugin's settings form if available.
 }
 
 /**
@@ -483,7 +480,7 @@ function theme_feeds_ui_plugin_form($form) {
 /**
  * Edit mapping.
  *
- * @todo: completely merge this into config form handling. This is just a
+ * @todo Completely merge this into config form handling. This is just a
  *   shared form of configuration, most of the common functionality can live in
  *   FeedsProcessor, a flag can tell whether mapping is supported or not.
  */
@@ -686,7 +683,7 @@ function theme_feeds_ui_edit_page($config_info, $active_container) {
   drupal_add_css(drupal_get_path('module', 'feeds_ui') .'/feeds_ui.css');
 
   // Outer wrapper.
-  $output = '<div class="feeds-settings">';
+  $output = '<div class="feeds-settings clear-block">';
 
   // Build left bar.
   $output .= '<div class="left-bar">';
@@ -711,7 +708,7 @@ function theme_feeds_ui_edit_page($config_info, $active_container) {
  * Render a simple container. A container can have a title, a description and
  * one or more actions. Recursive.
  *
- * @todo: Replace with theme_fieldset or a wrapper to theme_fieldset?
+ * @todo Replace with theme_fieldset or a wrapper to theme_fieldset?
  *
  * @param $container
  *   An array that describes the container. All elements are optional:

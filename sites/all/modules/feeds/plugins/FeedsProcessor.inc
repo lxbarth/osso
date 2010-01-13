@@ -1,10 +1,8 @@
 <?php
-// $Id: FeedsProcessor.inc,v 1.4 2009/10/31 14:30:27 alexb Exp $
+// $Id: FeedsProcessor.inc,v 1.6 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * Abstract class, defines interface for processors.
- *
- * @todo: declare an interface for mapping related functions.
  */
 abstract class FeedsProcessor extends FeedsPlugin {
 
@@ -12,14 +10,12 @@ abstract class FeedsProcessor extends FeedsPlugin {
    * Process the result of the parser or previous processors.
    * Extending classes must implement this method.
    *
-   * @param FeedsParserResult $parserResult
-   *   The result of the parsing stage.
+   * @param FeedsImportBatch $batch
+   *   The current feed import data passed in from the parsing stage.
    * @param FeedsSource $source
    *   Source information about this import.
-   *
-   * @todo: Should it be execute()?
    */
-  public abstract function process(FeedsParserResult $parserResult, FeedsSource $source);
+  public abstract function process(FeedsImportBatch $batch, FeedsSource $source);
 
   /**
    * Remove all stored results or stored results up to a certain time for this
@@ -31,7 +27,6 @@ abstract class FeedsProcessor extends FeedsPlugin {
    *   item pertains to a certain souce is by using $source->feed_nid. It is the
    *   processor's responsibility to store the feed_nid of an imported item in
    *   the processing stage.
-   *   @todo: pass in feed_nid instead of source?
    */
   public abstract function clear(FeedsSource $source);
 
@@ -191,7 +186,7 @@ abstract class FeedsProcessor extends FeedsPlugin {
    * sources that are unique.
    *
    * @param $source_item
-   *   A feed item from a FeedsParserResult.
+   *   A feed item from a FeedsImportBatch.
    *
    * @return
    *   An array where the keys are target field names and the values are the

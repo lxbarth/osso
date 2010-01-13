@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.test,v 1.5 2009/11/24 23:20:26 alexb Exp $
+// $Id: feeds.test,v 1.7 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -29,10 +29,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
    * Set up test.
    */
   public function setUp() {
-    // @todo: once we have default configurations shipping with feeds, we do not
-    // need feeds_ui.
     parent::setUp('feeds', 'feeds_ui', 'ctools');
-
     $this->drupalLogin(
       $this->drupalCreateUser(
         array(
@@ -83,7 +80,6 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     // Assert 10 items aggregated after creation of the node.
     $this->assertText('Created 10 Story nodes.');
 
-
     // Navigate to feed node, there should be Feeds tabs visible.
     $this->drupalGet('node/'. $nid);
     $this->assertRaw('node/'. $nid .'/import');
@@ -94,6 +90,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $this->drupalGet('node/'. $story_nid);
     $this->assertNoRaw('node/'. $story_nid .'/import');
     $this->assertNoRaw('node/'. $story_nid .'/delete-items');
+    $this->assertEqual('Created/updated by FeedsNodeProcessor', db_result(db_query('SELECT nr.log FROM {node} n JOIN {node_revisions} nr ON n.vid = nr.vid WHERE n.nid = %d', $story_nid)));
 
     // Assert accuracy of aggregated information.
     $this->drupalGet('node');
@@ -131,6 +128,27 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     // Assert DB status.
     $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_node_item}'));
     $this->assertEqual($count, 10, 'Accurate number of items in database.');
+
+    // Import again.
+    $this->drupalPost('node/'. $nid .'/import', array(), 'Import');
+    $this->assertText('There is no new content.');
+
+    // Assert DB status, there still shouldn't be more than 10 items.
+    $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_node_item}'));
+    $this->assertEqual($count, 10, 'Accurate number of items in database.');
+
+    // Enable update existing and import updated feed file.
+    $this->setSettings('syndication', 'FeedsNodeProcessor', array('update_existing' => TRUE));
+    $feed_url = $GLOBALS['base_url'] .'/'. drupal_get_path('module', 'feeds') .'/tests/feeds/developmentseed_changes.rss2';
+    $this->editFeedNode($nid, $feed_url);
+    $this->drupalPost('node/' . $nid . '/import', array(), 'Import');
+    $this->assertText('Updated 2 Story nodes.');
+
+    // Assert accuracy of aggregated content (check 2 updates, one original).
+    $this->drupalGet('node');
+    $this->assertText('Managing News Translation Workflow: Two Way Translation Updates');
+    $this->assertText('Presenting on Features in Drupal and Managing News');
+    $this->assertText('Scaling the Open Atrium UI');
 
     // Import again.
     $this->drupalPost('node/'. $nid .'/import', array(), 'Import');
@@ -260,6 +278,26 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_node_item}'));
     $this->assertEqual($count, 10, 'Accurate number of items in database.');
 
+    // Enable update existing and import updated feed file.
+    $this->setSettings('syndication_standalone', 'FeedsNodeProcessor', array('update_existing' => TRUE));
+    $feed_url = $GLOBALS['base_url'] .'/'. drupal_get_path('module', 'feeds') . '/tests/feeds/developmentseed_changes.rss2';
+    $this->importURL('syndication_standalone', $feed_url);
+    $this->assertText('Updated 2 Story nodes.');
+
+    // Assert accuracy of aggregated information (check 2 updates, one orig).
+    $this->drupalGet('node');
+    $this->assertText('Managing News Translation Workflow: Two Way Translation Updates');
+    $this->assertText('Presenting on Features in Drupal and Managing News');
+    $this->assertText('Scaling the Open Atrium UI');
+
+    // Import again.
+    $this->drupalPost('import/syndication_standalone', array(), 'Import');
+    $this->assertText('There is no new content.');
+
+    // Assert DB status, there still shouldn't be more than 10 items.
+    $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_node_item}'));
+    $this->assertEqual($count, 10, 'Accurate number of items in database.');
+
     // Now delete all items.
     $this->drupalPost('import/syndication_standalone/delete-items', array(), 'Delete');
     $this->assertText('Deleted 10 nodes.');
@@ -306,10 +344,7 @@ class FeedsRSStoDataTest extends FeedsWebTestCase {
    * Set up test.
    */
   public function setUp() {
-    // @todo: once we have default configurations shipping with feeds, we do not
-    // need feeds_ui.
     parent::setUp('feeds', 'feeds_ui', 'ctools', 'data', 'data_ui', 'views');
-
     $this->drupalLogin(
       $this->drupalCreateUser(
         array(
@@ -432,7 +467,6 @@ class FeedsRSStoDataTest extends FeedsWebTestCase {
     $this->assertText('Deleted 10 items.');
 
     // Assert DB status, now there should be no items.
-    // @todo: fails, is there something cached?
     $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_data_rss}'));
     $this->assertEqual($count, 0, 'Accurate number of items in database.');
 
@@ -444,8 +478,8 @@ class FeedsRSStoDataTest extends FeedsWebTestCase {
     $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_data_rss}'));
     $this->assertEqual($count, 10, 'Accurate number of items in database.');
 
-    // @todo: Standalone import form testing.
-    // @todo: Create a second feed and test.
+    // @todo Standalone import form testing.
+    // @todo Create a second feed and test.
   }
 }
 
@@ -533,7 +567,7 @@ class FeedsCSVtoUsersTest extends FeedsWebTestCase {
     $this->assertText('Gomez');
     $this->assertText('Pugsley');
 
-    // @todo: test status setting, update existing and role settings.
+    // @todo Test status setting, update existing and role settings.
   }
 }
 
@@ -698,8 +732,8 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
     $count = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE type = "story" AND status = 1'));
     $this->assertEqual($count, 200, 'The total of 200 story nodes has not changed.');
 
-    // @todo: use debug time feature in FeedsScheduler and test behavior in future.
-    // @todo: how do I call an API function on the test system from the test script?
+    // @todo Use debug time feature in FeedsScheduler and test behavior in future.
+    // @todo How do I call an API function on the test system from the test script?
   }
 }
 
@@ -714,7 +748,7 @@ class FeedsSyndicationParserTestCase extends FeedsWebTestCase {
   public function getInfo() {
     return array(
       'name' => t('Syndication parsers'),
-      'description' => t('Regression tests for syndication parsers Common syndication and SimplePie. Tests parsers against a set of feeds in the context of Feeds module. Requires Simplepie parser to be configured correctly.'),
+      'description' => t('Regression tests for syndication parsers Common syndication and SimplePie. Tests parsers against a set of feeds in the context of Feeds module. <strong>Requires SimplePie parser to be configured correctly.</strong>'),
       'group' => t('Feeds'),
     );
   }

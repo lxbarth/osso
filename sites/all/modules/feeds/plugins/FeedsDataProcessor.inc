@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsDataProcessor.inc,v 1.4 2009/11/02 20:18:35 alexb Exp $
+// $Id: FeedsDataProcessor.inc,v 1.7 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -14,12 +14,12 @@ class FeedsDataProcessor extends FeedsProcessor {
   /**
    * Implementation of FeedsProcessor::process().
    */
-  public function process(FeedsParserResult $parserResult, FeedsSource $source) {
+  public function process(FeedsImportBatch $batch, FeedsSource $source) {
 
     // Count number of created and updated nodes.
     $inserted  = $updated = 0;
 
-    foreach ($parserResult->value['items'] as $item) {
+    while ($item = $batch->shiftItem()) {
       if (!($id = $this->existingItemId($item, $source)) || $this->config['update_existing']) {
         // Map item to a data record, feed_nid and timestamp are mandatory.
         $data = array();
@@ -141,7 +141,7 @@ class FeedsDataProcessor extends FeedsProcessor {
       foreach ($schema['fields'] as $field_name => $field) {
         if (!in_array($field_name, array('id', 'feed_nid'))) {
           // Any existing field can be optionally unique.
-          // @todo: push this reverse mapping of spec to short name into data
+          // @todo Push this reverse mapping of spec to short name into data
           // module.
           $type = $field['type'];
           if ($type == 'int' && $field['unsigned']) {
@@ -269,7 +269,7 @@ class FeedsDataProcessor extends FeedsProcessor {
    * Return the data table name for this feed.
    */
   protected function tableName() {
-    return 'feeds_data_'. $this->id;
+    return variable_get('feeds_data_'. $this->id, 'feeds_data_'. $this->id);
   }
 
   /**
@@ -278,7 +278,7 @@ class FeedsDataProcessor extends FeedsProcessor {
    * @throws Exception $e
    *   Throws this exception if a table cannot be found and cannot be created.
    *
-   * @todo: Make *Data module* throw exception when table can't be found or
+   * @todo Make *Data module* throw exception when table can't be found or
    *   can't be created.
    */
   protected function table() {

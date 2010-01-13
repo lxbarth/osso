@@ -1,6 +1,7 @@
-;$Id: feeds.info,v 1.3 2009/10/20 20:59:04 alexb Exp $
+;$Id: feeds.info,v 1.4 2009/12/17 15:28:49 alexb Exp $
 name = Feeds
 description = Aggregates RSS/Atom/RDF feeds, imports CSV files and more.
 package = Feeds
 dependencies[] = ctools
 core = 6.x
+php = 5.2

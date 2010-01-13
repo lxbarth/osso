@@ -1,8 +1,30 @@
-// $Id: CHANGELOG.txt,v 1.14 2009/11/24 23:28:30 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.30 2010/01/12 16:28:02 alexb Exp $
 
-Feeds 6.x 1.0 xxxx, 200x-xx-xx
-------------------------------
+Feeds 6.x 1.0 XXXXXXX, 20XX-XX-XX
+---------------------------------
 
+- #624088: mongolito404, David Goode, alex_b: Imagefield/filefield mapper,
+  formalize feed elements.
+- #584034: aaroncouch, mongolito404: Views integration.
+- Redirect to node or import form after manual import or delete.
+- #663830 Aron Novak, alex_b: When download of URL failed, node w/ empty title
+  is created.
+- #654728 Aron Novak: Fix parsing + data handling error with RDF 1.0 feeds.
+- #641522 mongolito404, alex_b: Consolidate import stage results.
+- #662104 Aron Novak: Specify PHP requirement in .info file.
+- #657374 dtomasch: Common Parser does not get RSS Authors correctly.
+
+Feeds 6.x 1.0 Alpha 9, 2009-12-14
+---------------------------------
+
+- API change: feeds_source() takes an FeedsImporter id instead of an importer,
+  the methods import() and clear() moved from FeedsImporter to FeedsSource.
+  Import from a source with feeds_source($id, $nid)->import();
+- #629096 quickcel: Fix underscores in feed creation link.
+- #652848 BWPanda: Add 'clear-block' to admin-ui to fix float issues.
+- #623424 Kars-T, Eugen Mayer, alex_b: Mapper for Taxonomy.
+- #649552 rsoden: Provide variable for data table name.
+- #631962 velosol, alex_b: FeedsNodeProcessor: Update when changed.
 - #623452 mongolito404: Port basic test infrastructure for mappers, test for
   basic CCK mapper.
 

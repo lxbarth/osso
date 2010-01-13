@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsTermProcessor.inc,v 1.2 2009/11/02 20:48:52 alexb Exp $
+// $Id: FeedsTermProcessor.inc,v 1.3 2009/12/20 23:27:28 alexb Exp $
 
 /**
  * @file
@@ -14,7 +14,7 @@ class FeedsTermProcessor extends FeedsProcessor {
   /**
    * Implementation of FeedsProcessor::process().
    */
-  public function process(FeedsParserResult $parserResult, FeedsSource $source) {
+  public function process(FeedsImportBatch $batch, FeedsSource $source) {
 
     if (empty($this->config['vocabulary'])) {
       throw new Exception(t('You must define a vocabulary for Taxonomy term processor before importing.'));
@@ -23,7 +23,7 @@ class FeedsTermProcessor extends FeedsProcessor {
     // Count number of created and updated nodes.
     $created  = $updated = $no_name = 0;
 
-    foreach ($parserResult->value['items'] as $item) {
+    while ($item = $batch->shiftItem()) {
 
       if (!($tid = $this->existingItemId($item, $source)) || $this->config['update_existing']) {
 

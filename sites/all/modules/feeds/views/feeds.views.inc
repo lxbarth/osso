@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.views.inc,v 1.1 2009/10/20 21:03:08 alexb Exp $
+// $Id: feeds.views.inc,v 1.2 2009/12/21 01:57:31 alexb Exp $
 
 /**
  * @file
@@ -14,6 +14,9 @@
 function feeds_views_data() {
   $data = array();
 
+  /**
+   * Expose feeds_source table to views.
+   */
   $data['feeds_source']['table'] = array(
     'group' => 'Feeds source',
     'base' => array(
@@ -53,7 +56,6 @@ function feeds_views_data() {
       'click sortable' => FALSE,
     ),
   );
-  // feed_nid joins to node nid.
   $data['feeds_source']['table']['join'] = array(
     'node' => array(
       'left_field' => 'nid',
@@ -62,6 +64,113 @@ function feeds_views_data() {
     ),
   );
 
+  /**
+   * Expose feeds_node_item table to views.
+   */
+  $data['feeds_node_item']['table'] = array(
+    'group' => 'Feeds Item',
+    'join' => array(
+      'node' => array(
+        'left_field' => 'nid',
+        'field' => 'nid',
+        'type' => 'LEFT',
+      ),
+    ),
+  );
+  $data['feeds_node_item']['feed_nid'] = array(
+    'title' => t('Owner feed nid'),
+    'help' => t('The node id of the owner feed if available.'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+      'allow empty' => TRUE,
+      'help' => t('Filter on Feed Items by the Feed they were generated from using the Node Id of the Feed Node.'),
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+      'numeric' => TRUE,
+      'validate type' => 'nid',
+      'help' => t('Argument on Feed Items by the Feed they were generated from using the Node Id of the Feed Node.'),
+    ),
+    'sort' => array(
+      'help' => t('Sort Feed Items by the Feed they were generated from using the Node Id of the Feed Node.'),
+    ),
+    'relationship' => array(
+      'title' => t('Owner feed'),
+      'help' => t('Relate a node to its owner feed node if available.'),
+      'label' => t('Owner feed'),
+      'base' => 'node',
+      'base field' => 'nid',
+    ),
+  );
+  $data['feeds_node_item']['url'] = array(
+    'title' => t('Item link'),
+    'help' => t('Contains the link of the feed item.'),
+    'field' => array(
+      'handler' => 'views_handler_field_url',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+      'allow empty' => TRUE,
+      'help' => t('Filter on a Feeds Item\'s link field.'),
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+      'numeric' => TRUE,
+      'validate type' => 'nid',
+      'help' => t('Argument on a Feeds Item\'s link field.'),
+    ),
+    'sort' => array(
+      'help' => t('Sort on a Feeds Item\'s link field.'),
+    ),
+  );
+  $data['feeds_node_item']['guid'] = array(
+    'title' => t('Item GUID'),
+    'help' => t('Contains the GUID of the feed item.'),
+    'field' => array(
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+      'allow empty' => TRUE,
+      'help' => t('Filter on a Feeds Item\'s GUID field.'),
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+      'numeric' => TRUE,
+      'validate type' => 'nid',
+      'help' => t('Argument on a Feeds Item\'s GUID field.'),
+    ),
+    'sort' => array(
+      'help' => t('Sort on a Feeds Item\'s GUID field.'),
+    ),
+  );
+  $data['feeds_node_item']['imported'] = array(
+    'title' => t('Import date'),
+    'help' => t('Contains the import date of the feed item.'),
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_date',
+      'help' => t('Sort on a Feeds Item\'s import date field.'),
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+      'help' => t('Filter on a Feeds Item\'s import date field.'),
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_date',
+      'numeric' => TRUE,
+      'validate type' => 'nid',
+      'help' => t('Argument on a Feeds Item\'s import date field.'),
+    ),
+  );
   return $data;
 }
 

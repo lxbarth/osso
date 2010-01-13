@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsConfigurable.inc,v 1.2 2009/10/21 22:49:47 alexb Exp $
+// $Id: FeedsConfigurable.inc,v 1.3 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -20,7 +20,7 @@ abstract class FeedsConfigurable {
   /*
   CTools export type of this object.
 
-  @todo: should live in FeedsImporter. Not all child classes
+  @todo Should live in FeedsImporter. Not all child classes
   of FeedsConfigurable are exportable. Same goes for $disabled.
 
   Export type can be one of
@@ -128,7 +128,7 @@ abstract class FeedsConfigurable {
   /**
    * Return default configuration.
    *
-   * @todo: rename to getConfigDefaults().
+   * @todo rename to getConfigDefaults().
    *
    * @return
    *   Array where keys are the variable names of the configuration elements and

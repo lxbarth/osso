@@ -1,5 +1,66 @@
 <?php
-// $Id: FeedsSyndicationParser.inc,v 1.8 2009/11/02 19:58:37 alexb Exp $
+// $Id: FeedsSyndicationParser.inc,v 1.11 2010/01/12 16:28:02 alexb Exp $
+
+/**
+ * Enclosure element, can be part of the result array.
+ */
+class FeedsEnclosure extends FeedsElement {
+  protected $mime_type;
+  protected $file;
+
+  /**
+   * Constructor, requires MIME type.
+   */
+  public function __construct($value, $mime_type) {
+    parent::__construct($value);
+    $this->mime_type = $mime_type;
+  }
+
+  /**
+   * @return
+   *   MIME type of return value of getValue().
+   */
+  public function getMIMEType() {
+    return $this->mime_type;
+  }
+
+  /**
+   * @return
+   *   The content of the referenced resource.
+   */
+  public function getContent() {
+    feeds_include_library('http_request.inc', 'http_request');
+    $result = http_request_get($this->getValue());
+    if ($result->code != 200) {
+      throw new Exception(t('Download of @url failed with code !code.', array('@url' => $this->getValue(), '!code' => $result->code)));
+    }
+    return $result->data;
+  }
+
+  /**
+   * @return
+   *   The file path to the downloaded resource referenced by the enclosure.
+   *   Downloads resource if not downloaded yet.
+   *
+   * @todo Get file extension from mime_type.
+   * @todo This is not concurrency safe.
+   */
+  public function getFile() {
+    if(!isset($this->file)) {
+      $dest = file_destination(file_directory_temp() .'/'. get_class($this) .'-'. basename($this->getValue()), FILE_EXISTS_RENAME);
+      if (ini_get('allow_url_fopen')) {
+        $this->file = copy($this->getValue(), $dest) ? $dest : 0;
+      }
+      else {
+        $this->file = file_save_data($this->getContent(), $dest);
+      }
+      if ($this->file === 0) {
+        throw new Exception(t('Cannot write content to %dest', array('%dest' => $dest)));
+      }
+    }
+    return $this->file;
+  }
+}
 
 /**
  * Class definition for Common Syndication Parser.
@@ -9,17 +70,15 @@
 class FeedsSyndicationParser extends FeedsParser {
 
   /**
-   * Parses a raw string and returns a Feed object from it.
+   * Implementation of FeedsParser::parse().
    */
-  public function parse(FeedsFetcherResult $fetcherResult, FeedsSource $source) {
-    if ($fetcherResult->type == 'text/filepath') {
-      $string = file_get_contents($fetcherResult->value);
-    }
-    else {
-      $string = $fetcherResult->value;
-    }
+  public function parse(FeedsImportBatch $batch, FeedsSource $source) {
     feeds_include_library('common_syndication_parser.inc', 'common_syndication_parser');
-    return new FeedsParserResult(common_syndication_parser_parse($string), 'syndication');
+    $result = common_syndication_parser_parse($batch->getRaw());
+    $batch->setTitle($result['title']);
+    $batch->setDescription($result['description']);
+    $batch->setLink($result['link']);
+    $batch->setItems($result['items']);
   }
 
   /**

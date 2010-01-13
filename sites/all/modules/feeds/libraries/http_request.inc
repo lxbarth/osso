@@ -1,5 +1,5 @@
 <?php
-// $Id: http_request.inc,v 1.3 2009/11/04 17:20:36 alexb Exp $
+// $Id: http_request.inc,v 1.4 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -14,9 +14,9 @@
  * HTML document, function attempts to discover RSS or Atom feeds and downloads
  * them.
  *
- * @todo: debug
- * @todo: cache detected rss feeds in url.
- * @todo: use exceptions, not string or false return values.
+ * @todo Debug
+ * @todo Cache detected rss feeds in url.
+ * @todo Use exceptions, not string or false return values.
  *
  * @return
  *  string - the downloaded data, FALSE - if the URL is not reachable

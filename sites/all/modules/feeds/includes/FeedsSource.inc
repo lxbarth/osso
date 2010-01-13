@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSource.inc,v 1.1 2009/10/20 21:01:35 alexb Exp $
+// $Id: FeedsSource.inc,v 1.6 2009/12/20 23:48:38 alexb Exp $
 
 /**
  * @file
@@ -42,20 +42,14 @@ interface FeedsSourceInterface {
 }
 
 /**
- * This exception gets thrown when no source is available
- * for a given feed_nid.
+ * This class encapsulates a source of a feed. It stores where the feed can be
+ * found and how to import it.
  *
- * @todo: don't use internal source loading + exception, but load source
- * object and pass it into FeedsImporter object.
- */
-class FeedsNoSourceException extends Exception {}
-
-/**
- * This class encapsulates a source of a feed. While a FeedsImporter object
- * contains a feed import configuration, a FeedsSource object is what passes
- * through such an import configuration, holds information about the feed's
- * source (e. g. the URL) and provides all the information for necessary for
- * fetching, parsing and processing of a feed source.
+ * Information on how to import a feed is encapsulated in a FeedsImporter object
+ * which is identified by the common id of the FeedsSource and the
+ * FeedsImporter. More than one FeedsSource can use the same FeedsImporter
+ * therefore a FeedsImporter never holds a pointer to a FeedsSource object, nor
+ * does it hold any other information for a particular FeedsSource object.
  *
  * FeedsPlugins that implement FeedsSourceInterface and return TRUE on
  * hasSourceConfig() can define default values and forms that allow for
@@ -67,8 +61,10 @@ class FeedsNoSourceException extends Exception {}
  * FeedsPlugin class only exists once per FeedsImporter configuration, while an
  * instance of a FeedsSource class exists once per feed_nid to be imported.
  *
- * As with Feed, the idea with FeedsSource is that it can be used without
- * actually saving the object to the database.
+ * As with FeedsImporter, the idea with FeedsSource is that it can be used
+ * without actually saving the object to the database (
+ *
+ * @todo Test whether FeedsSource can be used without saving it.
  */
 class FeedsSource extends FeedsConfigurable {
 
@@ -84,30 +80,57 @@ class FeedsSource extends FeedsConfigurable {
    * Instantiate a unique object per class/id/feed_nid. Don't use
    * directly, use feeds_source() instead.
    */
-  public static function instance($importer, $feed_nid = 0) {
-    // This is useful at least as long as we're developing.
-    if (empty($importer)) {
-      throw new Exception(t('Empty FeedsImporter.'));
-    }
-
-    // Let others override which class to instantiate.
+  public static function instance($importer_id, $feed_nid = 0) {
     $class = variable_get('feeds_source_class', 'FeedsSource');
-
     static $instances = array();
-    if (!isset($instances[$class][$importer->id][$feed_nid])) {
-      $instances[$class][$importer->id][$feed_nid] = new $class($importer, $feed_nid);
+    if (!isset($instances[$class][$importer_id][$feed_nid])) {
+      $instances[$class][$importer_id][$feed_nid] = new $class($importer_id, $feed_nid);
     }
-    return $instances[$class][$importer->id][$feed_nid];
+    return $instances[$class][$importer_id][$feed_nid];
   }
 
   /**
    * Constructor.
    */
-  protected function __construct(FeedsImporter $importer, $feed_nid) {
+  protected function __construct($importer_id, $feed_nid) {
     $this->feed_nid = $feed_nid;
-    $this->importer = $importer;
-    parent::__construct($importer->id);
+    $this->importer = feeds_importer($importer_id);
+    parent::__construct($importer_id);
     $this->load();
+  }
+
+  /**
+   * Import a feed: execute, fetching, parsing and processing stage.
+   *
+   * @todo Iron out and document potential Exceptions.
+   * @todo Support batching.
+   * @todo catch exceptions outside of import(), clear() and expire().
+   */
+  public function import() {
+    try {
+      $feed = $this->importer->fetcher->fetch($this);
+      $this->importer->parser->parse($feed, $this);
+      $this->importer->processor->process($feed, $this);
+      unset($feed);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+    module_invoke_all('feeds_after_import', $this->importer, $this);
+  }
+
+  /**
+   * Remove all items from a feed.
+   */
+  public function clear() {
+    try {
+      $this->importer->fetcher->clear($this);
+      $this->importer->parser->clear($this);
+      $this->importer->processor->clear($this);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
   }
 
   /**
@@ -137,12 +160,13 @@ class FeedsSource extends FeedsConfigurable {
 
   /**
    * Load configuration and unpack.
+   *
+   * @todo Patch CTools to move constants from export.inc to ctools.module.
    */
   public function load() {
     if ($config = db_result(db_query('SELECT config FROM {feeds_source} WHERE id = "%s" AND feed_nid = %d', $this->id, $this->feed_nid))) {
       // While FeedsSource cannot be exported, we still use CTool's export.inc
       // export definitions.
-      // @todo: patch CTools to move constants from export.inc to ctools.module.
       ctools_include('export');
       $this->export_type = EXPORT_IN_DATABASE;
       $this->config = unserialize($config);

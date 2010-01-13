@@ -1,5 +1,5 @@
 <?php
-// $Id: common_syndication_parser.inc,v 1.1 2009/10/20 21:01:35 alexb Exp $
+// $Id: common_syndication_parser.inc,v 1.4 2009/12/21 00:16:22 alexb Exp $
 
 /**
  * @file
@@ -228,7 +228,7 @@ function _parser_common_syndication_RDF10_parse($feed_XML) {
 
   // Process the <rss:channel> resource containing feed metadata:
   foreach ($feed_XML->children($canonical_namespaces['rss'])->channel as $rss_channel) {
-    $parsed_source = (object)array(
+    $parsed_source = array(
       'title'       => _parser_common_syndication_title((string)$rss_channel->title),
       'description' => (string)$rss_channel->description,
       'options'     => (object)array('link' => (string)$rss_channel->link),
@@ -292,7 +292,7 @@ function _parser_common_syndication_RDF10_parse($feed_XML) {
     $item['rdf'] = (object)array();
     foreach ($rdf_data as $rdf_property => $rdf_value) {
       // looks nicer in the mapper UI
-      // @todo: revisit, not used with feedapi mapper anymore.
+      // @todo Revisit, not used with feedapi mapper anymore.
       $rdf_property = str_replace(':', '_', $rdf_property);
       $item['rdf'][$rdf_property] = $rdf_value;
     }
@@ -374,8 +374,8 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
       $body = "{$news['title']}";
     }
 
-    if (!empty($feed_XML->channel->title)) {
-      $original_author = "{$feed_XML->channel->title}";
+    if (!empty($news['author'])) {
+      $original_author = "{$news['author']}";
     }
 
     if (!empty($news['link'])) {

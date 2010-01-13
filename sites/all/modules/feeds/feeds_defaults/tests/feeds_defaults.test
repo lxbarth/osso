@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_defaults.test,v 1.2 2009/11/18 21:50:15 alexb Exp $
+// $Id: feeds_defaults.test,v 1.4 2010/01/12 15:19:43 alexb Exp $
 
 /**
  * @file
@@ -170,7 +170,7 @@ class FeedsDefaultsFastFeedTestCase extends FeedsDefaultsTestCase {
   public function getInfo() {
     return array(
       'name' => t('Defaults: Fast feed'),
-      'description' => t('Test "Fast feed" default configuration <strong>Requires Data and Views.</strong>.'),
+      'description' => t('Test "Fast feed" default configuration <strong>Requires Data and Views.</strong>'),
       'group' => t('Feeds'),
     );
   }
@@ -299,27 +299,26 @@ class FeedsDefaultsNodeTestCase extends FeedsDefaultsTestCase {
       $count = db_result(db_query('SELECT COUNT(*) FROM {node_revisions}'));
       $this->assertEqual($count, 8, 'Found correct number of items.');
 
-      // Import again. There are updates to 9 nodes because two nodes in the
-      // import have the same guid.
+      // Import again. Feeds only updates items that haven't changed. However,
+      // there are 2 different items with the same GUID in nodes.csv.
+      // Therefore, feeds will show updates to 2 nodes.
       $this->drupalPost('import/node/import', array(), 'Import');
-      $this->assertText('Updated 9 Story nodes.');
+      $this->assertText('Updated 2 Story nodes.');
     }
 
     // Remove all nodes.
     $this->drupalPost('import/node/delete-items', array(), 'Delete');
-    $this->assertText('Story Lorem ipsum has been deleted.');
-    $this->assertText('Story Ut wisi enim ad minim veniam has been deleted.');
-    $this->assertText('Story Duis autem vel eum iriure dolor has been deleted.');
-    $this->assertText('Story Typi non habent has been deleted.');
-    $this->assertText('Story Investigationes demonstraverunt has been deleted.');
-    $this->assertText('Story Claritas est etiam has been deleted.');
-    $this->assertText('Story Mirum est notare has been deleted.');
-    $this->assertText('Story Eodem modo typi has been deleted.');
     $this->assertText('Deleted 8 nodes.');
 
     // Import once again.
     $this->drupalPost('import/node/import', array(), 'Import');
     $this->assertText('Created 8 Story nodes.');
+
+    // Import a similar file with changes in 4 records. Feeds should report 6
+    // Updated story nodes (4 changed records, 2 records sharing a GUID
+    // subsequently being updated).
+    $this->importFile('node', $this->absolutePath() .'/tests/feeds/nodes_changes.csv');
+    $this->assertText('Updated 6 Story nodes.');
 
     // Disable.
     $this->disable('node');

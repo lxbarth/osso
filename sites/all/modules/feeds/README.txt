@@ -1,4 +1,4 @@
-$Id: README.txt,v 1.14 2009/11/10 20:54:50 alexb Exp $
+$Id: README.txt,v 1.15 2009/12/03 21:27:40 alexb Exp $
 
 
 "It feeds"
@@ -117,9 +117,16 @@ Description: The number of feeds to import on cron time.
 
 Name:        feeds_schedule_queue_num
 Default:     200
-             The number of feeds to queue on cron time. Only has an effect if
+Description: The number of feeds to queue on cron time. Only has an effect if
              Drupal Queue is enabled.
              http://drupal.org/project/drupal_queue
+
+Name:        feeds_data_$importer_id
+Default:     feeds_data_$importer_id
+Description: The table used by FeedsDataProcessor to store feed items. Usually a
+             FeedsDataProcessor builds a table name from a prefix (feeds_data_)
+             and the importer's id ($importer_id). This default table name can
+             be overridden by defining a variable with the same name.
 
 Glossary
 ========

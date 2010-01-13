@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.module,v 1.20 2009/11/16 14:52:38 alexb Exp $
+// $Id: feeds.module,v 1.26 2009/12/21 00:32:55 alexb Exp $
 
 /**
  * @file
@@ -12,8 +12,7 @@ define('FEEDS_REQUEST_TIME', time());
 // Do not schedule a feed for refresh.
 define('FEEDS_SCHEDULE_NEVER', -1);
 // Never expire feed items.
-// @todo:
-// Use FEEDS_NEVER instead of FEEDS_SCHEDULE_NEVER and FEEDS_EXPIRE_NEVER.
+// @todo Use FEEDS_NEVER instead of FEEDS_SCHEDULE_NEVER and FEEDS_EXPIRE_NEVER.
 define('FEEDS_EXPIRE_NEVER', -1);
 // An object is not persistent at all. Compare to EXPORT_IN_DATABASE OR
 // EXPORT_IN_CODE.
@@ -170,13 +169,11 @@ function feeds_access($action, $param) {
     $importer_id = $param;
   }
   elseif ($param->type) {
-    if ($importer = feeds_importer_by_content_type($param->type)) {
-      $importer_id = $importer->id;
-    }
+    $importer_id = feeds_get_importer_id($param->type);
   }
 
   // Check for permissions if feed id is present, otherwise return FALSE.
-  if (isset($importer_id)) {
+  if ($importer_id) {
     if (user_access('administer feeds') || user_access($action .' '. $importer_id .' feeds')) {
       return TRUE;
     }
@@ -187,7 +184,7 @@ function feeds_access($action, $param) {
 /**
  * Menu access callback.
  *
- * @todo: Create cached function that returns available configurations
+ * @todo Create cached function that returns available configurations
  * and use it for enumerating feed configuration ids.
  */
 function feeds_page_access() {
@@ -223,11 +220,6 @@ function feeds_ctools_plugin_api($owner, $api) {
 
 /**
  * Implementation of hook_feeds_plugins().
- *
- * @todo: Document API. Uses CTools plugin handling, extra keys:
- * 'description', 'hidden'
- *
- * @todo: Also declare and load include/ files with CTools plugins?
  */
 function feeds_feeds_plugins() {
   module_load_include('inc', 'feeds', 'feeds.plugins');
@@ -243,32 +235,31 @@ function feeds_nodeapi(&$node, $op, $form) {
   // Break out node processor related nodeapi functionality.
   _feeds_nodeapi_node_processor($node, $op);
 
-  if ($importer = feeds_importer_by_content_type($node->type)) {
+  if ($importer_id = feeds_get_importer_id($node->type)) {
     switch ($op) {
       case 'validate':
         // On validation stage we are working with a FeedsSource object that is
         // not tied to a nid - when creating a new node there is $node->nid at
         // this stage.
-        $source = feeds_source($importer);
+        $source = feeds_source($importer_id);
 
         // If node title is empty, try to retrieve title from feed.
         if (trim($node->title) == '') {
           try {
             $source->addConfig($node->feeds);
-            $result = $importer->fetcher->fetch($source);
-            $result = $importer->parser->parse($result, $source);
-            if (!isset($result->value['title']) || trim($result->value['title']) == '') {
-              form_set_error('title', t('Could not retrieve title from feed.'), 'error');
-            }
-            else {
-              // Keep the title in a static cache and populate $node->title on
-              // 'presave' as node module looses any changes to $node after
-              // 'validate'.
-              $last_title = $result->value['title'];
+            // @todo Too many indirections. Clean up.
+            $batch = $source->importer->fetcher->fetch($source);
+            $source->importer->parser->parse($batch, $source);
+            // Keep the title in a static cache and populate $node->title on
+            // 'presave' as node module looses any changes to $node after
+            // 'validate'.
+            if (!$last_title = $batch->getTitle()) {
+              throw new Exception();
             }
           }
           catch (Exception $e) {
             drupal_set_message($e->getMessage(), 'error');
+            form_set_error('title', t('Could not retrieve title from feed.'), 'error');
           }
         }
 
@@ -285,25 +276,25 @@ function feeds_nodeapi(&$node, $op, $form) {
       case 'insert':
       case 'update':
         // Add configuration to feed source and save.
-        $source = feeds_source($importer, $node->nid);
+        $source = feeds_source($importer_id, $node->nid);
         $source->addConfig($node->feeds);
         $source->save();
 
         // Refresh feed if import on create is selected and suppress_import is
         // not set.
-        if ($op == 'insert' && $importer->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
-          $importer->import($source);
+        if ($op == 'insert' && feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
+          $source->import();
         }
         // Add import to scheduler.
-        feeds_scheduler()->add($importer->id, 'import', $node->nid);
+        feeds_scheduler()->add($importer_id, 'import', $node->nid);
         // Add expiry to schedule, in case this is the first feed of this
         // configuration.
-        feeds_scheduler()->add($importer->id, 'expire');
+        feeds_scheduler()->add($importer_id, 'expire');
         break;
       case 'delete':
         // Remove feed from scheduler and delete source.
-        feeds_scheduler()->remove($importer->id, 'import', $node->nid);
-        feeds_source($importer, $node->nid)->delete();
+        feeds_scheduler()->remove($importer_id, 'import', $node->nid);
+        feeds_source($importer_id, $node->nid)->delete();
         break;
     }
   }
@@ -344,21 +335,19 @@ function _feeds_nodeapi_node_processor($node, $op) {
  */
 function feeds_form_alter(&$form, $form_state, $form_id) {
   if ($form['#id'] == 'node-form') {
-    if ($importer = feeds_importer_by_content_type($form['type']['#value'])) {
+    if ($importer_id = feeds_get_importer_id($form['type']['#value'])) {
       // Set title to not required, try to retrieve it from feed.
       $form['title']['#required'] = FALSE;
 
       // Build form.
-      $source = feeds_source($importer, empty($form['nid']['#value']) ? 0 : $form['nid']['#value']);
+      $source = feeds_source($importer_id, empty($form['nid']['#value']) ? 0 : $form['nid']['#value']);
       $form['feeds'] = array(
         '#type' => 'fieldset',
         '#title' => t('Feed'),
         '#tree' => TRUE,
       );
       $form['feeds'] += $source->configForm($form_state);
-
-      // Cannot pass on the FeedsImporter object, pass on id.
-      $form['#feed_id'] = $importer->id;
+      $form['#feed_id'] = $importer_id;
     }
   }
 }
@@ -388,7 +377,9 @@ function feeds_scheduler_work($feed_info) {
 /**
  * Load all importers.
  *
- * @
+ * @param $load_disabled
+ *   Pass TRUE to load all importers, enabled or disabled, pass FALSE to only
+ *   retrieve enabled importers.
  *
  * @return
  *   An array of all feed configurations available.
@@ -441,27 +432,27 @@ function feeds_importer_enabled($id) {
 /**
  * Get a an enabled importer configuration by content type.
  *
- * @todo: speed this up by DB caching the result.
+ * @todo speed this up by DB caching the result.
  *
  * @param $content_type
  *   A node type string.
  *
  * @return
- *   A FeedsImporter object if one is available, FALSE otherwise.
+ *   A FeedsImporter id if there is an importer for the given content type,
+ *   FALSE otherwise.
  */
-function feeds_importer_by_content_type($content_type) {
-  static $feeds = array();
-
-  if (!isset($feeds[$content_type])) {
-    $feeds[$content_type] = FALSE;
+function feeds_get_importer_id($content_type) {
+  static $ids = array();
+  if (!isset($ids[$content_type])) {
+    $ids[$content_type] = FALSE;
     foreach (feeds_importer_load_all() as $importer) {
       if ((!$importer->disabled) && $importer->config['content_type'] == $content_type) {
-        $feeds[$content_type] = $importer;
+        $ids[$content_type] = $importer->id;
         break;
       }
     }
   }
-  return $feeds[$content_type];
+  return $ids[$content_type];
 }
 
 /**
@@ -503,8 +494,8 @@ function feeds_importer($id) {
 /**
  * Get an instance of a source object.
  *
- * @param $importer
- *   A FeedsImporter object.
+ * @param $importer_id
+ *   A FeedsImporter id.
  * @param $feed_nid
  *   The node id of a feed node if the source is attached to a feed node.
  *
@@ -512,9 +503,9 @@ function feeds_importer($id) {
  *   A FeedsSource object or an object of a class defiend by the Drupal
  *   variable 'source_class'.
  */
-function feeds_source($importer, $feed_nid = 0) {
+function feeds_source($importer_id, $feed_nid = 0) {
   feeds_include('FeedsImporter');
-  return FeedsSource::instance($importer, $feed_nid);
+  return FeedsSource::instance($importer_id, $feed_nid);
 }
 
 /**
@@ -538,7 +529,7 @@ function feeds_scheduler() {
  * @defgroup plugins Plugin functions
  * @{
  *
- * @todo: Encapsulate this in a FeedsPluginHandler class, move it to includes/
+ * @todo Encapsulate this in a FeedsPluginHandler class, move it to includes/
  * and only load it if we're manipulating plugins.
  */
 
@@ -613,7 +604,7 @@ function feeds_plugin_instance($plugin, $id) {
   }
 
   // Return FeedsMissingPlugin if no plugin was found.
-  // @todo: better error handling.
+  // @todo Better error handling.
   drupal_set_message(t('Missing Feeds plugin. Check whether all required libraries and modules are installed properly.'), 'error');
   $class = ctools_plugin_load_class('feeds', 'plugins', 'FeedsMissingPlugin', 'handler');
   return FeedsConfigurable::instance($class, $id);
@@ -622,7 +613,7 @@ function feeds_plugin_instance($plugin, $id) {
 /**
  * Determines whether given plugin is derived from given base plugin.
  *
- * @todo: update variable names. Should be $plugin_key if it is a key string.
+ * @todo Update variable names. Should be $plugin_key if it is a key string.
  *
  * @param $plugin
  *   String that identifies a Feeds plugin key.
