@@ -1,0 +1,4 @@
+name = "Sync User"
+description = "Synchronizes user accounts to another Drupal site with PuSH User module enabled."
+dependencies[] = feeds
+core = 6.x

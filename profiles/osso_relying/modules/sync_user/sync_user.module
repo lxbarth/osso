@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Implementation of hook_feeds_plugins().
+ */
+function sync_user_feeds_plugins() {
+  $info = array();
+  $info['SyncUserParser'] = array(
+    'name' => 'Sync User parser',
+	    'description' => 'Parses user account information from feeds provided by the PuSH User module.',
+	    'handler' => array(
+	      'parent' => 'FeedsParser',
+	      'class' => 'SyncUserParser',
+	      'file' => 'SyncUserParser.inc',
+	      'path' => drupal_get_path('module', 'sync_user'),
+	    ),
+	  );
+	return $info;
+}
