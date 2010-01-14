@@ -36,7 +36,7 @@ class FeedsUserProcessor extends FeedsProcessor {
         if (!empty($uid)) {
           $account->uid = $uid;
         }
-dsm($account);
+
         // Save the user.
         user_save($account, (array) $account);
         if ($account->uid && $account->openid) {
