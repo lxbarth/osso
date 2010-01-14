@@ -137,3 +137,16 @@ function feeds_delete_tab_form(&$form_state, $importer_id, $node = NULL) {
 function feeds_delete_tab_form_submit($form, &$form_state) {
   feeds_source($form['#importer_id'], empty($form['#feed_nid']) ? 0 : $form['#feed_nid'])->clear();
 }
+
+/**
+ * Handle a PubsubHubbub notification.
+ */
+function feeds_push_notification($importer, $feed_nid = 0) {
+  if ($importer->fetcher instanceof FeedsPubSubFetcher) {
+    feeds_source($importer->id, $feed_nid)->import();
+  }
+  // This will return an empty page with response code 200, indicating to Hub
+  // that notifcation has been received successfully.
+  // http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#contentdistribution
+  return '';
+}

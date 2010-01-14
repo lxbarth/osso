@@ -76,6 +76,16 @@ function _feeds_feeds_plugins() {
       'path' => $path,
     ),
   );
+  $info['FeedsPubSubFetcher'] = array(
+    'name' => 'Pubsubhubbub Fetcher',
+    'description' => 'Receive updates from a PubSubHubbub notification hub.',
+    'handler' => array(
+      'parent' => 'FeedsFetcher',
+      'class' => 'FeedsPubSubFetcher',
+      'file' => 'FeedsPubSubFetcher.inc',
+      'path' => $path,
+    ),
+  );
   $info['FeedsCSVParser'] = array(
     'name' => 'CSV parser',
     'description' => 'Parse data in Comma Separated Value format.',
