@@ -135,8 +135,8 @@ function feeds_menu() {
       'file' => 'feeds.pages.inc',
     );
   }
-  $items['feeds/pubsub/notify/%feeds_importer'] = array(
-   'page callback' => 'feeds_push_notification',
+  $items['feeds/pubsubhubbub/notify/%feeds_importer'] = array(
+   'page callback' => 'feeds_push_receive',
    'page arguments' => array(3, 4),
    'file' => 'feeds.pages.inc',
    'type' => MENU_CALLBACK,

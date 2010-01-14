@@ -38,7 +38,12 @@ interface FeedsSourceInterface {
   /**
    * Validate user entered values submitted by sourceForm().
    */
-  public function sourceFormValidate(&$values);
+  public function sourceFormValidate(&$source_config);
+
+  /**
+   * A source is being saved.
+   */
+  public function sourceSave(&$source_config);
 }
 
 /**
@@ -138,6 +143,10 @@ class FeedsSource extends FeedsConfigurable {
    */
   public function save() {
     $config = $this->getConfig();
+    // Alert implementers of FeedsSourceInterface to the fact that we're saving.
+    foreach ($this->importer->plugin_types as $type) {
+      $this->importer->$type->sourceSave($config[get_class($this->importer->$type)]);
+    }
     // Store the source property of the fetcher in a separate column so that we
     // can do fast lookups on it.
     $source = '';

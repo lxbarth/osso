@@ -141,7 +141,7 @@ function feeds_delete_tab_form_submit($form, &$form_state) {
 /**
  * Handle a PubsubHubbub notification.
  */
-function feeds_push_notification($importer, $feed_nid = 0) {
+function feeds_push_receive($importer, $feed_nid = 0) {
   if ($importer->fetcher instanceof FeedsPubSubFetcher) {
     feeds_source($importer->id, $feed_nid)->import();
   }

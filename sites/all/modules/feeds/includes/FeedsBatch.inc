@@ -22,9 +22,10 @@ class FeedsImportBatch {
    *
    * Either $url or $file_path must be given.
    */
-  public function __construct($url = NULL, $file_path = NULL) {
+  public function __construct($url = NULL, $file_path = NULL, $raw = NULL) {
     $this->url = $url;
     $this->file_path = $file_path;
+    $this->raw = $raw;
     $this->items = array();
   }
 
