@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ *
+ * @todo Support notifications from publishers over HTTP.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function push_hub_menu() {
+  $items = array();
+  $items['pubsubhubbub/endpoint'] = array(
+   'page callback' => 'push_hub_endpoint',
+   'page arguments' => array(3, 4),
+   'file' => 'push_hub.pages.inc',
+   'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Notifiy subscribers of a change in topic.
+ *
+ * @param $topic
+ *   URL of the topic that changed.
+ * @param $changed
+ *   The feed that contains the changed elements.
+ */
+function push_hub_notify($topic, $changed) {
+
+}

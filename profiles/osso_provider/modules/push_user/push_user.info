@@ -1,0 +1,4 @@
+name = "PuSH Users"
+description = "Syndicates changes to user accounts."
+dependencies[] = push_hub
+core = 6.x

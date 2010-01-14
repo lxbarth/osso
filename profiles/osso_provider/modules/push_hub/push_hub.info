@@ -1,0 +1,3 @@
+name = "PubSubHubbub Hub"
+description = "Allows Drupal to act as a PubsubHubbub hub."
+core = 6.x
