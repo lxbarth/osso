@@ -36,10 +36,19 @@ class FeedsUserProcessor extends FeedsProcessor {
         if (!empty($uid)) {
           $account->uid = $uid;
         }
-
+dsm($account);
         // Save the user.
-        // @todo Is this really the best way to use this function?
         user_save($account, (array) $account);
+        if ($account->uid && $account->openid) {
+          $authmap = array(
+            'uid' => $account->uid,
+            'module' => 'openid',
+            'authname' => $account->openid,
+          );
+          if (SAVED_UPDATED != drupal_write_record('authmap', $authmap, array('uid', 'module'))) {
+            drupal_write_record('authmap', $authmap);
+          }
+        }
 
         if ($uid) {
           $updated++;
@@ -166,6 +175,13 @@ class FeedsUserProcessor extends FeedsProcessor {
         'description' => t('The created (e. g. joined) data of the user.'),
        ),
     );
+    if (module_exists('openid')) {
+      $targets['openid'] = array(
+        'name' => t('OpenID identifier'),
+        'description' => t('The OpenID identifier of the user. <strong>CAUTION:</strong> Use only for migration purposes, misconfiguration of the OpenID identifier can lead to severe security breaches like users gaining access to accounts other than their own.'),
+        'optional_unique' => TRUE,
+       );
+    }
     return $targets;
   }
 
@@ -179,15 +195,18 @@ class FeedsUserProcessor extends FeedsProcessor {
     foreach ($this->uniqueTargets($source_item) as $target => $value) {
       switch ($target) {
         case 'name':
-          $nid = db_result(db_query('SELECT uid FROM {users} WHERE name = "%s"', $value));
+          $uid = db_result(db_query('SELECT uid FROM {users} WHERE name = "%s"', $value));
           break;
         case 'mail':
-          $nid = db_result(db_query('SELECT uid FROM {users} WHERE mail = "%s"', $value));
+          $uid = db_result(db_query('SELECT uid FROM {users} WHERE mail = "%s"', $value));
+          break;
+        case 'openid':
+          $uid = db_result(db_query("SELECT uid FROM {authmap} WHERE authname = '%s' AND module = 'openid'", $value));
           break;
       }
-      if ($nid) {
+      if ($uid) {
         // Return with the first nid found.
-        return $nid;
+        return $uid;
       }
     }
     return 0;

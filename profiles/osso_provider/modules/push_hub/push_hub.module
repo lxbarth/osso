@@ -21,7 +21,7 @@ function push_hub_menu() {
 }
 
 /**
- * Notifiy subscribers of a change in topic.
+ * Notify subscribers of a change in topic.
  *
  * @param $topic
  *   URL of the topic that changed.

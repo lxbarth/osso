@@ -42,9 +42,12 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
     }
     $result = http_request_get($url);
     if ($result->code == 200) {
-      $xml = new SimpleXMLElement($raw);
-      $hub = $xml->xpath("/feed/link[attribute::rel='hub']");
-      $self = $xml->xpath("/feed/link[attribute::rel='self']");
+      $xml = new SimpleXMLElement($result->data);
+      $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
+      $hub = $xml->xpath("/atom:feed/atom:link[attribute::rel='hub']");
+      $self = $xml->xpath("/atom:feed/atom:link[attribute::rel='self']");
+      dsm($hub);
+      dsm($self);
       if ($hub && $self) {
         $this->pushRequest($hub, $self, 'subscribe');
       }
@@ -87,6 +90,6 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    * Receive a PubSubHubbub notification.
    */
   protected function pushReceive() {
-    error_log(print_r($_POST, true));
+    // error_log(print_r($_POST, true));
   }
 }

@@ -21,7 +21,7 @@ function push_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'insert':
     case 'update':
-      push_hub_notify(url('user/'. $account->uid .'/feed', array('absolute' => TRUE)));
+      push_hub_notify(url('user/'. $account->uid .'/feed', array('absolute' => TRUE)), theme('push_user_feed', $account));
       break;
   }
 }
@@ -43,6 +43,8 @@ function push_user_theme() {
 
 /**
  * Access callback for user feed.
+ *
+ * @todo: implement HMAC.
  */
 function push_user_feed_access() {
   return TRUE;
@@ -64,11 +66,12 @@ function template_preprocess_push_user_feed(&$vars) {
   $account = $vars['account'];
   $vars['hub'] = url('pubsubhubbub/endpoint', array('absolute' => TRUE));
   $vars['feed_url'] = url('user/'. $account->uid .'/feed', array('absolute' => TRUE));
-  $vars['updated'] = time(); // For lack of real updated date.
+  $vars['feed_title'] = t('Account information for @user', array('@user' => $account->name));
+  $vars['updated'] = gmdate('Y-m-d\TH:i:s\Z'); // For lack of real updated date.
   $vars['site_name'] = variable_get('site_name');
   $vars['site_url'] = url('', array('absolute' => TRUE));
-  $vars['user_name'] = $account->name;
+  $vars['user_name'] = check_plain($account->name);
   $vars['user_url'] = url('user/'. $account->uid, array('absolute' => TRUE));
   $vars['user_openid'] = url('user/'. $account->uid .'/identity', array('absolute' => TRUE));
-  $vars['user_mail'] = $account->mail;
+  $vars['user_mail'] = 'mailto:'. $account->mail;
 }

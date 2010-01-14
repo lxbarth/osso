@@ -80,7 +80,7 @@ function _feeds_feeds_plugins() {
     'name' => 'Pubsubhubbub Fetcher',
     'description' => 'Receive updates from a PubSubHubbub notification hub.',
     'handler' => array(
-      'parent' => 'FeedsFetcher',
+      'parent' => 'FeedsHTTPFetcher',
       'class' => 'FeedsPubSubFetcher',
       'file' => 'FeedsPubSubFetcher.inc',
       'path' => $path,
