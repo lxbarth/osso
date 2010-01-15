@@ -43,7 +43,7 @@ interface FeedsSourceInterface {
   /**
    * A source is being saved.
    */
-  public function sourceSave(&$source_config);
+  public function sourceSave(FeedsSource $source);
 }
 
 /**
@@ -145,7 +145,7 @@ class FeedsSource extends FeedsConfigurable {
     $config = $this->getConfig();
     // Alert implementers of FeedsSourceInterface to the fact that we're saving.
     foreach ($this->importer->plugin_types as $type) {
-      $this->importer->$type->sourceSave($config[get_class($this->importer->$type)]);
+      $this->importer->$type->sourceSave($this);
     }
     // Store the source property of the fetcher in a separate column so that we
     // can do fast lookups on it.

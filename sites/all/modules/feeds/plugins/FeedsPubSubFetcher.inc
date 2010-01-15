@@ -21,33 +21,36 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   /**
    * Override sourceSave() - subscribe to hub.
    */
-  public function sourceSave(&$source_config) {
-    $this->pushSubscribe($source_config['source']);
+  public function sourceSave(FeedsSource $source) {
+    $this->pushSubscribe($source);
   }
 
   /**
    * Subscribe to a PubSubHubbub hub by URL of feed.
    *
-   * @param $url
-   *   The URL of the feed to subscribe to.
+   * @param FeedsSource $source
+   *   The source to subscribe to.
    *
    * @todo RSS support.
    */
-  protected function pushSubscribe($url) {
-    // Fetch document, find rel=hub and rel=self.
-    // If present, issue subscription request.
-    feeds_include_library('http_request.inc', 'http_request');
-    if (!http_request_use_curl()) {
-      throw new Exception(t('CURL required.'));
-    }
-    $result = http_request_get($url);
-    if ($result->code == 200) {
-      $xml = new SimpleXMLElement($result->data);
-      $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-      $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
-      $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
-      if ($hub && $self) {
-        $this->pushRequest($hub, $self, 'subscribe');
+  protected function pushSubscribe(FeedsSource $source) {
+    $source_config = $source->getConfigFor($this);
+    if (valid_url($source_config['source'])) {
+      // Fetch document, find rel=hub and rel=self.
+      // If present, issue subscription request.
+      feeds_include_library('http_request.inc', 'http_request');
+      if (!http_request_use_curl()) {
+        throw new Exception(t('CURL required.'));
+      }
+      $result = http_request_get($source_config['source']);
+      if ($result->code == 200) {
+        $xml = new SimpleXMLElement($result->data);
+        $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
+        $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
+        $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
+        if ($hub && $self) {
+          $this->pushRequest($hub, $self, $source->feed_nid, 'subscribe');
+        }
       }
     }
   }
@@ -64,9 +67,9 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    *
    * Compare to http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#anchor5
    */
-  protected function pushRequest($hub, $topic, $mode) {
+  protected function pushRequest($hub, $topic, $feed_nid, $mode) {
     $values = array(
-      'hub.callback' => url('feeds/pubsubhubbub/notify/'. $this->id, array('absolute' => TRUE)),
+      'hub.callback' => url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $feed_nid, array('absolute' => TRUE)),
       'hub.mode' => $mode,
       'hub.topic' => $topic,
       'hub.verify' => 'sync',
@@ -75,14 +78,14 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
       'hub.verify_token' => drupal_get_token(),
     );
     // Cache request for verification.
-    $push_request = array(
-      'hub' => $hub,
+    $cached_request = array(
       'topic' => $topic,
+      'feed_nid' => $feed_nid,
       'mode' => $mode,
       'values' => $values,
     );
-    db_query('DELETE FROM {feeds_push_requests} WHERE hub = "%s" AND topic = "%s" AND mode = "%s"');
-    drupal_write_record('feeds_push_requests', $push_request);
+    db_query('DELETE FROM {feeds_push_requests} WHERE topic = "%s" AND feed_nid = %d AND mode = "%s"', $topic, $feed_nid, $mode);
+    drupal_write_record('feeds_push_requests', $cached_request);
     // Issue subscription request.
     $request = curl_init($hub);
     curl_setopt($request, CURLOPT_POST, TRUE);
@@ -97,13 +100,14 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   /**
    * Verify subscription request.
    */
-  public function pushVerifySubscriptionRequest($request) {
-
-  //    'hub.mode='. $_POST['hub_mode'],
-  //    'hub.topic='. $_POST['hub_topic'],
-  //    'hub.challenge='. $challenge,
-  //    'hub.lease_seconds='. $_POST['hub_lease_seconds'],
-  //    'hub.verify_token='. $_POST['hub_verify_token'],
+  public function pushVerifySubscriptionRequest($request, $feed_nid) {
+    if ($cached_request = db_fetch_array(db_query('SELECT * FROM {feeds_push_requests} WHERE topic = "%s" AND feed_nid = %d AND mode = "%s"', $request['hub.topic'], $feed_nid, $request['hub.mode']))) {
+      $values = unserialize($cached_request['values']);
+      if ($values['hub.verify_token'] == $request['hub.verify_token']) {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   /**
