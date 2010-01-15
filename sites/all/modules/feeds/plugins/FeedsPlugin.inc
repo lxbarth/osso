@@ -72,7 +72,7 @@ abstract class FeedsPlugin extends FeedsConfigurable implements FeedsSourceInter
   /**
    * A source is being saved.
    */
-  public function sourceSave(&$source_config) {}
+  public function sourceSave(FeedsSource $source) {}
 }
 
 /**

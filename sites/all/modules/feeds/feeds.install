@@ -181,6 +181,32 @@ function feeds_schema() {
       'guid' => array(array('guid', 255)),
     ),
   );
+  $schema['feeds_push_requests'] = array(
+    'description' => 'PubsubHubbub subscriber requests.',
+    'fields' => array(
+      'domain' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Domain of the subscriber.',
+      ),
+      'subscriber_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+        'description' => 'ID of the subscriber.',
+      ),
+      'post_fields' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Fields posted.',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('domain', 'subscriber_id'),
+  );
   return $schema;
 }
 
@@ -315,5 +341,40 @@ function feeds_update_6007() {
   );
   db_add_field($ret, 'feeds_node_item', 'hash', $spec);
 
+  return $ret;
+}
+
+/**
+ * Add a table for Pubsub Subscriber.
+ */
+function feeds_update_6008() {
+  $ret = array();
+  $table = array(
+    'description' => 'PubsubHubbub subscriber requests.',
+    'fields' => array(
+      'domain' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Domain of the subscriber.',
+      ),
+      'subscriber_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+        'description' => 'ID of the subscriber.',
+      ),
+      'post_fields' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Fields posted.',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('domain', 'subscriber_id'),
+  );
+  db_create_table($ret, 'feeds_push_requests', $table);
   return $ret;
 }
