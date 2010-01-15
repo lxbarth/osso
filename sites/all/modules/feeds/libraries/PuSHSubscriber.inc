@@ -8,6 +8,9 @@
  *
  * PHP 5.2.x or higher
  * SimpleXML
+ * cURL
+ *
+ * @todo Abstract storage layer.
  */
 
 /**
@@ -56,12 +59,13 @@ class PuSHSubscriber {
       // Fetch document, find rel=hub and rel=self.
       // If present, issue subscription request.
       feeds_include_library('http_request.inc', 'http_request');
-      if (!http_request_use_curl()) {
-        throw new Exception(t('CURL required.'));
-      }
-      $result = http_request_get($url);
-      if ($result->code == 200) {
-        $xml = new SimpleXMLElement($result->data);
+      $request = curl_init($url);
+      curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
+      curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+      $data = curl_exec($request);
+      $data = substr($data, curl_getinfo($request, CURLINFO_HEADER_SIZE));
+      if (curl_getinfo($request, CURLINFO_HTTP_CODE) == 200) {
+        $xml = new SimpleXMLElement($data);
         $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
         $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
         $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
@@ -69,6 +73,7 @@ class PuSHSubscriber {
           $this->request($hub, $self, 'subscribe');
         }
       }
+      curl_close($request);
     }
   }
 

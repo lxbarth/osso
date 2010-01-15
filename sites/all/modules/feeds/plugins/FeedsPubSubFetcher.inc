@@ -44,7 +44,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
 }
 
 /**
- * Return a PubSubHubbub subscriber.
+ * Create a PubSubHubbub subscriber.
  */
 function feeds_push_subscriber($id, $subscriber_id) {
   feeds_include_library('PushSubscriber.inc', 'PushSubscriber');
