@@ -198,6 +198,13 @@ function feeds_schema() {
         'unsigned' => TRUE,
         'description' => 'ID of the subscriber.',
       ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'Created timestamp.',
+      ),
       'post_fields' => array(
         'type' => 'text',
         'not null' => FALSE,
@@ -365,6 +372,13 @@ function feeds_update_6008() {
         'default' => 0,
         'unsigned' => TRUE,
         'description' => 'ID of the subscriber.',
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'Created timestamp.',
       ),
       'post_fields' => array(
         'type' => 'text',

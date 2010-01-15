@@ -63,7 +63,6 @@ class PuSHSubscriber {
       curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
       curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
       $data = curl_exec($request);
-      $data = substr($data, curl_getinfo($request, CURLINFO_HEADER_SIZE));
       if (curl_getinfo($request, CURLINFO_HTTP_CODE) == 200) {
         $xml = new SimpleXMLElement($data);
         $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
@@ -88,16 +87,18 @@ class PuSHSubscriber {
    *   'subscribe' or 'unsubscribe'.
    *
    * Compare to http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#anchor5
+   *
+   * @todo don't use url()
    */
   protected function request($hub, $topic, $mode) {
     $post_fields = array(
-      'hub.callback' => url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $this->subscriber_id, array('absolute' => TRUE)),
+      'hub.callback' => url('feeds/pubsubhubbub/notify/'. $this->domain .'/'. $this->subscriber_id, array('absolute' => TRUE)),
       'hub.mode' => $mode,
       'hub.topic' => $topic,
       'hub.verify' => 'sync',
       'hub.lease_seconds' => '', // Permanent subscription.
       'hub.secret' => '', // @todo
-      'hub.verify_token' => drupal_get_token(),
+      'hub.verify_token' => md5(session_id() . rand()),
     );
     $this->saveRequest($post_fields);
     // Issue subscription request.
@@ -115,12 +116,16 @@ class PuSHSubscriber {
    * Verify subscription request.
    */
   public function verifySubscriptionRequest($verify_fields) {
-    if ($sent_fields = $this->loadRequest()) {
-      if ($sent_fields['hub.verify_token'] == $verify_fields['hub.verify_token']) {
-        return TRUE;
+    if ($request = $this->loadRequest()) {
+      if ($verify_fields['hub_verify_token'] == $request['post_fields']['hub.verify_token']) {
+        $this->deleteRequest();
+        header('HTTP/1.0 200 "Found"', null, 200);
+        print $verify_fields['hub_challenge'];
+        exit();
       }
     }
-    return FALSE;
+    header('HTTP/1.0 404 "Not Found"', null, 404);
+    exit();
   }
 
   /**
@@ -135,6 +140,7 @@ class PuSHSubscriber {
       'topic' => $values['hub.topic'],
       'mode' => $values['hub.mode'],
       'post_fields' => $post_fields,
+      'timestamp' => time(),
     );
     $this->deleteRequest();
     drupal_write_record('feeds_push_requests', $save);
@@ -148,6 +154,7 @@ class PuSHSubscriber {
     if ($request = db_fetch_array(db_query("SELECT * FROM {feeds_push_requests} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id))) {
       $request['post_fields'] = unserialize($request['post_fields']);
     }
+    return $request;
   }
 
   /**
