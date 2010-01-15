@@ -143,10 +143,23 @@ function feeds_delete_tab_form_submit($form, &$form_state) {
  */
 function feeds_push_receive($importer, $feed_nid = 0) {
   if ($importer->fetcher instanceof FeedsPubSubFetcher) {
-    feeds_source($importer->id, $feed_nid)->import();
+    // A subscription verification has been sent, verify and confirm.
+    if ($_GET['hub.challenge']) {
+      if ($importer->fetcher->pushVerifySubscriptionRequest($_GET)) {
+        return '';
+      }
+      else {
+
+      }
+    }
+    // No subscription notification has ben sent, we are being notified.
+    // @todo: verify notification.
+    else {
+      feeds_source($importer->id, $feed_nid)->import();
+    }
+    // This will return an empty page with response code 200, indicating to Hub
+    // that notifcation has been received successfully.
+    // http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#contentdistribution
+    return '';
   }
-  // This will return an empty page with response code 200, indicating to Hub
-  // that notifcation has been received successfully.
-  // http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#contentdistribution
-  return '';
 }

@@ -33,3 +33,26 @@ function push_hub_menu() {
 function push_hub_notify($topic, $changed) {
 
 }
+
+/**
+ * Save a notification subscription.
+ *
+ * @param $suscriber
+ *   A callback URL of a subscriber.
+ * @param $topic
+ *   The topic of which changes a subscriber would like to notified of.
+ */
+function push_hub_save_subscription($subscriber, $topic) {
+
+}
+
+/**
+ * Delete subscription.
+ * @param $suscriber
+ *   A callback URL of a subscriber.
+ * @param $topic
+ *   The topic of which changes a subscriber would like to notified of.
+ */
+function push_hub_delete_subscription($subscriber, $topic) {
+
+}

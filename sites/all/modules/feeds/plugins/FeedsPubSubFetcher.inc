@@ -74,6 +74,16 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
       'hub.secret' => '', // @todo
       'hub.verify_token' => drupal_get_token(),
     );
+    // Cache request for verification.
+    $push_request = array(
+      'hub' => $hub,
+      'topic' => $topic,
+      'mode' => $mode,
+      'values' => $values,
+    );
+    db_query('DELETE FROM {feeds_push_requests} WHERE hub = "%s" AND topic = "%s" AND mode = "%s"');
+    drupal_write_record('feeds_push_requests', $push_request);
+    // Issue subscription request.
     $request = curl_init($hub);
     curl_setopt($request, CURLOPT_POST, TRUE);
     curl_setopt($request, CURLOPT_POSTFIELDS, $values);
@@ -82,6 +92,18 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
       drupal_set_message(t('Error subscribing to PubsubHubbub hub.'), 'error');
     }
     curl_close($request);
+  }
+
+  /**
+   * Verify subscription request.
+   */
+  public function pushVerifySubscriptionRequest($request) {
+
+  //    'hub.mode='. $_POST['hub_mode'],
+  //    'hub.topic='. $_POST['hub_topic'],
+  //    'hub.challenge='. $challenge,
+  //    'hub.lease_seconds='. $_POST['hub_lease_seconds'],
+  //    'hub.verify_token='. $_POST['hub_verify_token'],
   }
 
   /**
