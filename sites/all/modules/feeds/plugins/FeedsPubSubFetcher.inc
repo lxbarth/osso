@@ -22,92 +22,17 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    * Override sourceSave() - subscribe to hub.
    */
   public function sourceSave(FeedsSource $source) {
-    $this->pushSubscribe($source);
-  }
-
-  /**
-   * Subscribe to a PubSubHubbub hub by URL of feed.
-   *
-   * @param FeedsSource $source
-   *   The source to subscribe to.
-   *
-   * @todo RSS support.
-   */
-  protected function pushSubscribe(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    if (valid_url($source_config['source'])) {
-      // Fetch document, find rel=hub and rel=self.
-      // If present, issue subscription request.
-      feeds_include_library('http_request.inc', 'http_request');
-      if (!http_request_use_curl()) {
-        throw new Exception(t('CURL required.'));
-      }
-      $result = http_request_get($source_config['source']);
-      if ($result->code == 200) {
-        $xml = new SimpleXMLElement($result->data);
-        $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-        $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
-        $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
-        if ($hub && $self) {
-          $this->pushRequest($hub, $self, $source->feed_nid, 'subscribe');
-        }
-      }
-    }
+    feeds_push_subscriber($this->id, $source->feed_nid)->subscribe($source_config['source']);
   }
 
   /**
-   * Issue a subscribe or unsubcribe request to a PubsubHubbub hub.
+   * Verify a PubSubHubbub subscription request.
    *
-   * @param $hub
-   *   The URL of the hub's subscription endpoint.
-   * @param $topic
-   *   The topic URL of the feed to subscribe to.
-   * @param $mode
-   *   'subscribe' or 'unsubscribe'.
-   *
-   * Compare to http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#anchor5
+   * @param unknown_type $verify_fields
    */
-  protected function pushRequest($hub, $topic, $feed_nid, $mode) {
-    $values = array(
-      'hub.callback' => url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $feed_nid, array('absolute' => TRUE)),
-      'hub.mode' => $mode,
-      'hub.topic' => $topic,
-      'hub.verify' => 'sync',
-      'hub.lease_seconds' => '', // Permanent subscription.
-      'hub.secret' => '', // @todo
-      'hub.verify_token' => drupal_get_token(),
-    );
-    // Cache request for verification.
-    $cached_request = array(
-      'topic' => $topic,
-      'feed_nid' => $feed_nid,
-      'mode' => $mode,
-      'values' => $values,
-    );
-    db_query('DELETE FROM {feeds_push_requests} WHERE topic = "%s" AND feed_nid = %d AND mode = "%s"', $topic, $feed_nid, $mode);
-    drupal_write_record('feeds_push_requests', $cached_request);
-    // Issue subscription request.
-    $request = curl_init($hub);
-    curl_setopt($request, CURLOPT_POST, TRUE);
-    curl_setopt($request, CURLOPT_POSTFIELDS, $values);
-    curl_exec($request);
-    if (!in_array(curl_getinfo($request), array(202, 204))) {
-      drupal_set_message(t('Error subscribing to PubsubHubbub hub.'), 'error');
-    }
-    curl_close($request);
-  }
-
-  /**
-   * Verify subscription request.
-   */
-  public function pushVerifySubscriptionRequest($request, $feed_nid) {
-    if ($cached_request = db_fetch_array(db_query('SELECT * FROM {feeds_push_requests} WHERE topic = "%s" AND feed_nid = %d AND mode = "%s"', $request['hub.topic'], $feed_nid, $request['hub.mode']))) {
-      $values = unserialize($cached_request['values']);
-      if ($values['hub.verify_token'] == $request['hub.verify_token']) {
-        return TRUE;
-      }
-    }
-    return FALSE;
+  public function pushVerifySubscriptionRequest($verify_fields, $feed_nid) {
+    feeds_push_subscriber($this->id, $feed_nid)->verifySubscriptionRequest($verify_fields);
   }
 
   /**
@@ -116,4 +41,12 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   protected function pushReceive() {
     // error_log(print_r($_POST, true));
   }
+}
+
+/**
+ * Return a PubSubHubbub subscriber.
+ */
+function feeds_push_subscriber($id, $subscriber_id) {
+  feeds_include_library('PushSubscriber.inc', 'PushSubscriber');
+  return PushSubscriber::instance($id, $subscriber_id);
 }

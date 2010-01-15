@@ -1,8 +1,9 @@
-// $Id: CHANGELOG.txt,v 1.30 2010/01/12 16:28:02 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.31 2010/01/15 19:44:53 alexb Exp $
 
 Feeds 6.x 1.0 XXXXXXX, 20XX-XX-XX
 ---------------------------------
 
+- #623448: David Goode, alex_b, et al.: Date mapper.
 - #624088: mongolito404, David Goode, alex_b: Imagefield/filefield mapper,
   formalize feed elements.
 - #584034: aaroncouch, mongolito404: Views integration.

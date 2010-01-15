@@ -1,5 +1,5 @@
 <?php
-// $Id: common_syndication_parser.inc,v 1.4 2009/12/21 00:16:22 alexb Exp $
+// $Id: common_syndication_parser.inc,v 1.5 2010/01/15 19:44:54 alexb Exp $
 
 /**
  * @file
@@ -439,6 +439,9 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
  *  The timestamp of the string or the current time if can't be parsed
  */
 function _parser_common_syndication_parse_date($date_str) {
+  // PHP < 5.3 doesn't like the GMT- notation for parsing timezones.
+  $date_str = str_replace("GMT-", "-", $date_str);
+  $date_str = str_replace("GMT+", "+", $date_str);
   $parsed_date = strtotime($date_str);
   if ($parsed_date === FALSE || $parsed_date == -1) {
     $parsed_date = _parser_common_syndication_parse_w3cdtf($date_str);
