@@ -44,10 +44,8 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
     if ($result->code == 200) {
       $xml = new SimpleXMLElement($result->data);
       $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-      $hub = $xml->xpath("/atom:feed/atom:link[attribute::rel='hub']");
-      $self = $xml->xpath("/atom:feed/atom:link[attribute::rel='self']");
-      dsm($hub);
-      dsm($self);
+      $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
+      $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
       if ($hub && $self) {
         $this->pushRequest($hub, $self, 'subscribe');
       }

@@ -10,8 +10,7 @@ class SyncUserParser extends FeedsParser {
   public function parse(FeedsImportBatch $batch, FeedsSource $source) {
     $xml = new SimpleXMLElement($batch->getRaw());
     $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-    $xml->registerXPathNamespace('foaf', 'http://xmlns.com/foaf/0.1/');
-    $batch->setTitle((string) current($xml->xpath('/atom:feed/atom:title')));
+    $batch->setTitle((string) $xml->title);
     $batch->setItems($xml->xpath('//atom:entry'));
   }
 

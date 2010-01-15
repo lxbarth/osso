@@ -14,6 +14,8 @@ function push_hub_menu() {
   $items['pubsubhubbub/endpoint'] = array(
    'page callback' => 'push_hub_endpoint',
    'page arguments' => array(3, 4),
+   'access callback' => 'user_access',
+   'access arguments' => array('access content'), // @todo Specific permission
    'file' => 'push_hub.pages.inc',
    'type' => MENU_CALLBACK,
   );

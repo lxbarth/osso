@@ -68,7 +68,7 @@ function template_preprocess_push_user_feed(&$vars) {
   $vars['feed_url'] = url('user/'. $account->uid .'/feed', array('absolute' => TRUE));
   $vars['feed_title'] = t('Account information for @user', array('@user' => $account->name));
   $vars['updated'] = gmdate('Y-m-d\TH:i:s\Z'); // For lack of real updated date.
-  $vars['site_name'] = variable_get('site_name');
+  $vars['site_name'] = variable_get('site_name', 'Drupal');
   $vars['site_url'] = url('', array('absolute' => TRUE));
   $vars['user_name'] = check_plain($account->name);
   $vars['user_url'] = url('user/'. $account->uid, array('absolute' => TRUE));
