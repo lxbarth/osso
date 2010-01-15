@@ -106,7 +106,7 @@ class PuSHSubscriber {
     curl_setopt($request, CURLOPT_POST, TRUE);
     curl_setopt($request, CURLOPT_POSTFIELDS, $post_fields);
     curl_exec($request);
-    if (!in_array(curl_getinfo($request), array(202, 204))) {
+    if (!in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
       drupal_set_message(t('Error subscribing to PubsubHubbub hub.'), 'error');
     }
     curl_close($request);
