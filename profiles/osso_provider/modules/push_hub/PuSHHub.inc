@@ -36,6 +36,7 @@ class PuSHHub {
    * Notify a specific subscriber of a change in a topic.
    *
    * @todo: Fix POST content type.
+   * @todo: Support a light ping.
    */
   public function notifySubscriber($subscriber, $topic, $changed) {
     $request = curl_init($subscriber);
