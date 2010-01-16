@@ -53,27 +53,27 @@ class PuSHSubscriber {
    *
    * @param $url
    *   The URL of the feed to subscribe to.
+   * @param $callback
+   *   The full URL that hub should invoke when feed changes.
    */
-  public function subscribe($url) {
-    if (valid_url($url)) {
-      // Fetch document, find rel=hub and rel=self.
-      // If present, issue subscription request.
-      feeds_include_library('http_request.inc', 'http_request');
-      $request = curl_init($url);
-      curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
-      curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-      $data = curl_exec($request);
-      if (curl_getinfo($request, CURLINFO_HTTP_CODE) == 200) {
-        $xml = new SimpleXMLElement($data);
-        $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-        $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
-        $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
-        if ($hub && $self) {
-          $this->request($hub, $self, 'subscribe');
-        }
+  public function subscribe($url, $callback_url) {
+    // Fetch document, find rel=hub and rel=self.
+    // If present, issue subscription request.
+    feeds_include_library('http_request.inc', 'http_request');
+    $request = curl_init($url);
+    curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
+    curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+    $data = curl_exec($request);
+    if (curl_getinfo($request, CURLINFO_HTTP_CODE) == 200) {
+      $xml = new SimpleXMLElement($data);
+      $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
+      $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
+      $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
+      if ($hub && $self) {
+        $this->request($hub, $self, 'subscribe', $callback_url);
       }
-      curl_close($request);
     }
+    curl_close($request);
   }
 
   /**
@@ -85,14 +85,16 @@ class PuSHSubscriber {
    *   The topic URL of the feed to subscribe to.
    * @param $mode
    *   'subscribe' or 'unsubscribe'.
+   * @param $callback_url
+   *   The subscriber's notifications callback URL.
    *
    * Compare to http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.2.html#anchor5
    *
    * @todo don't use url()
    */
-  protected function request($hub, $topic, $mode) {
+  protected function request($hub, $topic, $mode, $callback_url) {
     $post_fields = array(
-      'hub.callback' => url('feeds/pubsubhubbub/notify/'. $this->domain .'/'. $this->subscriber_id, array('absolute' => TRUE)),
+      'hub.callback' => $callback_url,
       'hub.mode' => $mode,
       'hub.topic' => $topic,
       'hub.verify' => 'sync',
@@ -100,13 +102,16 @@ class PuSHSubscriber {
       'hub.secret' => '', // @todo
       'hub.verify_token' => md5(session_id() . rand()),
     );
-    $this->saveRequest($post_fields);
+    $this->saveSubscription($hub, $topic, $mode, $post_fields);
     // Issue subscription request.
     $request = curl_init($hub);
     curl_setopt($request, CURLOPT_POST, TRUE);
     curl_setopt($request, CURLOPT_POSTFIELDS, $post_fields);
     curl_exec($request);
-    if (!in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
+    if (in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
+      $this->saveSubscription($hub, $topic, '');
+    }
+    else {
       drupal_set_message(t('Error subscribing to PubsubHubbub hub.'), 'error');
     }
     curl_close($request);
@@ -114,11 +119,13 @@ class PuSHSubscriber {
 
   /**
    * Verify subscription request.
+   *
+   * @todo: break out subscription handling in its own abstract class with a
+   * Drupal implementer.
    */
   public function verifySubscriptionRequest($verify_fields) {
-    if ($request = $this->loadRequest()) {
-      if ($verify_fields['hub_verify_token'] == $request['post_fields']['hub.verify_token']) {
-        $this->deleteRequest();
+    if ($subscription = $this->loadSubscription()) {
+      if ($verify_fields['hub_verify_token'] == $subscription['post_fields']['hub.verify_token']) {
         header('HTTP/1.0 200 "Found"', null, 200);
         print $verify_fields['hub_challenge'];
         exit();
@@ -129,39 +136,40 @@ class PuSHSubscriber {
   }
 
   /**
-   * Save a subscription request. This is Drupal-dependent. Override for other
+   * Save a subscription. This is Drupal-dependent. Override for other
    * storage backends.
    */
-  protected function saveRequest($post_fields) {
+  protected function saveSubscription($hub, $topic, $mode, $post_fields = array()) {
     // Cache request for verification.
     $save = array(
       'domain' => $this->domain,
       'subscriber_id' => $this->subscriber_id,
-      'topic' => $values['hub.topic'],
-      'mode' => $values['hub.mode'],
+      'hub' => $hub,
+      'topic' => $topic,
+      'mode' => $mode,
       'post_fields' => $post_fields,
       'timestamp' => time(),
     );
-    $this->deleteRequest();
-    drupal_write_record('feeds_push_requests', $save);
+    $this->deleteSubscription();
+    drupal_write_record('feeds_push_subscriptions', $save);
   }
 
   /**
-   * Load a subscription request. This is Drupal-dependent. Override for other
+   * Load a subscription. This is Drupal-dependent. Override for other
    * storage backends.
    */
-  protected function loadRequest() {
-    if ($request = db_fetch_array(db_query("SELECT * FROM {feeds_push_requests} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id))) {
+  protected function loadSubscription() {
+    if ($request = db_fetch_array(db_query("SELECT * FROM {feeds_push_subscriptions} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id))) {
       $request['post_fields'] = unserialize($request['post_fields']);
     }
     return $request;
   }
 
   /**
-   * Delete a subscription request. This is Drupal-dependent. Override for other
+   * Delete a subscription. This is Drupal-dependent. Override for other
    * storage backends.
    */
-  protected function deleteRequest() {
-    db_query("DELETE FROM {feeds_push_requests} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id);
+  protected function deleteSubscription() {
+    db_query("DELETE FROM {feeds_push_subscriptions} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id);
   }
 }

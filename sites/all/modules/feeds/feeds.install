@@ -181,8 +181,8 @@ function feeds_schema() {
       'guid' => array(array('guid', 255)),
     ),
   );
-  $schema['feeds_push_requests'] = array(
-    'description' => 'PubsubHubbub subscriber requests.',
+  $schema['feeds_push_subscriptions'] = array(
+    'description' => 'PubsubHubbub subscriptions.',
     'fields' => array(
       'domain' => array(
         'type' => 'varchar',
@@ -205,6 +205,23 @@ function feeds_schema() {
         'not null' => TRUE,
         'description' => 'Created timestamp.',
       ),
+      'hub' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The URL of the hub endpoint of this subscription.'),
+      ),
+      'topic' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The topic URL (feed URL) of this subscription.'),
+      ),
+      'mode' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Subscribe or unsubscribe. Empty if subscribed.',
+      ),
       'post_fields' => array(
         'type' => 'text',
         'not null' => FALSE,
@@ -213,6 +230,9 @@ function feeds_schema() {
       ),
     ),
     'primary key' => array('domain', 'subscriber_id'),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+    ),
   );
   return $schema;
 }
@@ -357,7 +377,7 @@ function feeds_update_6007() {
 function feeds_update_6008() {
   $ret = array();
   $table = array(
-    'description' => 'PubsubHubbub subscriber requests.',
+    'description' => 'PubsubHubbub subscriptions.',
     'fields' => array(
       'domain' => array(
         'type' => 'varchar',
@@ -380,6 +400,23 @@ function feeds_update_6008() {
         'not null' => TRUE,
         'description' => 'Created timestamp.',
       ),
+      'hub' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The URL of the hub endpoint of this subscription.'),
+      ),
+      'topic' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The topic URL (feed URL) of this subscription.'),
+      ),
+      'mode' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Subscribe or unsubscribe. Empty if subscribed.',
+      ),
       'post_fields' => array(
         'type' => 'text',
         'not null' => FALSE,
@@ -388,7 +425,10 @@ function feeds_update_6008() {
       ),
     ),
     'primary key' => array('domain', 'subscriber_id'),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+    ),
   );
-  db_create_table($ret, 'feeds_push_requests', $table);
+  db_create_table($ret, 'feeds_push_subscriptions', $table);
   return $ret;
 }
