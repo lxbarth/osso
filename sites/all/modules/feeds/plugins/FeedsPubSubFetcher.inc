@@ -12,7 +12,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
     // Handle fat ping if present, otherwise pass up to HTTP fetcher.
-    if ($raw = $this->pushReceive()) {
+    if ($raw = feeds_push_subscriber($this->id, $source->feed_nid)->receive($_POST)) {
       return new FeedsImportBatch($source_config['source'], NULL, $raw);
     }
     return new FeedsImportBatch($source_config['source']);
@@ -31,13 +31,6 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    */
   public function pushVerifySubscriptionRequest($verify_fields, $feed_nid) {
     feeds_push_subscriber($this->id, $feed_nid)->verifySubscriptionRequest($verify_fields);
-  }
-
-  /**
-   * Receive a PubSubHubbub notification.
-   */
-  protected function pushReceive() {
-    // error_log(print_r($_POST, true));
   }
 }
 

@@ -19,7 +19,7 @@ class PuSHHub {
   }
 
   /**
-   * Notify subscribers of a change in topic.
+   * Notify subscribers of a change in a topic.
    *
    * @param $topic
    *   URL of the topic that changed.
@@ -27,6 +27,26 @@ class PuSHHub {
    *   The feed that contains the changed elements.
    */
   public function notify($topic, $changed) {
+    foreach ($this->subscribers($topic) as $subscriber) {
+      $this->notifySubscriber($subscriber, $topic, $changed);
+    }
+  }
+
+  /**
+   * Notify a specific subscriber of a change in a topic.
+   */
+  public function notifySubscriber($subscriber, $topic, $changed) {
+error_log(print_r(func_get_args(), true));
+    $request = curl_init($subscriber);
+    curl_setopt($request, CURLOPT_HEADER, TRUE);
+    curl_setopt($request, CURLOPT_HTTPHEADER, "Content-Type: 'application/atom+xml'");
+    curl_setopt($request, CURLOPT_POST, TRUE);
+    curl_setopt($request, CURLOPT_POSTFIELDS, $changed);
+    curl_exec($request);
+    if (!in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
+      error_log('Error notifying '. $subscriber .' of change in '. $topic);
+    }
+    curl_close($request);
   }
 
   /**
@@ -77,7 +97,7 @@ class PuSHHub {
    * @param $subscription
    *   A subscription array with at least a 'topic' and a 'subscriber' key.
    */
-  function saveSubscription($subscription) {
+  protected function saveSubscription($subscription) {
     if (SAVED_UPDATED != drupal_write_record('push_hub_subscriptions', $subscription, array('topic', 'subscriber'))) {
       drupal_write_record('push_hub_subscriptions', $subscription);
     }
@@ -89,7 +109,19 @@ class PuSHHub {
    * @param $subscription
    *   A subscription array with a 'topic' and a 'subscriber' key.
    */
-  function deleteSubscription($subscription) {
+  protected function deleteSubscription($subscription) {
     db_query("DELETE FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $subscription['topic'], $subscription['subscriber']);
+  }
+
+  /**
+   * Return all subscribers for a given topic URL as an array of subscriber URLs.
+   */
+  protected function subscribers($topic) {
+    $subscribers = array();
+    $result = db_query("SELECT subscriber FROM {push_hub_subscriptions} WHERE topic = '%s'", $topic);
+    while ($row = db_fetch_object($result)) {
+      $subscribers[] = $subscriber;
+    }
+    return $subscribers;
   }
 }

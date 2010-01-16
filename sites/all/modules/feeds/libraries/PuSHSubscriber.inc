@@ -136,6 +136,13 @@ class PuSHSubscriber {
   }
 
   /**
+   * Receive a notification.
+   */
+  public function pushReceive($post) {
+error_log("Received !". print_r($post, true));
+  }
+
+  /**
    * Save a subscription. This is Drupal-dependent. Override for other
    * storage backends.
    */
