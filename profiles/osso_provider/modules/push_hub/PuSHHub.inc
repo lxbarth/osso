@@ -75,7 +75,7 @@ class PuSHHub {
    * Save a notification subscription.
    *
    * @param $subscription
-   *   A subscription array.
+   *   A subscription array with at least a 'topic' and a 'subscriber' key.
    */
   function saveSubscription($subscription) {
     if (SAVED_UPDATED != drupal_write_record('push_hub_subscriptions', $subscription, array('topic', 'subscriber'))) {
@@ -85,11 +85,11 @@ class PuSHHub {
 
   /**
    * Delete subscription.
-   * @param $topic
-   *   The topic of which changes a subscriber would like to notified of.
-   * @param $suscriber
-   *   A callback URL of a subscriber.
+   *
+   * @param $subscription
+   *   A subscription array with a 'topic' and a 'subscriber' key.
    */
-  function deleteSubscription($topic, $subscriber) {
+  function deleteSubscription($subscription) {
+    db_query("DELETE FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $subscription['topic'], $subscription['subscriber']);
   }
 }
