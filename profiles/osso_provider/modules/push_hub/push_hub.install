@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * @file
+ * Schema definitions install/update/uninstall hooks.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function push_hub_schema() {
+  $schema = array();
+  $schema['push_hub_subscriptions'] = array(
+    'description' => 'PubsubHubbub subscriptions.',
+    'fields' => array(
+      'domain' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Domain of the subscriber.',
+      ),
+      'subscriber_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+        'description' => 'ID of the subscriber.',
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'Created timestamp.',
+      ),
+      'hub' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The URL of the hub endpoint of this subscription.'),
+      ),
+      'topic' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The topic URL (feed URL) of this subscription.'),
+      ),
+      'mode' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Subscribe or unsubscribe. Empty if subscribed.',
+      ),
+      'post_fields' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Fields posted.',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('domain', 'subscriber_id'),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function push_hub_install() {
+  // Create tables.
+  drupal_install_schema('push_hub');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function push_hub_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('push_hub');
+}
+
+/**
+ * Add a table for Pubsub subscriptions.
+ */
+function push_hub_update_6001() {
+  $ret = array();
+  $table = array(
+  );
+  db_create_table($ret, 'push_hub_subscriptions', $table);
+  return $ret;
+}

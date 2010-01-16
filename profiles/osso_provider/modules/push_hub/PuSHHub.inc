@@ -63,7 +63,7 @@ class PuSHHub {
    */
   public function subscribe($post) {
     if (isset($post['hub_topic']) && isset($post['hub_callback']) && $this->verify($post)) {
-      $this->saveSubscription($post['hub_topic'], $post['hub_callback']);
+      $this->saveSubscription(array('topic' => $post['hub_topic'], 'subscriber' => $post['hub_callback'], 'created' => time()));
       header('HTTP/1.0 204 "No Content"', null, 204);
       exit();
     }
@@ -74,13 +74,13 @@ class PuSHHub {
   /**
    * Save a notification subscription.
    *
-   * @param $topic
-   *   The topic of which changes a subscriber would like to notified of.
-   * @param $suscriber
-   *   A callback URL of a subscriber.
+   * @param $subscription
+   *   A subscription array.
    */
-  function saveSubscription($topic, $subscriber) {
-error_log($topic. ' '. $subscriber);
+  function saveSubscription($subscription) {
+    if (SAVED_UPDATED != drupal_write_record('push_hub_subscriptions', $subscription, array('topic', 'subscriber'))) {
+      drupal_write_record('push_hub_subscriptions', $subscription);
+    }
   }
 
   /**
