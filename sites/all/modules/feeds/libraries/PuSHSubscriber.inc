@@ -53,7 +53,7 @@ class PuSHSubscriber {
    *
    * @param $url
    *   The URL of the feed to subscribe to.
-   * @param $callback
+   * @param $callback_url
    *   The full URL that hub should invoke when feed changes.
    */
   public function subscribe($url, $callback_url) {

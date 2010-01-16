@@ -23,7 +23,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    */
   public function sourceSave(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    feeds_push_subscriber($this->id, $source->feed_nid)->subscribe($source_config['source'], url('feeds/pubsubhubbub/notify/'. $this->domain .'/'. $this->subscriber_id, array('absolute' => TRUE)));
+    feeds_push_subscriber($this->id, $source->feed_nid)->subscribe($source_config['source'], url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $source->feed_nid, array('absolute' => TRUE)));
   }
 
   /**
