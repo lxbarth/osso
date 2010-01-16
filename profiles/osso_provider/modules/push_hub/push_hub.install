@@ -13,20 +13,6 @@ function push_hub_schema() {
   $schema['push_hub_subscriptions'] = array(
     'description' => 'PubsubHubbub subscriptions.',
     'fields' => array(
-      'domain' => array(
-        'type' => 'varchar',
-        'length' => 128,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Domain of the subscriber.',
-      ),
-      'subscriber_id' => array(
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'unsigned' => TRUE,
-        'description' => 'ID of the subscriber.',
-      ),
       'timestamp' => array(
         'type' => 'int',
         'unsigned' => FALSE,
@@ -34,33 +20,21 @@ function push_hub_schema() {
         'not null' => TRUE,
         'description' => 'Created timestamp.',
       ),
-      'hub' => array(
-        'type' => 'text',
-        'not null' => TRUE,
-        'description' => t('The URL of the hub endpoint of this subscription.'),
-      ),
       'topic' => array(
         'type' => 'text',
         'not null' => TRUE,
         'description' => t('The topic URL (feed URL) of this subscription.'),
       ),
-      'mode' => array(
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Subscribe or unsubscribe. Empty if subscribed.',
-      ),
-      'post_fields' => array(
+      'subscriber' => array(
         'type' => 'text',
-        'not null' => FALSE,
-        'description' => 'Fields posted.',
-        'serialize' => TRUE,
+        'not null' => TRUE,
+        'description' => t('The subscriber\'s notification URL.'),
       ),
     ),
-    'primary key' => array('domain', 'subscriber_id'),
     'indexes' => array(
       'timestamp' => array('timestamp'),
+      'topic' => array(array('topic', 255)),
+      'topic_subscriber' => array(array('topic', 255), array('subscriber', 255)),
     ),
   );
   return $schema;
@@ -88,6 +62,31 @@ function push_hub_uninstall() {
 function push_hub_update_6001() {
   $ret = array();
   $table = array(
+    'description' => 'PubsubHubbub subscriptions.',
+    'fields' => array(
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'Created timestamp.',
+      ),
+      'topic' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The topic URL (feed URL) of this subscription.'),
+      ),
+      'subscriber' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The subscriber\'s notification URL.'),
+      ),
+    ),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+      'topic' => array(array('topic', 255)),
+      'topic_subscriber' => array(array('topic', 255), array('subscriber', 255)),
+    ),
   );
   db_create_table($ret, 'push_hub_subscriptions', $table);
   return $ret;

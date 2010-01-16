@@ -34,16 +34,17 @@ class PuSHHub {
 
   /**
    * Notify a specific subscriber of a change in a topic.
+   *
+   * @todo: Fix POST content type.
    */
   public function notifySubscriber($subscriber, $topic, $changed) {
-error_log(print_r(func_get_args(), true));
     $request = curl_init($subscriber);
-    curl_setopt($request, CURLOPT_HEADER, TRUE);
-    curl_setopt($request, CURLOPT_HTTPHEADER, "Content-Type: 'application/atom+xml'");
+//    curl_setopt($request, CURLOPT_HTTPHEADER, array("Content-Type: application/atom+xml; charset=utf-8"));
     curl_setopt($request, CURLOPT_POST, TRUE);
-    curl_setopt($request, CURLOPT_POSTFIELDS, $changed);
+    curl_setopt($request, CURLOPT_POSTFIELDS, array('changed' => $changed));
     curl_exec($request);
-    if (!in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
+    $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+    if ($code < 200 || $code > 299) {
       error_log('Error notifying '. $subscriber .' of change in '. $topic);
     }
     curl_close($request);
@@ -83,7 +84,7 @@ error_log(print_r(func_get_args(), true));
    */
   public function subscribe($post) {
     if (isset($post['hub_topic']) && isset($post['hub_callback']) && $this->verify($post)) {
-      $this->saveSubscription(array('topic' => $post['hub_topic'], 'subscriber' => $post['hub_callback'], 'created' => time()));
+      $this->saveSubscription(array('topic' => $post['hub_topic'], 'subscriber' => $post['hub_callback'], 'timestamp' => time()));
       header('HTTP/1.0 204 "No Content"', null, 204);
       exit();
     }
@@ -98,9 +99,8 @@ error_log(print_r(func_get_args(), true));
    *   A subscription array with at least a 'topic' and a 'subscriber' key.
    */
   protected function saveSubscription($subscription) {
-    if (SAVED_UPDATED != drupal_write_record('push_hub_subscriptions', $subscription, array('topic', 'subscriber'))) {
-      drupal_write_record('push_hub_subscriptions', $subscription);
-    }
+    $this->deleteSubscription($subscription);
+    drupal_write_record('push_hub_subscriptions', $subscription);
   }
 
   /**
@@ -120,7 +120,7 @@ error_log(print_r(func_get_args(), true));
     $subscribers = array();
     $result = db_query("SELECT subscriber FROM {push_hub_subscriptions} WHERE topic = '%s'", $topic);
     while ($row = db_fetch_object($result)) {
-      $subscribers[] = $subscriber;
+      $subscribers[] = $row->subscriber;
     }
     return $subscribers;
   }

@@ -138,8 +138,13 @@ class PuSHSubscriber {
   /**
    * Receive a notification.
    */
-  public function pushReceive($post) {
-error_log("Received !". print_r($post, true));
+  public function receive($post) {
+    if (is_array($post) && isset($post['changed'])) {
+      return $post['changed'];
+    }
+    elseif (is_string($post)) {
+      return $post;
+    }
   }
 
   /**
