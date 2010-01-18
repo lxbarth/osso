@@ -105,7 +105,7 @@ class PuSHSubscriber {
       'hub.secret' => '', // @todo
       'hub.verify_token' => md5(session_id() . rand()),
     );
-    $this->subscriptions->save($hub, $topic, $mode, $post_fields);
+    $this->subscriptions->save($this->domain, $this->subscriber_id, $hub, $topic, $mode, $post_fields);
     // Issue subscription request.
     $request = curl_init($hub);
     curl_setopt($request, CURLOPT_POST, TRUE);
@@ -127,7 +127,7 @@ class PuSHSubscriber {
    * Drupal implementer.
    */
   public function verifySubscriptionRequest($verify_fields) {
-    if ($subscription = $this->subscription->load()) {
+    if ($subscription = $this->subscription->load($this->domain, $this->subscriber_id)) {
       if ($verify_fields['hub_verify_token'] == $subscription['post_fields']['hub.verify_token']) {
         header('HTTP/1.0 200 "Found"', null, 200);
         print $verify_fields['hub_challenge'];
