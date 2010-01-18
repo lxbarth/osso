@@ -115,12 +115,12 @@ interface PuSHHubSubscriptionsInterface {
   /**
    * Save a subscription.
    */
-  public function save();
+  public function save($topic, $subscriber);
 
   /**
    * Delete a subscription.
    */
-  public function delete();
+  public function delete($topic, $subscriber);
 
   /**
    * Find all subscriber URLs for a given topic URL.
