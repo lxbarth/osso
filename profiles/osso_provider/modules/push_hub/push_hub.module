@@ -6,6 +6,8 @@
  * @todo Support notifications from publishers over HTTP.
  */
 
+include_once('PuSHHub.inc');
+
 /**
  * Implementation of hook_menu().
  */
@@ -26,8 +28,7 @@ function push_hub_menu() {
  * Instantiates a PuSH Hub object.
  */
 function push_hub() {
-  module_load_include('inc', 'push_hub', 'PuSHHub');
-  return PuSHHub::instance();
+  return PuSHHub::instance('PuSHHubSubscription');
 }
 
 /**

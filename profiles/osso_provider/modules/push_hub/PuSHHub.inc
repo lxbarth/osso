@@ -147,7 +147,7 @@ interface PuSHHubSubscriptionInterface {
   /**
    * Constructor.
    */
-  public function __construct($topic, $subscriber, $timestamp);
+  public function __construct($topic, $subscriber);
 
   /**
    * Save a subscription.
