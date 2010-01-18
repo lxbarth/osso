@@ -112,7 +112,7 @@ class PuSHSubscriber {
     curl_setopt($request, CURLOPT_POSTFIELDS, $post_fields);
     curl_exec($request);
     if (in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
-      $this->subscriptions->save($hub, $topic, '');
+      $this->subscriptions->save($this->domain, $this->subscriber_id, $hub, $topic, '');
     }
     else {
       drupal_set_message(t('Error subscribing to PubsubHubbub hub.'), 'error');
@@ -127,7 +127,7 @@ class PuSHSubscriber {
    * Drupal implementer.
    */
   public function verifySubscriptionRequest($verify_fields) {
-    if ($subscription = $this->subscription->load($this->domain, $this->subscriber_id)) {
+    if ($subscription = $this->subscriptions->load($this->domain, $this->subscriber_id)) {
       if ($verify_fields['hub_verify_token'] == $subscription['post_fields']['hub.verify_token']) {
         header('HTTP/1.0 200 "Found"', null, 200);
         print $verify_fields['hub_challenge'];
