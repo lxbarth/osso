@@ -3,14 +3,6 @@
 /**
  * @file
  * Pubsubhubbub subscriber library.
- *
- * Requirements:
- *
- * PHP 5.2.x or higher
- * SimpleXML
- * cURL
- *
- * @todo Abstract storage layer.
  */
 
 /**

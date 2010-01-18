@@ -2,9 +2,12 @@
 
 /**
  * @file
- * A PubsubHubbub Hub.
+ * PubsubHubbub library.
  */
 
+/**
+ * A PubsubHubbub Hub.
+ */
 class PuSHHub {
   // Class to use for storing subscriptions.
   protected $subscriptions;
@@ -108,7 +111,8 @@ class PuSHHub {
 }
 
 /**
- * Describes a PuSHHubSubscription. Implement to provide persistent storage.
+ * Describes the storage for PuSHHub subscriptions. Implement to provide a
+ * storage class.
  */
 interface PuSHHubSubscriptionsInterface {
 
