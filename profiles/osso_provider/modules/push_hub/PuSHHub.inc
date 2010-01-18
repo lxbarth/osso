@@ -6,16 +6,29 @@
  */
 
 class PuSHHub {
+  // Class to use for creating a subscriber object.
+  protected $subscriber_class;
 
   /**
    * Singleton.
    */
-  public function instance() {
+  public function instance($subscriber_class) {
     static $hub;
     if (empty($hub)) {
-      $hub = new PuSHHub();
+      $hub = new PuSHHub($subscriber_class);
     }
     return $hub;
+  }
+
+  /**
+   * Constructor.
+   *
+   * @param $subscriber_class
+   *   String that identifies a subscriber class. Must implement
+   *   PuSHHubSubscriptionInterface.
+   */
+  protected function __construct($subscriber_class) {
+    $this->subsciber_class = $subscriber_class;
   }
 
   /**
@@ -125,4 +138,32 @@ class PuSHHub {
     }
     return $subscribers;
   }
+}
+
+/**
+ * Describes a PuSHHubSubscription. Implement to provide persistent storage.
+ */
+interface PuSHHubSubscriptionInterface {
+  /**
+   * Constructor.
+   */
+  public function __construct($topic, $subscriber, $timestamp);
+
+  /**
+   * Save a subscription.
+   */
+  public function save();
+
+  /**
+   * Delete a subscription.
+   */
+  public function delete();
+
+  /**
+   * Find all subscriber URLs for a given topic URL.
+   *
+   * @return
+   *   An array of subscriber URLs.
+   */
+  public static function all($topic);
 }

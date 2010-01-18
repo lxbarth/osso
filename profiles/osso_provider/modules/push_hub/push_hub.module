@@ -29,3 +29,54 @@ function push_hub() {
   module_load_include('inc', 'push_hub', 'PuSHHub');
   return PuSHHub::instance();
 }
+
+/**
+ * A PuSHHub Subscription.
+ */
+class PuSHHubSubscription implements PuSHHubSubscriptionInterface {
+  protected $topic;
+  protected $subscriber;
+
+  /**
+   * Constructor.
+   */
+  public function __construct($topic, $subscriber) {
+    $this->topic = $topic;
+    $this->subscriber = $subscriber;
+  }
+
+  /**
+   * Save a subscription.
+   */
+  public function save() {
+    $this->delete();
+    $subscription = array(
+      'topic' => $this->topic,
+      'subscriber' => $this->subscriber,
+      'timestamp' => time(),
+    );
+    drupal_write_record('push_hub_subscriptions', $subscription);
+  }
+
+  /**
+   * Delete a subscription.
+   */
+  public function delete() {
+    db_query("DELETE FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $this->topic, $this->subscriber);
+  }
+
+  /**
+   * Find all subscriber URLs for a given topic URL.
+   *
+   * @return
+   *   An array of subscriber URLs.
+   */
+  public static function all($topic) {
+    $subscribers = array();
+    $result = db_query("SELECT subscriber FROM {push_hub_subscriptions} WHERE topic = '%s'", $topic);
+    while ($row = db_fetch_object($result)) {
+      $subscribers[] = $row->subscriber;
+    }
+    return $subscribers;
+  }
+}
