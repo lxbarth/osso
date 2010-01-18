@@ -1,5 +1,7 @@
 <?php
 
+feeds_include_library('PushSubscriber.inc', 'PushSubscriber');
+
 /**
  * Publish/Subscribe fetcher. Supports at the moment only PubSubHubbub (PuSH).
  *
@@ -38,6 +40,61 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
  * Create a PubSubHubbub subscriber.
  */
 function feeds_push_subscriber($id, $subscriber_id) {
-  feeds_include_library('PushSubscriber.inc', 'PushSubscriber');
-  return PushSubscriber::instance($id, $subscriber_id);
+  return PushSubscriber::instance($id, $subscriber_id, PuSHSubscriptions::instance());
+}
+
+/**
+ * Implement a PuSHSubscriptionsInterface.
+ */
+class PuSHSubscriptions implements PuSHSubscriptionsInterface {
+  /**
+   * Singleton.
+   */
+  public function instance() {
+    static $subscriptions;
+    if (empty($subscriptions)) {
+      $subscriptions = new PuSHSubscriptions();
+    }
+    return $subscriptions;
+  }
+
+  /**
+   * Protect constructor.
+   */
+  protected function __construct() {
+  }
+
+  /**
+   * Save a subscription.
+   */
+  public function save($domain, $subscriber_id, $hub, $topic, $mode, $post_fields = array()) {
+    $save = array(
+      'domain' => $domain,
+      'subscriber_id' => $subscriber_id,
+      'hub' => $hub,
+      'topic' => $topic,
+      'mode' => $mode,
+      'post_fields' => $post_fields,
+      'timestamp' => time(),
+    );
+    $this->delete($domain, $subscriber_id);
+    drupal_write_record('feeds_push_subscriptions', $save);
+  }
+
+  /**
+   * Load a subscription.
+   */
+  public function load($domain, $subscriber_id) {
+    if ($request = db_fetch_array(db_query("SELECT * FROM {feeds_push_subscriptions} WHERE domain = '%s' AND subscriber_id = %d", $domain, $subscriber_id))) {
+      $request['post_fields'] = unserialize($request['post_fields']);
+    }
+    return $request;
+  }
+
+  /**
+   * Delete a subscription.
+   */
+  public function delete($domain, $subscriber_id) {
+    db_query("DELETE FROM {feeds_push_subscriptions} WHERE domain = '%s' AND subscriber_id = %d", $domain, $subscriber_id);
+  }
 }

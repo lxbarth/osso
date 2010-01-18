@@ -19,6 +19,7 @@
 class PuSHSubscriber {
   protected $domain;
   protected $subscriber_id;
+  protected $subscriptions;
 
   /**
    * Singleton.
@@ -30,11 +31,13 @@ class PuSHSubscriber {
    *   A string that identifies the domain in which $subscriber_id is unique.
    * @param $subscriber_id
    *   A numeric subscriber id.
+   * @param PuSHSubscriptionsInterface $subscriptions
+   *   An object to use for storing and loading subscriptions.
    */
-  public static function instance($domain, $subscriber_id) {
+  public static function instance($domain, $subscriber_id, PuSHSubscriptionsInterface $subscriptions) {
     static $subscribers;
     if (!isset($subscriber[$domain][$subscriber_id])) {
-      $subscriber = new PuSHSubscriber($domain, $subscriber_id);
+      $subscriber = new PuSHSubscriber($domain, $subscriber_id, $subscriptions);
     }
     return $subscriber;
   }
@@ -42,9 +45,10 @@ class PuSHSubscriber {
   /**
    * Protect constructor.
    */
-  protected function __construct($domain, $subscriber_id) {
+  protected function __construct($domain, $subscriber_id, PuSHSubscriptionsInterface $subscriptions) {
     $this->domain = $domain;
     $this->subscriber_id = $subscriber_id;
+    $this->subscriptions = $subscriptions;
   }
 
   /**
@@ -102,14 +106,14 @@ class PuSHSubscriber {
       'hub.secret' => '', // @todo
       'hub.verify_token' => md5(session_id() . rand()),
     );
-    $this->saveSubscription($hub, $topic, $mode, $post_fields);
+    $this->subscriptions->save($hub, $topic, $mode, $post_fields);
     // Issue subscription request.
     $request = curl_init($hub);
     curl_setopt($request, CURLOPT_POST, TRUE);
     curl_setopt($request, CURLOPT_POSTFIELDS, $post_fields);
     curl_exec($request);
     if (in_array(curl_getinfo($request, CURLINFO_HTTP_CODE), array(202, 204))) {
-      $this->saveSubscription($hub, $topic, '');
+      $this->subscriptions->save($hub, $topic, '');
     }
     else {
       drupal_set_message(t('Error subscribing to PubsubHubbub hub.'), 'error');
@@ -124,7 +128,7 @@ class PuSHSubscriber {
    * Drupal implementer.
    */
   public function verifySubscriptionRequest($verify_fields) {
-    if ($subscription = $this->loadSubscription()) {
+    if ($subscription = $this->subscription->load()) {
       if ($verify_fields['hub_verify_token'] == $subscription['post_fields']['hub.verify_token']) {
         header('HTTP/1.0 200 "Found"', null, 200);
         print $verify_fields['hub_challenge'];
@@ -146,42 +150,37 @@ class PuSHSubscriber {
       return $post;
     }
   }
+}
+
+/**
+ * Implement to provide a storage backend for subscriptions.
+ */
+interface PuSHSubscriptionsInterface {
+  /**
+   * Save a subscription.
+   *
+   * @param $domain
+   *   A string that defines the domain in which the subscriber_id is unique.
+   * @param $subscriber_id
+   *   A unique numeric subscriber id.
+   * @param $hub
+   *   The URL of the hub endpoint.
+   * @param $topic
+   *   The topic to subscribe to.
+   * @param $mode
+   *   The temporary mode of the subscription.
+   * @param $post_fields
+   *   An array of the fields posted to the hub.
+   */
+  public function save($domain, $subscriber_id, $hub, $topic, $mode, $post_fields = array());
 
   /**
-   * Save a subscription. This is Drupal-dependent. Override for other
-   * storage backends.
+   * Load a subscription.
    */
-  protected function saveSubscription($hub, $topic, $mode, $post_fields = array()) {
-    // Cache request for verification.
-    $save = array(
-      'domain' => $this->domain,
-      'subscriber_id' => $this->subscriber_id,
-      'hub' => $hub,
-      'topic' => $topic,
-      'mode' => $mode,
-      'post_fields' => $post_fields,
-      'timestamp' => time(),
-    );
-    $this->deleteSubscription();
-    drupal_write_record('feeds_push_subscriptions', $save);
-  }
+  public function load($domain, $subscriber_id);
 
   /**
-   * Load a subscription. This is Drupal-dependent. Override for other
-   * storage backends.
+   * Delete a subscription.
    */
-  protected function loadSubscription() {
-    if ($request = db_fetch_array(db_query("SELECT * FROM {feeds_push_subscriptions} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id))) {
-      $request['post_fields'] = unserialize($request['post_fields']);
-    }
-    return $request;
-  }
-
-  /**
-   * Delete a subscription. This is Drupal-dependent. Override for other
-   * storage backends.
-   */
-  protected function deleteSubscription() {
-    db_query("DELETE FROM {feeds_push_subscriptions} WHERE domain = '%s' AND subscriber_id = %d", $this->domain, $this->subscriber_id);
-  }
+  public function delete($domain, $subscriber_id);
 }
