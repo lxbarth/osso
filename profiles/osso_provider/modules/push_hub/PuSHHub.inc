@@ -6,16 +6,16 @@
  */
 
 class PuSHHub {
-  // Class to use for creating a subscriber object.
-  protected $subscriber_class;
+  // Class to use for storing subscriptions.
+  protected $subscriptions;
 
   /**
    * Singleton.
    */
-  public function instance($subscriber_class) {
+  public function instance(PuSHHubSubscriptionsInterface $subscriptions) {
     static $hub;
     if (empty($hub)) {
-      $hub = new PuSHHub($subscriber_class);
+      $hub = new PuSHHub($subscriptions);
     }
     return $hub;
   }
@@ -23,12 +23,12 @@ class PuSHHub {
   /**
    * Constructor.
    *
-   * @param $subscriber_class
-   *   String that identifies a subscriber class. Must implement
-   *   PuSHHubSubscriptionInterface.
+   * @param $subscriptions
+   *   Subsriptions object that handles subscription storage. Must implement
+   *   PuSHHubSubscriptionsInterface.
    */
-  protected function __construct($subscriber_class) {
-    $this->subsciber_class = $subscriber_class;
+  protected function __construct(PuSHHubSubscriptionsInterface $subscriptions) {
+    $this->subscriptions = $subscriptions;
   }
 
   /**
@@ -40,7 +40,7 @@ class PuSHHub {
    *   The feed that contains the changed elements.
    */
   public function notify($topic, $changed) {
-    foreach ($this->subscribers($topic) as $subscriber) {
+    foreach ($this->subscriptions->all($topic) as $subscriber) {
       $this->notifySubscriber($subscriber, $topic, $changed);
     }
   }
@@ -98,56 +98,19 @@ class PuSHHub {
    */
   public function subscribe($post) {
     if (isset($post['hub_topic']) && isset($post['hub_callback']) && $this->verify($post)) {
-      $this->saveSubscription(array('topic' => $post['hub_topic'], 'subscriber' => $post['hub_callback'], 'timestamp' => time()));
+      $this->subscriptions->save($post['hub_topic'], $post['hub_callback']);
       header('HTTP/1.0 204 "No Content"', null, 204);
       exit();
     }
     header('HTTP/1.0 404 "Not Found"', null, 404);
     exit();
   }
-
-  /**
-   * Save a notification subscription.
-   *
-   * @param $subscription
-   *   A subscription array with at least a 'topic' and a 'subscriber' key.
-   */
-  protected function saveSubscription($subscription) {
-    $this->deleteSubscription($subscription);
-    drupal_write_record('push_hub_subscriptions', $subscription);
-  }
-
-  /**
-   * Delete subscription.
-   *
-   * @param $subscription
-   *   A subscription array with a 'topic' and a 'subscriber' key.
-   */
-  protected function deleteSubscription($subscription) {
-    db_query("DELETE FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $subscription['topic'], $subscription['subscriber']);
-  }
-
-  /**
-   * Return all subscribers for a given topic URL as an array of subscriber URLs.
-   */
-  protected function subscribers($topic) {
-    $subscribers = array();
-    $result = db_query("SELECT subscriber FROM {push_hub_subscriptions} WHERE topic = '%s'", $topic);
-    while ($row = db_fetch_object($result)) {
-      $subscribers[] = $row->subscriber;
-    }
-    return $subscribers;
-  }
 }
 
 /**
  * Describes a PuSHHubSubscription. Implement to provide persistent storage.
  */
-interface PuSHHubSubscriptionInterface {
-  /**
-   * Constructor.
-   */
-  public function __construct($topic, $subscriber);
+interface PuSHHubSubscriptionsInterface {
 
   /**
    * Save a subscription.
@@ -165,5 +128,5 @@ interface PuSHHubSubscriptionInterface {
    * @return
    *   An array of subscriber URLs.
    */
-  public static function all($topic);
+  public function all($topic);
 }

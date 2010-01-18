@@ -28,32 +28,38 @@ function push_hub_menu() {
  * Instantiates a PuSH Hub object.
  */
 function push_hub() {
-  return PuSHHub::instance('PuSHHubSubscription');
+  return PuSHHub::instance(PuSHHubSubscriptions::instance());
 }
 
 /**
- * A PuSHHub Subscription.
+ * A PuSHHub Subscriptions.
  */
-class PuSHHubSubscription implements PuSHHubSubscriptionInterface {
-  protected $topic;
-  protected $subscriber;
+class PuSHHubSubscriptions implements PuSHHubSubscriptionsInterface {
+  /**
+   * Singleton.
+   */
+  public function instance() {
+    static $subscriptions;
+    if (empty($subscriptions)) {
+      $subscriptions = new PuSHHubSubscriptions();
+    }
+    return $subscriptions;
+  }
 
   /**
-   * Constructor.
+   * Protect constructor.
    */
-  public function __construct($topic, $subscriber) {
-    $this->topic = $topic;
-    $this->subscriber = $subscriber;
+  protected function __construct() {
   }
 
   /**
    * Save a subscription.
    */
-  public function save() {
-    $this->delete();
+  public function save($topic, $subscriber) {
+    $this->delete($topic, $subscriber);
     $subscription = array(
-      'topic' => $this->topic,
-      'subscriber' => $this->subscriber,
+      'topic' => $topic,
+      'subscriber' => $subscriber,
       'timestamp' => time(),
     );
     drupal_write_record('push_hub_subscriptions', $subscription);
@@ -62,8 +68,8 @@ class PuSHHubSubscription implements PuSHHubSubscriptionInterface {
   /**
    * Delete a subscription.
    */
-  public function delete() {
-    db_query("DELETE FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $this->topic, $this->subscriber);
+  public function delete($topic, $subscriber) {
+    db_query("DELETE FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $topic, $subscriber);
   }
 
   /**
@@ -72,7 +78,7 @@ class PuSHHubSubscription implements PuSHHubSubscriptionInterface {
    * @return
    *   An array of subscriber URLs.
    */
-  public static function all($topic) {
+  public function all($topic) {
     $subscribers = array();
     $result = db_query("SELECT subscriber FROM {push_hub_subscriptions} WHERE topic = '%s'", $topic);
     while ($row = db_fetch_object($result)) {
