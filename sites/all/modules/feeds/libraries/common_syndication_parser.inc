@@ -1,5 +1,5 @@
 <?php
-// $Id: common_syndication_parser.inc,v 1.6 2010/01/25 20:09:28 alexb Exp $
+// $Id: common_syndication_parser.inc,v 1.7 2010/01/28 19:57:54 alexb Exp $
 
 /**
  * @file
@@ -384,8 +384,11 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
     if (!empty($news['author'])) {
       $original_author = "{$news['author']}";
     }
-    else {
+    elseif (isset($dc["creator"])) {
       $original_author = (string)$dc["creator"];
+    }
+    else {
+      $original_author = NULL;
     }
 
     if (!empty($news['link'])) {

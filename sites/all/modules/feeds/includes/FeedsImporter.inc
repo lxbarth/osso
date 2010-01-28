@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsImporter.inc,v 1.9 2010/01/27 15:26:32 alexb Exp $
+// $Id: FeedsImporter.inc,v 1.10 2010/01/28 21:00:45 alexb Exp $
 
 /**
  * @file
@@ -73,19 +73,54 @@ class FeedsImporter extends FeedsConfigurable {
   }
 
   /**
+   * Callback for scheduler to invoke task. Do not execute if this importer is
+   * not persistent at all.
+   *
+   * @param $feed_info
+   *   FeedsScheduler feed infor array.
+   *
+   * @see FeedsScheduler::work().
+   */
+  public function work($feed_info) {
+    if ($this->export_type == FEEDS_EXPORT_NONE) {
+      return;
+    }
+    switch ($feed_info['callback']) {
+      case 'import':
+        feeds_source($feed_info['importer_id'], $feed_info['feed_nid'])->import();
+        break;
+      case 'expire':
+        $this->expire();
+        break;
+      case 'subscribe':
+        feeds_source($feed_info['importer_id'], $feed_info['feed_nid'])->subscribe();
+        return;
+    }
+  }
+
+  /**
    * Get the refresh period for import() or expire().
    */
   public function getSchedulePeriod($callback) {
-    if ($callback == 'import') {
-      return $this->config['import_period'];
+    switch ($callback) {
+      case 'import':
+        return $this->config['import_period'];
+      case 'expire':
+        // If a processor has expiry time set, run expiry every hour.
+        if (FEEDS_EXPIRE_NEVER != $this->processor->expiryTime()) {
+          return 3600;
+        }
+        return FEEDS_SCHEDULE_NEVER;
+      case 'subscribe':
+        return $this->fetcher->subscribePeriod();
     }
-    if ($callback == 'expire') {
-      // If a processor has expiry time set, run expiry every hour.
-      if (FEEDS_EXPIRE_NEVER != $this->processor->expiryTime()) {
-        return 3600;
-      }
-      return FEEDS_SCHEDULE_NEVER;
-    }
+  }
+
+  /**
+   * Expose available schedule callbacks.
+   */
+  public function getScheduleCallbacks() {
+    return array('import', 'expire', 'subscribe');
   }
 
   /**

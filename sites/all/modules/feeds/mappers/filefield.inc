@@ -1,5 +1,5 @@
 <?php
-// $Id: filefield.inc,v 1.2 2010/01/13 14:22:15 alexb Exp $
+// $Id: filefield.inc,v 1.3 2010/01/28 20:07:08 alexb Exp $
 
 /**
  * @file
@@ -65,6 +65,8 @@ function filefield_feeds_set_target($node, $field_name, $value) {
       $target_dir = filefield_widget_file_path($field, user_load($node->uid));
       $info = field_file_save_file($enclosure->getFile(), array(), $target_dir);
       if ($info) {
+        $info['list'] = array();
+        $info['data'] = array('description' => '');
         if ($field['list_field']) {
           $info['list'] = $field['list_default'];
         }

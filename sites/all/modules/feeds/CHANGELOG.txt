@@ -1,4 +1,10 @@
-// $Id: CHANGELOG.txt,v 1.35 2010/01/25 22:15:38 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.36 2010/01/28 21:00:45 alexb Exp $
+
+Feeds 6.x 1.0 xxxxx xx, xxxx-xx-xx
+----------------------------------
+
+- #698356 alex_b: Refactor and clean up FeedsScheduler::work() to allow more
+  scheduled tasks than 'import' and 'expire'.
 
 Feeds 6.x 1.0 Alpha 10, 2010-01-25
 ----------------------------------

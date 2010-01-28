@@ -24,8 +24,31 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    * Override sourceSave() - subscribe to hub.
    */
   public function sourceSave(FeedsSource $source) {
+    $this->subscribe($source);
+  }
+
+  /**
+   * Implement FeedsFetcher::subscribe() - subscribe to hub.
+   */
+  public function subscribe(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
     feeds_push_subscriber($this->id, $source->feed_nid)->subscribe($source_config['source'], url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $source->feed_nid, array('absolute' => TRUE)));
+  }
+
+  /**
+   * Implement FeedsFetcher::unsubscribe() - unsubscribe from hub.
+   */
+  public function unsubscribe(FeedsSource $source) {
+    $source_config = $source->getConfigFor($this);
+    feeds_push_subscriber($this->id, $source->feed_nid)->unsubscribe($source_config['source'], url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $source->feed_nid, array('absolute' => TRUE)));
+  }
+
+  /**
+   * Implement FeedsFetcher::subscribePeriod().
+   * Indicate how often a subscription needs to be renewed.
+   */
+  public function subscribePeriod() {
+    return $this->config['subscribe_period'];
   }
 
   /**
@@ -33,7 +56,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    */
   public function configDefaults() {
     return array(
-      'renew_period' => 3600*24, // Renew subscription in 24 hours.
+      'subscribe_period' => 3600*24, // Renew subscription in 24 hours.
     );
   }
 
@@ -45,12 +68,12 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
     $period = drupal_map_assoc(array(0, 900, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800, 2419200), 'format_interval');
     $period[FEEDS_SCHEDULE_NEVER] = t('Never');
     $period[0] = t('As often as possible');
-    $form['renew_period'] = array(
+    $form['subscribe_period'] = array(
       '#type' => 'select',
       '#title' => t('Renew subscription after'),
       '#options' => $period,
       '#description' => t('@todo - Not implemented, setting has no effect. This is the minimum time that must elapse before a subscription is renewed.'),
-      '#default_value' => $this->config['renew_period'],
+      '#default_value' => $this->config['subscribe_period'],
     );
     return $form;
   }
@@ -65,6 +88,9 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
 
 /**
  * Create a PubSubHubbub subscriber.
+ *
+ * @return PushSubscriber
+ *   A PushSubscriber object.
  */
 function feeds_push_subscriber($id, $subscriber_id) {
   return PushSubscriber::instance($id, $subscriber_id, PuSHSubscriptions::instance());

@@ -139,6 +139,32 @@ class FeedsSource extends FeedsConfigurable {
   }
 
   /**
+   * Subscribe a source. Not all sources need to be subscribed, this method
+   * only has an effect if the fetcher in place supports subscription.
+   */
+  public function subscribe() {
+    try {
+      $this->importer->fetcher->subscribe($this);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+
+  /**
+   * Unsubscribe a source. This method  only has an effect if the fetcher in
+   * place supports subscription.
+   */
+  public function unsubscribe() {
+    try {
+      $this->importer->fetcher->unsubscribe($this);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+
+  /**
    * Save configuration.
    */
   public function save() {

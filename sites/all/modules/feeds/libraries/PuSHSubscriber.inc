@@ -72,6 +72,19 @@ class PuSHSubscriber {
   }
 
   /**
+   * @todo Unsubscribe from a hub.
+   * @todo Make sure we unsubscribe with the correct topic URL as it can differ
+   * from the initial subscription URL.
+   *
+   * @param $topic_url
+   *   The URL of the topic to unsubscribe from.
+   * @param $callback_url
+   *   The callback to unsubscribe.
+   */
+  public function unsubscribe($topic_url, $callback_url) {
+  }
+
+  /**
    * Issue a subscribe or unsubcribe request to a PubsubHubbub hub.
    *
    * @param $hub

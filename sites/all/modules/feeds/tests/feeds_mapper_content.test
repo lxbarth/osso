@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_mapper_content.test,v 1.1 2009/11/24 23:20:26 alexb Exp $
+// $Id: feeds_mapper_content.test,v 1.2 2010/01/28 19:40:49 alexb Exp $
 
 /**
  * @file
@@ -16,7 +16,7 @@ class FeedsMapperContentTestCase extends FeedsMapperTestCase {
   public static function getInfo() {
     return array(
       'name' => t('Mapper: Content'),
-      'description' => t('Test Feeds Mapper support for CCK fields'),
+      'description' => t('Test Feeds Mapper support for CCK fields. <strong>Requires CCK module</strong>.'),
       'group' => t('Feeds'),
     );
   }

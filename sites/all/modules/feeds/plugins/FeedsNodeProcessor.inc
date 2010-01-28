@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsNodeProcessor.inc,v 1.20 2009/12/21 01:20:05 alexb Exp $
+// $Id: FeedsNodeProcessor.inc,v 1.21 2010/01/28 19:52:34 alexb Exp $
 
 /**
  * @file
@@ -46,6 +46,7 @@ class FeedsNodeProcessor extends FeedsProcessor {
 
         // Populate and prepare node object.
         $node->type = $this->config['content_type'];
+        $node->created = FEEDS_REQUEST_TIME;
         $node->feeds_node_item = new stdClass();
         $node->feeds_node_item->hash = $hash;
         $node->feeds_node_item->id = $this->id;

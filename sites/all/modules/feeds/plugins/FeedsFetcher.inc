@@ -26,4 +26,27 @@ abstract class FeedsFetcher extends FeedsPlugin {
    *   caches pertaining to this source.
    */
   public function clear(FeedsSource $source) {}
+
+  /**
+   * Subscribe to a source. Only implement if fetcher requires subscription.
+   *
+   * @param FeedsSource $source
+   *   Source information for this subscription.
+   */
+  public function subscribe(FeedsSource $source) {}
+
+  /**
+   * Unsubscribe from a source. Only implement if fetcher requires subscription.
+   *
+   * @param FeedsSource $source
+   *   Source information for unsubscribing.
+   */
+  public function unsubscribe(FeedsSource $source) {}
+
+  /**
+   * Indicate the time within which a subscription needs to be renewed.
+   */
+  public function subscribePeriod() {
+    return FEEDS_SCHEDULE_NEVER;
+  }
 }

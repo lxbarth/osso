@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSimplePieParser.inc,v 1.9 2010/01/18 19:20:40 alexb Exp $
+// $Id: FeedsSimplePieParser.inc,v 1.10 2010/01/28 20:07:46 alexb Exp $
 
 /**
  * Adapter to present SimplePie_Enclosure as FeedsEnclosure object.
@@ -75,9 +75,9 @@ class FeedsSimplePieParser extends FeedsParser {
         $item['guid'] = $item['url'];
       }
       $author = $simplepie_item->get_author();
-      $item['author_name'] = html_entity_decode($author->name);
-      $item['author_link'] = $author->link;
-      $item['author_email'] = $author->email;
+      $item['author_name'] = isset($author->name) ? html_entity_decode($author->name) : '';
+      $item['author_link'] = isset($author->link) ? $author->link : '';
+      $item['author_email'] = isset($author->email) ? $author->email : '';
       // Enclosures
       $enclosures = $simplepie_item->get_enclosures();
       if (is_array($enclosures)) {
