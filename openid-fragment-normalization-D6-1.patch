@@ -1,0 +1,29 @@
+Index: modules/openid/openid.inc
+===================================================================
+RCS file: /cvs/drupal/drupal/modules/openid/openid.inc,v
+retrieving revision 1.8.2.1
+diff -u -9 -p -r1.8.2.1 openid.inc
+--- modules/openid/openid.inc	16 Sep 2009 17:58:24 -0000	1.8.2.1
++++ modules/openid/openid.inc	23 Nov 2009 22:40:01 -0000
+@@ -109,18 +109,21 @@ function _openid_normalize_xri($xri) {
+ }
+ 
+ function _openid_normalize_url($url) {
+   $normalized_url = $url;
+ 
+   if (stristr($url, '://') === FALSE) {
+     $normalized_url = 'http://'. $url;
+   }
+ 
++  // Strip the fragment and fragment delimiter if present.
++  $normalized_url = strtok($normalized_url, '#');
++
+   if (substr_count($normalized_url, '/') < 3) {
+     $normalized_url .= '/';
+   }
+ 
+   return $normalized_url;
+ }
+ 
+ /**
+  * Create a serialized message packet as per spec: $key:$value\n .
