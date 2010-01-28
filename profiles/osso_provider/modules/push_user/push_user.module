@@ -54,7 +54,7 @@ function push_user_feed_access() {
  * Feed of user changes.
  */
 function push_user_feed($account) {
-  drupal_set_header('Content-Type: application/atom+xml');
+  drupal_set_header('Content-Type: application/xml; charset=UTF-8');
   print theme('push_user_feed', $account);
   exit();
 }
