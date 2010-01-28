@@ -29,6 +29,33 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   }
 
   /**
+   * Return defaults for configuration.
+   */
+  public function configDefaults() {
+    return array(
+      'renew_period' => 3600*24, // Renew subscription in 24 hours.
+    );
+  }
+
+  /**
+   * Override parent::configForm().
+   */
+  public function configForm(&$form_state) {
+    $form = array();
+    $period = drupal_map_assoc(array(0, 900, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800, 2419200), 'format_interval');
+    $period[FEEDS_SCHEDULE_NEVER] = t('Never');
+    $period[0] = t('As often as possible');
+    $form['renew_period'] = array(
+      '#type' => 'select',
+      '#title' => t('Renew subscription after'),
+      '#options' => $period,
+      '#description' => t('@todo - Not implemented, setting has no effect. This is the minimum time that must elapse before a subscription is renewed.'),
+      '#default_value' => $this->config['renew_period'],
+    );
+    return $form;
+  }
+
+  /**
    * Verify a PubSubHubbub subscription request.
    */
   public function pushVerifySubscriptionRequest($verify_fields, $feed_nid) {
