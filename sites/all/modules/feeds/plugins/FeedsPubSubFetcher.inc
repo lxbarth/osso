@@ -44,11 +44,11 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   }
 
   /**
-   * Implement FeedsFetcher::subscribePeriod().
+   * Implement FeedsFetcher::subscriptionPeriod().
    * Indicate how often a subscription needs to be renewed.
    */
-  public function subscribePeriod() {
-    return $this->config['subscribe_period'];
+  public function subscriptionPeriod() {
+    return $this->config['subscription_period'];
   }
 
   /**
@@ -56,7 +56,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    */
   public function configDefaults() {
     return array(
-      'subscribe_period' => 3600*24, // Renew subscription in 24 hours.
+      'subscription_period' => 3600*24, // Renew subscription in 24 hours.
     );
   }
 
@@ -66,14 +66,14 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   public function configForm(&$form_state) {
     $form = array();
     $period = drupal_map_assoc(array(0, 900, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800, 2419200), 'format_interval');
-    $period[FEEDS_SCHEDULE_NEVER] = t('Never');
-    $period[0] = t('As often as possible');
-    $form['subscribe_period'] = array(
+    $period[FEEDS_SCHEDULE_NEVER] = t('Never renew');
+    $period[0] = t('Renew as often as possible');
+    $form['subscription_period'] = array(
       '#type' => 'select',
       '#title' => t('Renew subscription after'),
       '#options' => $period,
-      '#description' => t('@todo - Not implemented, setting has no effect. This is the minimum time that must elapse before a subscription is renewed.'),
-      '#default_value' => $this->config['subscribe_period'],
+      '#description' => t('This is the minimum time that must elapse before a subscription is renewed.'),
+      '#default_value' => $this->config['subscription_period'],
     );
     return $form;
   }

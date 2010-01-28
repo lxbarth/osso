@@ -46,7 +46,7 @@ abstract class FeedsFetcher extends FeedsPlugin {
   /**
    * Indicate the time within which a subscription needs to be renewed.
    */
-  public function subscribePeriod() {
+  public function subscriptionPeriod() {
     return FEEDS_SCHEDULE_NEVER;
   }
 }
