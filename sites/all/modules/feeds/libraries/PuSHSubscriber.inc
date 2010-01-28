@@ -62,8 +62,12 @@ class PuSHSubscriber {
     if (curl_getinfo($request, CURLINFO_HTTP_CODE) == 200) {
       $xml = new SimpleXMLElement($data);
       $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-      $hub = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))->attributes()->href;
-      $self = (string) current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))->attributes()->href;
+      if ($hub = current($xml->xpath("/atom:feed/atom:link[attribute::rel='hub']"))) {
+        $hub = (string) $hub->attributes()->href;
+      }
+      if ($self = current($xml->xpath("/atom:feed/atom:link[attribute::rel='self']"))) {
+        $self = (string) $self->attributes()->href;
+      }
       if ($hub && $self) {
         $this->request($hub, $self, 'subscribe', $callback_url);
       }
