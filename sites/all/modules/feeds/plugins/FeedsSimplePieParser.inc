@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSimplePieParser.inc,v 1.8 2010/01/12 16:28:02 alexb Exp $
+// $Id: FeedsSimplePieParser.inc,v 1.9 2010/01/18 19:20:40 alexb Exp $
 
 /**
  * Adapter to present SimplePie_Enclosure as FeedsEnclosure object.
@@ -41,7 +41,7 @@ class FeedsSimplePieParser extends FeedsParser {
    */
   public function parse(FeedsImportBatch $batch, FeedsSource $source) {
     feeds_include_library('simplepie.inc', 'simplepie');
-    
+
     // Initialize SimplePie.
     $parser = new SimplePie();
     $parser->set_raw_data($batch->getRaw());
@@ -53,7 +53,7 @@ class FeedsSimplePieParser extends FeedsParser {
     $parser->init();
 
     // Construct the standard form of the parsed feed
-    $batch->setTitle(($title = $parser->get_title()) ? $title : $this->createTitle($parser->get_description()));
+    $batch->setTitle(html_entity_decode(($title = $parser->get_title()) ? $title : $this->createTitle($parser->get_description())));
     $batch->setDescription($parser->get_description());
     $batch->setLink(html_entity_decode($parser->get_link()));
 
@@ -61,7 +61,7 @@ class FeedsSimplePieParser extends FeedsParser {
     for ($i = 0; $i < $items_num; $i++) {
       $item = array();
       $simplepie_item = $parser->get_item($i);
-      $item['title'] = ($title = $simplepie_item->get_title()) ? $title : $this->createTitle($simplepie_item->get_content());
+      $item['title'] = html_entity_decode(($title = $simplepie_item->get_title()) ? $title : $this->createTitle($simplepie_item->get_content()));
       $item['description'] = $simplepie_item->get_content();
       $item['url'] = html_entity_decode($simplepie_item->get_link());
       // Use UNIX time. If no date is defined, fall back to FEEDS_REQUEST_TIME.
@@ -75,7 +75,7 @@ class FeedsSimplePieParser extends FeedsParser {
         $item['guid'] = $item['url'];
       }
       $author = $simplepie_item->get_author();
-      $item['author_name'] = $author->name;
+      $item['author_name'] = html_entity_decode($author->name);
       $item['author_link'] = $author->link;
       $item['author_email'] = $author->email;
       // Enclosures

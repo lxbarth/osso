@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsCSVParser.inc,v 1.5 2009/12/20 23:54:44 alexb Exp $
+// $Id: FeedsCSVParser.inc,v 1.6 2010/01/27 15:26:32 alexb Exp $
 
 /**
  * Parses a given file as a CSV file.
@@ -87,7 +87,7 @@ class FeedsCSVParser extends FeedsParser {
       '#title' => t('Delimiter'),
       '#description' => t('The character that delimits fields in the CSV file.'),
       '#options' => drupal_map_assoc(array(',', ';')),
-      '#default_value' => $source_config['delimiter'],
+      '#default_value' => isset($source_config['delimiter']) ? $source_config['delimiter'] : ',',
     );
     return $form;
   }

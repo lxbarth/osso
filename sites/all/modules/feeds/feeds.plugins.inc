@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.plugins.inc,v 1.3 2010/01/12 16:28:02 alexb Exp $
+// $Id: feeds.plugins.inc,v 1.4 2010/01/25 20:03:05 alexb Exp $
 
 /**
  * @file
@@ -123,7 +123,7 @@ function _feeds_feeds_plugins() {
       'description' => 'Parse RSS and Atom feeds.',
       'help' => 'Use <a href="http://simplepie.org">SimplePie</a> to parse XML feeds in RSS 1, RSS 2 and Atom format.',
       'handler' => array(
-        'parent' => 'FeedsSyndicationParser',
+        'parent' => 'FeedsParser',
         'class' => 'FeedsSimplePieParser',
         'file' => 'FeedsSimplePieParser.inc',
         'path' => $path,

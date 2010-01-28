@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsConfigurable.inc,v 1.3 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsConfigurable.inc,v 1.4 2010/01/27 15:26:32 alexb Exp $
 
 /**
  * @file
@@ -60,13 +60,12 @@ abstract class FeedsConfigurable {
   protected function __construct($id) {
     // Set this object's id.
     $this->id = $id;
-
     // Per default we assume that a Feeds object is not saved to
     // database nor is it exported to code.
     $this->export_type = FEEDS_EXPORT_NONE;
-
     // Make sure configuration is populated.
     $this->config = $this->configDefaults();
+    $this->disabled = FALSE;
   }
 
   /**

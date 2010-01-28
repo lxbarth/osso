@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsFileFetcher.inc,v 1.4 2009/12/20 23:54:44 alexb Exp $
+// $Id: FeedsFileFetcher.inc,v 1.5 2010/01/18 20:05:53 alexb Exp $
 
 /**
  * @file
@@ -16,8 +16,6 @@ class FeedsFileFetcher extends FeedsFetcher {
    */
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    // Just return path to file, contents can be read easily with
-    // file_get_contents($file_path);
     return new FeedsImportBatch(NULL, $source_config['source']);
   }
 

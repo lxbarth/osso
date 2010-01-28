@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.test,v 1.7 2009/12/20 23:48:38 alexb Exp $
+// $Id: feeds.test,v 1.8 2010/01/18 19:20:40 alexb Exp $
 
 /**
  * @file
@@ -96,7 +96,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $this->drupalGet('node');
     $this->assertText('Open Atrium Translation Workflow: Two Way Translation Updates');
     $this->assertText('Tue, 10/06/2009');
-    $this->assertText('A new translation process for Open Atrium and integration with Localize Drupal');
+    $this->assertText('A new translation process for Open Atrium &amp; integration with Localize Drupal');
     $this->assertText('Week in DC Tech: October 5th Edition');
     $this->assertText('Mon, 10/05/2009');
     $this->assertText('There are some great technology events happening this week');
@@ -118,7 +118,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $this->assertText('Week in DC Tech: September 21 Edition');
     $this->assertText('Mon, 09/21/2009');
     $this->assertText('an interesting variety of technology events happening in Washington, DC ');
-    $this->assertText('s Software Freedom Day: Impressions and Photos');
+    $this->assertText('s Software Freedom Day: Impressions &amp; Photos');
     $this->assertText('Mon, 09/21/2009');
     $this->assertText('Presenting on Features in Drupal and Open Atrium');
     $this->assertText('Scaling the Open Atrium UI');
@@ -237,7 +237,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $this->drupalGet('node');
     $this->assertText('Open Atrium Translation Workflow: Two Way Translation Updates');
     $this->assertText('Tue, 10/06/2009');
-    $this->assertText('A new translation process for Open Atrium and integration with Localize Drupal');
+    $this->assertText('A new translation process for Open Atrium &amp; integration with Localize Drupal');
     $this->assertText('Week in DC Tech: October 5th Edition');
     $this->assertText('Mon, 10/05/2009');
     $this->assertText('There are some great technology events happening this week');
@@ -259,7 +259,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $this->assertText('Week in DC Tech: September 21 Edition');
     $this->assertText('Mon, 09/21/2009');
     $this->assertText('an interesting variety of technology events happening in Washington, DC ');
-    $this->assertText('s Software Freedom Day: Impressions and Photos');
+    $this->assertText('s Software Freedom Day: Impressions &amp; Photos');
     $this->assertText('Mon, 09/21/2009');
     $this->assertText('Presenting on Features in Drupal and Open Atrium');
     $this->assertText('Scaling the Open Atrium UI');
@@ -430,7 +430,7 @@ class FeedsRSStoDataTest extends FeedsWebTestCase {
     // Assert accuracy of aggregated information.
     $this->drupalGet('admin/content/data/view/feeds_data_rss');
     $this->assertText('Open Atrium Translation Workflow: Two Way Translation Updates');
-    $this->assertText('A new translation process for Open Atrium and integration with Localize Drupal');
+    $this->assertText('A new translation process for Open Atrium &amp; integration with Localize Drupal');
     $this->assertText('Week in DC Tech: October 5th Edition');
     $this->assertText('There are some great technology events happening this week');
     $this->assertText('Mapping Innovation at the World Bank with Open Atrium');
@@ -445,7 +445,7 @@ class FeedsRSStoDataTest extends FeedsWebTestCase {
     $this->assertText('In addition to authentication, the Siteminder system');
     $this->assertText('Week in DC Tech: September 21 Edition');
     $this->assertText('an interesting variety of technology events happening in Washington, DC ');
-    $this->assertText('s Software Freedom Day: Impressions and Photos');
+    $this->assertText('s Software Freedom Day: Impressions &amp; Photos');
     $this->assertText('Presenting on Features in Drupal and Open Atrium');
     $this->assertText('Scaling the Open Atrium UI');
     $this->assertText('The first major change is switching');

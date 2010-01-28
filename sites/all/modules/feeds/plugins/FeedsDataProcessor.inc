@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsDataProcessor.inc,v 1.7 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsDataProcessor.inc,v 1.8 2010/01/21 20:45:11 alexb Exp $
 
 /**
  * @file
@@ -185,7 +185,9 @@ class FeedsDataProcessor extends FeedsProcessor {
         'description' => t('Creates a new column of type !type.', array('!type' => $v)),
       );
     }
-    return $new_fields + $existing_fields;
+    $fields = $new_fields + $existing_fields;
+    drupal_alter('feeds_data_processor_targets', $fields, $this->table()->get('name'));
+    return $fields;
   }
 
   /**

@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsDataHandler.inc,v 1.2 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsDataHandler.inc,v 1.4 2010/01/21 20:51:07 alexb Exp $
 
 /**
  * @file
@@ -176,35 +176,28 @@ class FeedsDataHandler extends DataHandler {
    * @todo Push this functionality into DataHandler.
    */
   public function delete($clause) {
-
-    // Assemble where clause for delete query.
-    $where = $values = array();
+    $query = new DataQuery($this->table);
     $schema = drupal_get_schema($this->table);
     $fields = $schema['fields'];
+    $this_table = db_escape_table($this->table);
     foreach ($clause as $key => $value) {
+      $operator = '=';
       if (is_array($value)) {
-        $where[] = 'base.'. db_escape_string($key) ." {$value[0]} ". db_type_placeholder($fields[$key]['type']);
-        $values[] = $value[1];
+        $operator = array_shift($value);
+        $value = array_shift($value);
       }
-      else {
-        $where[] = 'base.'. db_escape_string($key) ." = ". db_type_placeholder($fields[$key]['type']);
-        $values[] = $value;
-      }
+      $query->addWhere($this_table .'.'. db_escape_string($key) ." ". $operator ." ". db_type_placeholder($fields[$key]['type']), $value);
     }
 
-    // Only execute delete statement if where clause has been populated.
-    if (!empty($where)) {
-
-      // First delete records from joined tables, then delete this table's
-      // record.
-      foreach ($this->joined_tables as $table) {
-        if (!empty($where)) {
-          db_query('DELETE joined FROM {'. db_escape_table($this->table) .'} base JOIN  {'. db_escape_table($table) .'} joined ON base.'. $this->key .' = joined.'. $this->key .' WHERE '. implode(' AND ', $where), $values);
-        }
-      }
-      db_query('DELETE base FROM {'. db_escape_table($this->table) .'} base WHERE '. implode(' AND ', $where), $values);
+    foreach ($this->joined_tables as $table) {
+      $table = db_escape_table($table);
+      $query->addSubject($table);
+      $query->addJoin($table, "$table.{$this->key} = $this_table.{$this->key}", 'LEFT JOIN');
     }
-
+    drupal_alter('data_delete_query', $query, $this->table);
+    if (!empty($query->where)) {
+      $query->execute();
+    }
     return db_affected_rows();
   }
 

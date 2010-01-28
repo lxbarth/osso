@@ -1,5 +1,5 @@
 <?php
-// $Id: common_syndication_parser.inc,v 1.5 2010/01/15 19:44:54 alexb Exp $
+// $Id: common_syndication_parser.inc,v 1.6 2010/01/25 20:09:28 alexb Exp $
 
 /**
  * @file
@@ -182,7 +182,7 @@ function _parser_common_syndication_atom10_parse($feed_XML) {
     $item = array();
     $item['title'] = _parser_common_syndication_title($title, $body);
     $item['description'] = $body;
-    $item['author'] = $original_author;
+    $item['author_name'] = $original_author;
     $item['timestamp'] = _parser_common_syndication_parse_date(isset($news->published) ? "{$news->published}" : "{$news->issued}");
     $item['url'] = trim($original_url);
     if (valid_url($item['url']) && !valid_url($item['url'], TRUE) && !empty($base)) {
@@ -280,7 +280,7 @@ function _parser_common_syndication_RDF10_parse($feed_XML) {
 
     // If no author name found, use the feed title:
     if (empty($item['author'])) {
-      $item['author'] = $parsed_source['title'];
+      $item['author_name'] = $parsed_source['title'];
     }
 
     // If no GUID found, use the URL of the feed.
@@ -330,6 +330,12 @@ function _parser_common_syndication_RDF10_item($rdf_data, $mappings) {
  * Parse RSS2.0 feeds.
  */
 function _parser_common_syndication_RSS20_parse($feed_XML) {
+
+  $ns = array (
+    "content" => "http://purl.org/rss/1.0/modules/content/",
+     "dc" => "http://purl.org/dc/elements/1.1/",
+  );
+
   $parsed_source = array();
   // Detect the title.
   $parsed_source['title'] = isset($feed_XML->channel->title) ? _parser_common_syndication_title("{$feed_XML->channel->title}") : "";
@@ -343,7 +349,8 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
     $category = $news->xpath('category');
     // Get children for current namespace.
     if (version_compare(phpversion(), '5.1.2', '>')) {
-      $content = (array)$news->children('http://purl.org/rss/1.0/modules/content/');
+      $content = (array)$news->children($ns["content"]);
+      $dc      = (array)$news->children($ns["dc"]);
     }
     $news = (array) $news;
     $news['category'] = $category;
@@ -376,6 +383,9 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
 
     if (!empty($news['author'])) {
       $original_author = "{$news['author']}";
+    }
+    else {
+      $original_author = (string)$dc["creator"];
     }
 
     if (!empty($news['link'])) {
@@ -414,7 +424,7 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
     $item = array();
     $item['title'] = _parser_common_syndication_title($title, $body);
     $item['description'] = $body;
-    $item['author'] = $original_author;
+    $item['author_name'] = $original_author;
     if (isset($news['pubDate'])) {
       $item['timestamp'] = _parser_common_syndication_parse_date($news['pubDate']);
     }

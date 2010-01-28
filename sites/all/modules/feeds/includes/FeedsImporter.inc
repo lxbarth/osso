@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsImporter.inc,v 1.8 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsImporter.inc,v 1.9 2010/01/27 15:26:32 alexb Exp $
 
 /**
  * @file
@@ -113,7 +113,7 @@ class FeedsImporter extends FeedsConfigurable {
     if ($config = ctools_export_load_object('feeds_importer', 'conditions', array('id' => $this->id))) {
       $config = array_shift($config);
       $this->export_type = $config->export_type;
-      $this->disabled = $config->disabled;
+      $this->disabled = isset($config->disabled) ? $config->disabled : FALSE;
       $this->config = $config->config;
       return TRUE;
     }

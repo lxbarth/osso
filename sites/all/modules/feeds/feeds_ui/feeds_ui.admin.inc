@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_ui.admin.inc,v 1.26 2009/12/20 23:48:37 alexb Exp $
+// $Id: feeds_ui.admin.inc,v 1.27 2010/01/27 15:26:32 alexb Exp $
 
 /**
  * @file
@@ -651,27 +651,29 @@ function _feeds_ui_format_options($options) {
 function theme_feeds_ui_overview_form($form) {
   drupal_add_js(drupal_get_path('module', 'feeds_ui') .'/feeds_ui.js');
   drupal_add_css(drupal_get_path('module', 'feeds_ui') .'/feeds_ui.css');
-
   // Iterate through all importers and build a table.
+  $rows = array();
   foreach (array('enabled', 'disabled') as $type) {
-    foreach (element_children($form[$type]) as $id) {
-      $row = array();
-      foreach (element_children($form[$type][$id]) as $col) {
-        $row[$col] = array(
-          'data' => drupal_render($form[$type][$id][$col]),
+    if (isset($form[$type])) {
+      foreach (element_children($form[$type]) as $id) {
+        $row = array();
+        foreach (element_children($form[$type][$id]) as $col) {
+          $row[$col] = array(
+            'data' => drupal_render($form[$type][$id][$col]),
+            'class' => $type,
+          );
+        }
+        $rows[] = array(
+          'data' => $row,
           'class' => $type,
         );
       }
-      $rows[] = array(
-        'data' => $row,
-        'class' => $type,
-      );
     }
   }
+  $output = '';
   if (count($rows)) {
-    $output = theme('table', $form['#header'], $rows, array('class' => 'feeds-admin-importers'));
+    $output .= theme('table', $form['#header'], $rows, array('class' => 'feeds-admin-importers'));
   }
-
   $output .= drupal_render($form);
   return $output;
 }
