@@ -5,9 +5,8 @@
  */
 function push_user_menu() {
   $items = array();
-  $items['user/%user/feed'] = array(
+  $items['user/feed'] = array(
    'page callback' => 'push_user_feed',
-   'page arguments' => array(1),
    'access callback' => 'push_user_feed_access',
    'type' => MENU_CALLBACK,
   );
@@ -53,10 +52,20 @@ function push_user_feed_access() {
 /**
  * Feed of user changes.
  */
-function push_user_feed($account) {
-  drupal_set_header('Content-Type: application/xml; charset=UTF-8');
-  print theme('push_user_feed', $account);
-  exit();
+function push_user_feed() {
+  if ($_GET['openid']) {
+    preg_match('/user\/(\d*?)\/identity/', $_GET['openid'], $matches);
+    $uid = $matches[1];
+  }
+  elseif ($_GET['uid']) {
+    $uid = $_GET['uid'];
+  }
+  if (isset($uid) && is_numeric($uid) && $account = user_load(array('uid' => $uid))) {
+    drupal_set_header('Content-Type: application/xml; charset=UTF-8');
+    print theme('push_user_feed', $account);
+    exit();
+  }
+  drupal_access_denied();
 }
 
 /**
