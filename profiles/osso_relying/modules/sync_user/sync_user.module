@@ -3,6 +3,23 @@
 include_once('sync_user.features.inc');
 
 /**
+ * Implementation of hook_menu().
+ */
+function sync_user_menu() {
+  $items = array();
+  $items['admin/user/sync'] = array(
+    'title' => 'Synchronize users',
+    'description' => 'Synchronize users from another Drupal site.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sync_user_form', 'administer users'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
  * Implementation of hook_feeds_plugins().
  */
 function sync_user_feeds_plugins() {
@@ -25,14 +42,68 @@ function sync_user_feeds_plugins() {
  *
  * Subscribe/unsubscribe users when they register.
  */
-function sync_user_user() {
+function sync_user_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      $url = variable_get('sync_user_feed_url', 'http://example.com/');
+      if (isset($edit['auth_openid'])) {
+        $url .= 'user/feed?openid='. urlencode($edit['auth_openid']);
+        if (valid_url($url)) {
+          $source = feeds_source('user_updates', $account->uid);
+          $source->addConfig(array(
+            'FeedsPubSubFetcher' => array(
+              'source' => $url,
+            ),
+          ));
+          $source->save();
+          feeds_scheduler()->add('user_updates', 'import', $account->uid);
+          feeds_scheduler()->add('user_updates', 'subscribe', $account->uid);
+          feeds_scheduler()->add('user_updates', 'expire');
+        }
+      }
+      break;
+  }
 }
 
 /**
- * Implementation of hook_cron().
- *
- * Refresh subscriptions recurringly.
+ * Implementation of hook_form_alter().
  */
-function sync_user_cron() {
+function sync_user_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'user_profile_form' && user_access('administer users')) {
+    $account = $form['_account']['#value'];
+    if ($importer = feeds_importer('user_updates')) {
+      // Build form.
+      $source = feeds_source($importer->id, $account->uid);
+      $form['sync_user_feed'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Synchronization feed'),
+        '#description' => t('You can change this URL for all users on !sync_settings.', array('!sync_settings' => l(t('Synchronize users settings'), 'admin/user/sync'))),
+      );
+      $form['sync_user_feed']['url']['#value'] = l(check_plain($source->config['FeedsPubSubFetcher']['source']), $source->config['FeedsPubSubFetcher']['source']);
+    }
+  }
+}
 
+/**
+ * Settings form.
+ *
+ * @todo Add private key authentication.
+ * @todo Verify private key and feed url.
+ */
+function sync_user_form() {
+  $form = array();
+  $form['sync_user_feed_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Provider site URL'),
+    '#description' => t('URL to synchronize users from. Point to the root of a trusted Drupal site with PuSH user module installed.'),
+    '#default_value' => variable_get('sync_user_feed_url', 'http://example.com/'),
+  );
+  $form['sync_user_private_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Private key'),
+    '#description' => t('Private key to authenticate this site on the Provider.'),
+    '#default_value' => variable_get('sync_user_private_key', '@todo'),
+  );
+  return system_settings_form($form);
 }

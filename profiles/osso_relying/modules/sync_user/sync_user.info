@@ -1,5 +1,6 @@
 core = "6.x"
 dependencies[] = "feeds"
+dependencies[] = "openid"
 description = "Synchronizes user accounts to another Drupal site with PuSH User module enabled."
 features[ctools][] = "feeds_importer"
 features[feeds_importer][] = "user_updates"
