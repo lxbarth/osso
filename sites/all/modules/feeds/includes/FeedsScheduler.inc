@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsScheduler.inc,v 1.9 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsScheduler.inc,v 1.10 2010/01/28 19:23:52 alexb Exp $
 
 /**
  * @file
@@ -88,6 +88,8 @@ class FeedsScheduler implements FeedsSchedulerInterface {
    *
    * If drupal_queue is present, only pushes refresh tasks to queue and
    * returns. If drupal_queue is not available, works off tasks.
+   *
+   * @todo: Make import/expire agnostic, define general job callback interface.
    */
   public function cron() {
 
@@ -189,6 +191,8 @@ class FeedsScheduler implements FeedsSchedulerInterface {
    *
    * Used as worker callback invoked from feeds_scheduler_refresh() or
    * if drupal_queue is not enabled, directly from $this->cron().
+   *
+   * @todo: Make import/expire agnostic, define general job callback interface.
    */
   public function work($feed_info) {
     $importer = feeds_importer($feed_info['importer_id']);
