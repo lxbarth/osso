@@ -88,6 +88,7 @@ function feeds_import_form_submit($form, &$form_state) {
 
   // Add importer to schedule.
   feeds_scheduler()->add($form['#importer_id'], 'import');
+  feeds_scheduler()->add($form['#importer_id'], 'subscribe');
   feeds_scheduler()->add($form['#importer_id'], 'expire');
 }
 

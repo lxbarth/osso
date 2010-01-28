@@ -292,8 +292,9 @@ function feeds_nodeapi(&$node, $op, $form) {
         if ($op == 'insert' && feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
           $source->import();
         }
-        // Add import to scheduler.
+        // Add import and subscribe to scheduler.
         feeds_scheduler()->add($importer_id, 'import', $node->nid);
+        feeds_scheduler()->add($importer_id, 'subscribe', $node->nid);
         // Add expiry to schedule, in case this is the first feed of this
         // configuration.
         feeds_scheduler()->add($importer_id, 'expire');
@@ -301,6 +302,7 @@ function feeds_nodeapi(&$node, $op, $form) {
       case 'delete':
         // Remove feed from scheduler and delete source.
         feeds_scheduler()->remove($importer_id, 'import', $node->nid);
+        feeds_scheduler()->remove($importer_id, 'subscribe', $node->nid);
         feeds_source($importer_id, $node->nid)->delete();
         break;
     }
