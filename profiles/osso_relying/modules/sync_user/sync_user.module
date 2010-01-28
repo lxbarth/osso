@@ -1,5 +1,7 @@
 <?php
 
+include_once('sync_user.features.inc');
+
 /**
  * Implementation of hook_feeds_plugins().
  */
@@ -16,4 +18,21 @@ function sync_user_feeds_plugins() {
 	    ),
 	  );
 	return $info;
+}
+
+/**
+ * Implementation of hook_user().
+ *
+ * Subscribe/unsubscribe users when they register.
+ */
+function sync_user_user() {
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * Refresh subscriptions recurringly.
+ */
+function sync_user_cron() {
+
 }
