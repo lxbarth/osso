@@ -67,8 +67,6 @@ class PuSHHub {
 
   /**
    * Verify subscription request.
-   *
-   * @todo Use stream wrappers instead of cURL?
    */
   public function verify($post) {
     // Send verification request to subscriber.
@@ -110,8 +108,8 @@ class PuSHHub {
   }
 
   /**
-   * Helper for posting a fat ping. Uses PHP sockets instead of curl for posting
-   * non application/x-www-form-urlencoded content
+   * Helper for posting a fat ping. Uses stream wrappers instead of cURL for
+   * posting non application/x-www-form-urlencoded content
    */
   protected function fatPing($url, $content) {
     $result = FALSE;
