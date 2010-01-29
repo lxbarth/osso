@@ -88,6 +88,15 @@ function openid_provider_sso_menu() {
 }
 
 /**
+ * Implementation of hook_menu_alter() - don't allow common users to see the
+ * OpenID sites page.
+ */
+function openid_provider_sso_menu_alter(&$items) {
+  $items['user/%user/openid_sites']['access callback'] = 'user_access';
+  $items['user/%user/openid_sites']['access arguments'] = array('administer openid provider');
+}
+
+/**
  * Implementation of hook_form_alter().
  *
  * - Keep destinations spanning different sessions.

@@ -2,7 +2,8 @@
 
 function hubnet_preprocess_page (&$vars) {
   $vars['site_slogan'] = variable_get('site_slogan', '');
-  if ($logged_in == FALSE && $vars['template_files']['0'] == 'page-user') {
+  global $user;
+  if (empty($user->uid) && $vars['template_files']['0'] == 'page-user') {
     unset($vars['tabs']);
   }
   if (function_exists('osso_hub_bar')) {
