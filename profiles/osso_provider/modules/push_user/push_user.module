@@ -20,7 +20,7 @@ function push_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'insert':
     case 'after_update':
-      push_hub()->notify(url('user/'. $account->uid .'/feed', array('absolute' => TRUE)), theme('push_user_feed', $account));
+      push_hub()->notify(push_user_feed_url($account->uid), theme('push_user_feed', $account));
       break;
   }
 }
@@ -69,12 +69,19 @@ function push_user_feed() {
 }
 
 /**
+ * Create a full feed URL for a given user.
+ */
+function push_user_feed_url($uid) {
+  return url('user/feed', array('query' => 'openid='. urlencode(url('user/'. $uid .'/identity', array('absolute' => TRUE))), 'absolute' => TRUE));
+}
+
+/**
  * Preprocessor for push_user_feed.
  */
 function template_preprocess_push_user_feed(&$vars) {
   $account = $vars['account'];
   $vars['hub'] = url('pubsubhubbub/endpoint', array('absolute' => TRUE));
-  $vars['feed_url'] = url('user/feed', array('query' => 'openid='. urlencode(url('user/'. $account->uid .'/identity', array('absolute' => TRUE))), 'absolute' => TRUE));
+  $vars['feed_url'] = push_user_feed_url($account->uid);
   $vars['feed_title'] = t('Account information for @user', array('@user' => $account->name));
   $vars['updated'] = gmdate('Y-m-d\TH:i:s\Z'); // For lack of real updated date.
   $vars['site_name'] = variable_get('site_name', 'Drupal');
