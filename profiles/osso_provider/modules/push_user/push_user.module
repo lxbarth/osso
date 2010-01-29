@@ -74,7 +74,7 @@ function push_user_feed() {
 function template_preprocess_push_user_feed(&$vars) {
   $account = $vars['account'];
   $vars['hub'] = url('pubsubhubbub/endpoint', array('absolute' => TRUE));
-  $vars['feed_url'] = url('user/'. $account->uid .'/feed', array('absolute' => TRUE));
+  $vars['feed_url'] = url('user/feed', array('query' => 'openid='. urlencode(url('user/'. $account->uid .'/identity', array('absolute' => TRUE))), 'absolute' => TRUE));
   $vars['feed_title'] = t('Account information for @user', array('@user' => $account->name));
   $vars['updated'] = gmdate('Y-m-d\TH:i:s\Z'); // For lack of real updated date.
   $vars['site_name'] = variable_get('site_name', 'Drupal');
