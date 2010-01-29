@@ -20,7 +20,10 @@ function push_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'insert':
     case 'after_update':
-      push_hub_notify(push_user_feed_url($account->uid)/*, theme('push_user_feed', $account)*/);
+      // Issue a light ping to force authentication for content, underneath an
+      // example how a fat ping would look like.
+      push_hub_notify(push_user_feed_url($account->uid));
+      // push_hub_notify(push_user_feed_url($account->uid)/*, theme('push_user_feed', $account)*/);
       break;
   }
 }

@@ -4,7 +4,6 @@ feeds_include_library('PushSubscriber.inc', 'PushSubscriber');
 
 /**
  * Publish/Subscribe fetcher. Supports at the moment only PubSubHubbub (PuSH).
- *
  */
 class FeedsPubSubFetcher extends FeedsHTTPFetcher {
 
