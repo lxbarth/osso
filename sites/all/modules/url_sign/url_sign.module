@@ -1,0 +1,147 @@
+<?php
+
+/**
+ * Decode url parameters and check signature.
+ *
+ * As a security measure, all parameters must be signed
+ *
+ * @todo This may be extended with expiration date and other options
+ *
+ * @param $path
+ *   Request path
+ * @param $query
+ *   Additional $_GET parameters
+ */
+function url_sign_check($path, $params) {
+  $result = array();
+  $account = !empty($params['suid']) ? user_load(array('uid' => $params['suid'])) : NULL;
+  $signature = !empty($params['signature']) ? $params['signature'] : NULL;
+  if ($account && $signature && url_sign_allowed_path($path) && user_access('use signed urls', $account)) {
+    // Remove signature and uid from params and check
+    unset($params['signature']);
+    unset($params['suid']);
+    unset($params['q']);
+    if ($signature == url_sign_params($account, $path, $params)) {
+      // Successful authentication
+      $result['path'] = $path;
+      $result['params'] = $params;
+      $result['account'] = $account;
+    }
+  }
+  return $result;
+}
+
+/**
+ * Get signature for path and parameters
+ *
+ * We don't worry about encoding here, url params will encoded/decoded at a different level
+ */
+function url_sign_params($account, $path, $params = array(), $create = FALSE) {
+  if (($user_key = url_sign_user_key($account, $create))) {
+    // Strip q param that is on all get requests
+    unset($params['q']);
+    // Reorder params so they're always in the same order and recompose query string
+    ksort($params);
+    $keys = implode(':', array_keys($params));
+    $values = implode(':', $params);
+    return md5(url_sign_system_key().$user_key.':'.$path.'&'.$keys.'='.$values);
+  }
+}
+
+/**
+ * Sign path and add parameters for outgoing urls
+ */
+function url_sign_get_url($account, $path, $query = array(), $fragment = NULL, $absolute = FALSE) {
+  if (url_sign_allowed_path($path) && user_access('use signed urls', $account)
+    && ($signature = url_sign_params($account, $path, $query, TRUE))) {
+    $query['signature'] = $signature;
+    $query['suid'] = $account->uid;
+    unset($query['q']);
+    foreach ($query as $key => $value) {
+      $parts[] = $key.'='.$value;
+    }
+    $querystring = implode('&', $parts);
+    return url($path, $querystring, $fragment , $absolute);
+  }
+}
+
+/**
+ * Get user key for signing urls
+ *
+ * @param $account
+ *   May be user id or user object
+ * @param $create
+ *   Whether to create a signature if it doesn't exist yet
+ */
+function url_sign_user_key($account, $create = FALSE) {
+  $account = is_numeric($account) ? user_load(array('uid' => $account)) : $account;
+  if (!empty($account->url_sign)) {
+    return $account->url_sign;
+  } elseif ($create) {
+    // First check that this is the up to date user object, so we reload it
+    $account = user_load(array('uid' => $account->uid));
+    if (!$reset && !empty($account->url_sign)) {
+      $signature = $account->url_sign;
+    } else {
+      // This user doesn't have a signature yet, or has reset it, we create and save one
+      $signature = url_sign_create_key();
+      user_save($account, array('url_sign' => $signature));
+    }
+    return $signature;
+  }
+}
+
+/**
+ * Return TRUE if current page may be viewed using a url signature
+ *
+ * Code from tokenauth module
+ */
+function url_sign_allowed_path($path) {
+  // Code from the block_list funtion in block.module.
+  // If the path doesn't match any of the exeptions, return TRUE.
+  $pathalias = drupal_get_path_alias($path);
+  $find = array(
+    '/(\r\n?|\n)/',
+    '/\\\\\*/',
+    '/(^|\|)\\\\<front\\\\>($|\|)/',
+    '/\%/'
+  );
+  $replace = array(
+    '|',
+    '.*',
+    '\1'. preg_quote(variable_get('site_frontpage', 'node'), '/') .'\2',
+    '[\d]+'
+  );
+  $regexp = '/^('. preg_replace($find, $replace, preg_quote(variable_get('url_sign_whitelist', "node/%"), '/')) .')$/';
+  // Compare with the internal and path alias (if any).
+  $page_match = preg_match($regexp, $pathalias);
+  if ($pathalias != $path) {
+    $page_match = $page_match || preg_match($regexp, $path);
+  }
+  if ($page_match) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Shortcut function to get a new key
+ *
+ * This key generation is taken from drupal_get_private_key()
+ */
+function url_sign_create_key() {
+  return md5(uniqid(mt_rand(), true)) . md5(uniqid(mt_rand(), true));
+}
+
+/**
+ * Shortcut function to get/reset system key
+ */
+function url_sign_system_key($op = 'get') {
+  if ($op == 'reset') {
+    variable_set('url_sign_system_key', url_sign_create_key());
+  }
+  // This key will default to system's private key unless a specific one is set
+  return variable_get('url_sign_system_key', drupal_get_private_key());
+}
