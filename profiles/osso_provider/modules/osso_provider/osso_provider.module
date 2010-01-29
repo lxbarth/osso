@@ -30,10 +30,10 @@ function osso_provider_block($op = 'list', $delta = '') {
  */
 function osso_provider_user($op, &$edit, &$account) {
   switch ($op) {
-    case 'insert':
     case 'update':
-      // Set an alias for this user.
-      path_set_alias('user/'. $account->uid, 'user/'. $account->name);
+      path_set_alias('user/'. $account->uid);
+    case 'insert':
+      path_set_alias('user/'. $account->uid, 'user/'. urlencode($edit['name']));
       break;
     case 'delete':
       path_set_alias('user/'. $account->uid);
