@@ -1,4 +1,18 @@
 <?php
+/**
+ * @file
+ * Synchronize local users from another Drupal site that exposes user
+ * information with PuSH user module.
+ *
+ * @todo Add authentication with url_sign module.
+ *
+ * - Don't require a user to sign a URL.
+ * - Add shared private key between OP and RPs.
+ * - Extend FeedsPubSubFetcher in sync_user and sign every request URL with
+ *   private key.
+ * - Verify signature in push_user before returning the feed.
+ * - Add nonce and random token to signed URL?
+ */
 
 include_once('sync_user.features.inc');
 
