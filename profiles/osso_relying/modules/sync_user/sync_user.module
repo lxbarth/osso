@@ -57,6 +57,7 @@ function sync_user_user($op, &$edit, &$account, $category = NULL) {
             ),
           ));
           $source->save();
+          // @todo: move this to FeedsSource class.
           feeds_scheduler()->add('user_updates', 'import', $account->uid);
           feeds_scheduler()->add('user_updates', 'subscribe', $account->uid);
           feeds_scheduler()->add('user_updates', 'expire');
