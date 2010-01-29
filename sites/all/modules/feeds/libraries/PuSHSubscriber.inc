@@ -150,13 +150,11 @@ class PuSHSubscriber {
   /**
    * Receive a notification.
    */
-  public function receive($post) {
-    if (is_array($post) && isset($post['changed'])) {
-      return $post['changed'];
+  public function receive() {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      return file_get_contents('php://input');
     }
-    elseif (is_string($post)) {
-      return $post;
-    }
+    return FALSE;
   }
 }
 

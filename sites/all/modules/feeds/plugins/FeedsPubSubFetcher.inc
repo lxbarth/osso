@@ -14,7 +14,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
     // Handle fat ping if present, otherwise pass up to HTTP fetcher.
-    if ($raw = feeds_push_subscriber($this->id, $source->feed_nid)->receive($_POST)) {
+    if ($raw = feeds_push_subscriber($this->id, $source->feed_nid)->receive()) {
       return new FeedsImportBatch($source_config['source'], NULL, $raw);
     }
     return new FeedsImportBatch($source_config['source']);

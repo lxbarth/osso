@@ -55,21 +55,10 @@ class PuSHHub {
    * @return
    *   TRUE if subscriber was successfully notified, FALSE otherwise.
    *
-   * @todo: Fix POST content type http://www.alt-php-faq.org/local/55/
    * @todo: Support a light ping.
    */
-  public function notify($subscriber, $topic, $changed) {
-    $request = curl_init($subscriber);
-//    curl_setopt($request, CURLOPT_HTTPHEADER, array("Content-Type: application/atom+xml; charset=utf-8"));
-    curl_setopt($request, CURLOPT_POST, TRUE);
-    curl_setopt($request, CURLOPT_POSTFIELDS, array('changed' => $changed));
-    curl_exec($request);
-    $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-    if ($code < 200 || $code > 299) {
-      return FALSE;
-    }
-    curl_close($request);
-    return TRUE;
+  public function notify($subscriber, $changed) {
+    return $this->fatPing($subscriber, $changed);
   }
 
   /**
@@ -112,6 +101,27 @@ class PuSHHub {
     }
     header('HTTP/1.0 404 "Not Found"', null, 404);
     exit();
+  }
+
+  /**
+   * Helper for posting a fat ping. Uses PHP sockets instead of curl for posting
+   * non application/x-www-form-urlencoded content
+   */
+  protected function fatPing($url, $content) {
+    $params = array('http' =>
+                array(
+                  'method' => 'POST',
+                  'content' => $content,
+                  'header' => "Content-Type: application/atom+xml\n".
+                              "Content-Length: ". strlen($content) ."\n\n",
+                ),
+              );
+    $ctx = stream_context_create($params);
+    if ($fp = @fopen($url, 'rb', false, $ctx)) {
+      $response = @stream_get_contents($fp);
+      return ($response === FALSE) ? FALSE : TRUE;
+    }
+    return FALSE;
   }
 }
 
