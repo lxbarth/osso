@@ -35,26 +35,30 @@ class PuSHHub {
   }
 
   /**
-   * Notify subscribers of a change in a topic.
+   * Get all subscribers for a given topic.
+   */
+  public function allSubscribers($topic) {
+    return $this->subscriptions->all($topic);
+  }
+
+  /**
+   * Notify a specific subscriber of a change in a topic. API user is
+   * responsible for handling failed requests.
    *
+   * @param $subscriber
+   *   A subscriber callback.
    * @param $topic
    *   URL of the topic that changed.
    * @param $changed
    *   The feed that contains the changed elements.
-   */
-  public function notify($topic, $changed) {
-    foreach ($this->subscriptions->all($topic) as $subscriber) {
-      $this->notifySubscriber($subscriber, $topic, $changed);
-    }
-  }
-
-  /**
-   * Notify a specific subscriber of a change in a topic.
    *
-   * @todo: Fix POST content type.
+   * @return
+   *   TRUE if subscriber was successfully notified, FALSE otherwise.
+   *
+   * @todo: Fix POST content type http://www.alt-php-faq.org/local/55/
    * @todo: Support a light ping.
    */
-  public function notifySubscriber($subscriber, $topic, $changed) {
+  public function notify($subscriber, $topic, $changed) {
     $request = curl_init($subscriber);
 //    curl_setopt($request, CURLOPT_HTTPHEADER, array("Content-Type: application/atom+xml; charset=utf-8"));
     curl_setopt($request, CURLOPT_POST, TRUE);
@@ -62,9 +66,10 @@ class PuSHHub {
     curl_exec($request);
     $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
     if ($code < 200 || $code > 299) {
-      error_log('Error notifying '. $subscriber .' of change in '. $topic);
+      return FALSE;
     }
     curl_close($request);
+    return TRUE;
   }
 
   /**

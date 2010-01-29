@@ -20,7 +20,10 @@ function push_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'insert':
     case 'after_update':
-      push_hub()->notify(push_user_feed_url($account->uid), theme('push_user_feed', $account));
+      // @todo: support batching, queue failing notifications for later.
+      foreach (push_hub()->allSubscribers(push_user_feed_url($account->uid)) as $subscriber) {
+        push_hub()->notify($subscriber, push_user_feed_url($account->uid), theme('push_user_feed', $account));
+      }
       break;
   }
 }
