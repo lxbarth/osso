@@ -1,0 +1,69 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Create user</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Create user</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/op/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=The Blog</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Log in / Sign up</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Sign up</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>edit-name</td>
+	<td>Max Moser</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>edit-mail</td>
+	<td>max@moser</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>edit-pass-pass1</td>
+	<td>max</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>edit-pass-pass2</td>
+	<td>max</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>edit-submit</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>edit-submit-once</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyTextPresent</td>
+	<td>Hello, Max Moser</td>
+	<td></td>
+</tr>
+
+</tbody></table>
+</body>
+</html>
