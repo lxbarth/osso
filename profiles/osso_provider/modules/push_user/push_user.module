@@ -45,8 +45,6 @@ function push_user_theme() {
 
 /**
  * Access callback for user feed.
- *
- * @todo: implement HMAC.
  */
 function push_user_feed_access() {
   return TRUE;
