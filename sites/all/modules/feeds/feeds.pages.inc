@@ -149,7 +149,7 @@ function feeds_push_receive($importer, $feed_nid = 0) {
       $importer->fetcher->pushVerifySubscriptionRequest($_GET, $feed_nid);
     }
     // No subscription notification has ben sent, we are being notified.
-    // @todo: verify notification.
+    // @todo: handle errors and do not respond with 2x if there are any.
     else {
       feeds_source($importer->id, $feed_nid)->import();
     }

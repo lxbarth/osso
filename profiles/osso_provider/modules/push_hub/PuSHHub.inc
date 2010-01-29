@@ -50,19 +50,25 @@ class PuSHHub {
    * @param $topic
    *   URL of the topic that changed.
    * @param $changed
-   *   The full or partial feed that contains the changed elements.
+   *   The full or partial feed that contains the changed elements. If NULL,
+   *   a light ping (without any content) will be issued to subscriber and
+   *   subscriber is expected to fetch content from publisher. Light pings are
+   *   not pubsubhubbub spec conform.
    *
    * @return
    *   TRUE if subscriber was successfully notified, FALSE otherwise.
-   *
-   * @todo: Support a light ping.
    */
-  public function notify($subscriber, $changed) {
+  public function notify($subscriber, $changed = NULL) {
+    if ($changed === NULL) {
+      return $this->lightPing($subscriber);
+    }
     return $this->fatPing($subscriber, $changed);
   }
 
   /**
    * Verify subscription request.
+   *
+   * @todo Use stream wrappers instead of cURL?
    */
   public function verify($post) {
     // Send verification request to subscriber.
@@ -96,10 +102,10 @@ class PuSHHub {
   public function subscribe($post) {
     if (isset($post['hub_topic']) && isset($post['hub_callback']) && $this->verify($post)) {
       $this->subscriptions->save($post['hub_topic'], $post['hub_callback']);
-      header('HTTP/1.0 204 "No Content"', null, 204);
+      header('HTTP/1.1 204 "No Content"', null, 204);
       exit();
     }
-    header('HTTP/1.0 404 "Not Found"', null, 404);
+    header('HTTP/1.1 404 "Not Found"', null, 404);
     exit();
   }
 
@@ -108,6 +114,7 @@ class PuSHHub {
    * non application/x-www-form-urlencoded content
    */
   protected function fatPing($url, $content) {
+    $result = FALSE;
     $params = array('http' =>
                 array(
                   'method' => 'POST',
@@ -119,7 +126,28 @@ class PuSHHub {
     $ctx = stream_context_create($params);
     if ($fp = @fopen($url, 'rb', false, $ctx)) {
       $response = @stream_get_contents($fp);
-      return ($response === FALSE) ? FALSE : TRUE;
+      $meta = stream_get_meta_data($fp);
+      preg_match('/HTTP.*?\s(\d*?)\s.*/i', $meta['wrapper_data'][0], $matches);
+      $code = (integer) $matches[1];
+      if ($code >= 200 && $code < 300) {
+        $result = TRUE;
+      }
+      fclose($fp);
+    }
+    return $result;
+  }
+
+  /**
+   * Issue a light ping, not spec conform.
+   */
+  protected function lightPing($url) {
+    $request = curl_init($url);
+    curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
+    $data = curl_exec($request);
+    $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+    curl_close($request);
+    if ($code >= 200 && $code < 300) {
+      return TRUE;
     }
     return FALSE;
   }
