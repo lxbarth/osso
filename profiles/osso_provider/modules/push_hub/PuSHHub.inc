@@ -50,7 +50,7 @@ class PuSHHub {
    * @param $topic
    *   URL of the topic that changed.
    * @param $changed
-   *   The feed that contains the changed elements.
+   *   The full or partial feed that contains the changed elements.
    *
    * @return
    *   TRUE if subscriber was successfully notified, FALSE otherwise.

@@ -32,6 +32,22 @@ function push_hub() {
 }
 
 /**
+ * Notify subscribers.
+ *
+ * @param $topic
+ *   URL of the topic that changed.
+ * @param $changed
+ *   The full or partial feed that contains the changed elements.
+ *
+ * @todo Support batching, queue failing notifications for later.
+ */
+function push_hub_notify($topic, $changed) {
+  foreach (push_hub()->allSubscribers($topic) as $subscriber) {
+    push_hub()->notify($subscriber, $topic, $changed);
+  }
+}
+
+/**
  * A PuSHHub Subscriptions.
  */
 class PuSHHubSubscriptions implements PuSHHubSubscriptionsInterface {
