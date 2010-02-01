@@ -45,14 +45,36 @@ function push_hub() {
  * @todo Support batching, queue failing notifications for later.
  */
 function push_hub_notify($topic, $changed = NULL) {
+  $operations = array();
   foreach (push_hub()->allSubscribers($topic) as $subscriber) {
-    if (push_hub()->notify($subscriber, $changed)) {
-      drupal_set_message('success');
-    }
-    else {
-      drupal_set_message('fail');
-    }
+    $operations[] = array(
+      'push_hub_notify_subscriber', array($subscriber, $changed),
+    );
   }
+  $batch = array(
+    'title' => t('Updating account'),
+    'operations' => $operations
+    );
+  batch_set($batch);
+}
+
+/**
+ * Notify subscriber, used as Batch API callback. The absence of a $topic may
+ * be confusing: A $subscriber URL is unique to a topic URL, therefore it is not
+ * necessary to supply $subscriber and $topic for issueing a notification.
+ *
+ * @param $subscriber
+ *   The subscriber for a specific topic.
+ * @param $changed
+ *   The content that has changed.
+ * @param $context
+ *   Batch API context.
+ */
+function push_hub_notify_subscriber($subscriber, $changed = NULL, &$context) {
+  if (!push_hub()->notify($subscriber, $changed)) {
+    watchdog('push_hub', 'Failed to notify @subscriber - queueing for later notification.', array('@subscriber' => $subscriber), WATCHDOG_NOTICE);
+  }
+  $context['finished'] = TRUE;
 }
 
 /**
