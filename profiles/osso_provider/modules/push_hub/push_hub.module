@@ -10,6 +10,13 @@ include_once('PuSHHub.inc');
 define('PUSH_HUB_NOTIFICATIONS_QUEUE', 'push_hub_notifications');
 
 /**
+ * Implementation of hook_enable().
+ */
+function push_hub_enable() {
+  variable_set('queue_module_'. PUSH_HUB_NOTIFICATIONS_QUEUE, 'PuSHHub');
+}
+
+/**
  * Implementation of hook_menu().
  */
 function push_hub_menu() {
@@ -36,6 +43,13 @@ function push_hub_cron_queue_info() {
     'time' => 15,
   );
   return $queues;
+}
+
+/**
+ * Implementation of hook_push_hub_drupal_queue_load_classes().
+ */
+function push_hub_drupal_queue_load_classes() {
+  module_load_include('inc', 'push_hub', 'PuSHHubQueue');
 }
 
 /**
@@ -95,7 +109,7 @@ function push_hub_notify_subscriber_batchapi($info, &$context) {
 function push_hub_notify_subscriber($info) {
   if (!push_hub()->notify($info['subscriber'], isset($info['content']) ? $info['content'] : NULL)) {
     // On failure, queue for later notification.
-    push_hub_queue()->createItem($info);
+    push_hub_queue()->createItem($info, time() + 5 * 60);
   }
 }
 
