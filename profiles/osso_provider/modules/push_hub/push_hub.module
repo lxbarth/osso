@@ -25,7 +25,7 @@ function push_hub_menu() {
 }
 
 /**
- * Instantiates a PuSH Hub object.
+ * Instantiates a PuSHHub object.
  */
 function push_hub() {
   return PuSHHub::instance(PuSHHubSubscriptions::instance());
