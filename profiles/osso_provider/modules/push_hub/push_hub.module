@@ -7,6 +7,7 @@
  */
 
 include_once('PuSHHub.inc');
+define('PUSH_HUB_NOTIFICATIONS_QUEUE', 'push_hub_notifications');
 
 /**
  * Implementation of hook_menu().
@@ -25,10 +26,16 @@ function push_hub_menu() {
 }
 
 /**
- * Instantiates a PuSHHub object.
+ * Implementation of hook_cron_queue_info().
+ * Invoked by drupal_queue module if present.
  */
-function push_hub() {
-  return PuSHHub::instance(PuSHHubSubscriptions::instance());
+function push_hub_cron_queue_info() {
+  $queues = array();
+  $queues[PUSH_HUB_NOTIFICATIONS_QUEUE] = array(
+    'worker callback' => 'push_hub_notify_subscriber',
+    'time' => 15,
+  );
+  return $queues;
 }
 
 /**
@@ -41,40 +48,70 @@ function push_hub() {
  *   a light ping (without any content) will be issued to subscriber and
  *   subscriber is expected to fetch content from publisher. Light pings are
  *   not pubsubhubbub spec conform.
+ * @param $batch
+ *   Set to true to use browser based batching, otherwise notifications will be
+ *   queued for execution cron.
  *
  * @todo Support batching, queue failing notifications for later.
  */
-function push_hub_notify($topic, $changed = NULL) {
-  $operations = array();
-  foreach (push_hub()->allSubscribers($topic) as $subscriber) {
-    $operations[] = array(
-      'push_hub_notify_subscriber', array($subscriber, $changed),
-    );
+function push_hub_notify($topic, $changed = NULL, $batch = FALSE) {
+  if ($batch) {
+    $operations = array();
+    foreach (push_hub()->allSubscribers($topic) as $subscriber) {
+      $operations[] = array(
+        'push_hub_notify_subscriber_batchapi', array(array('subscriber' => $subscriber, 'changed' => $changed)),
+      );
+    }
+    $batch = array(
+      'title' => t('Updating account'),
+      'operations' => $operations
+      );
+    batch_set($batch);
   }
-  $batch = array(
-    'title' => t('Updating account'),
-    'operations' => $operations
-    );
-  batch_set($batch);
+  else {
+    foreach (push_hub()->allSubscribers($topic) as $subscriber) {
+      push_hub_queue()->createItem(array('subscriber' => $subscriber, 'changed' => $changed));
+    }
+  }
 }
 
 /**
- * Notify subscriber, used as Batch API callback. The absence of a $topic may
- * be confusing: A $subscriber URL is unique to a topic URL, therefore it is not
- * necessary to supply $subscriber and $topic for issueing a notification.
- *
- * @param $subscriber
- *   The subscriber for a specific topic.
- * @param $changed
- *   The content that has changed.
- * @param $context
- *   Batch API context.
+ * Batch API callback for push_hub_notify_subscriber().
  */
-function push_hub_notify_subscriber($subscriber, $changed = NULL, &$context) {
-  if (!push_hub()->notify($subscriber, $changed)) {
-    watchdog('push_hub', 'Failed to notify @subscriber - queueing for later notification.', array('@subscriber' => $subscriber), WATCHDOG_NOTICE);
-  }
+function push_hub_notify_subscriber_batchapi($info, &$context) {
+  push_hub_notify_subscriber($info);
   $context['finished'] = TRUE;
+}
+
+/**
+ * Notify subscriber, used as queue callback. The absence of a topic may
+ * be confusing: A subscriber URL is unique to a topic URL, therefore it is not
+ * necessary to supply subscriber and topic for issueing a notification.
+ *
+ * @param $info
+ *   An array with a key 'subscriber' containing the subscriber callback URL and
+ *   an optional key 'changed' containing the changed content.
+ */
+function push_hub_notify_subscriber($info) {
+  if (!push_hub()->notify($info['subscriber'], isset($info['content']) ? $info['content'] : NULL)) {
+    // On failure, queue for later notification.
+    push_hub_queue()->createItem($info);
+  }
+}
+
+/**
+ * Instantiates a Drupal queue for push_hub.
+ */
+function push_hub_queue() {
+  drupal_queue_include();
+  return drupal_queue_get(PUSH_HUB_NOTIFICATIONS_QUEUE);
+}
+
+/**
+ * Instantiates a PuSHHub object.
+ */
+function push_hub() {
+  return PuSHHub::instance(PuSHHubSubscriptions::instance());
 }
 
 /**
