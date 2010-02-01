@@ -1,5 +1,5 @@
 <?php
-// $Id: drupal_queue.module,v 1.2 2009/10/31 13:55:45 alexb Exp $
+// $Id: drupal_queue.module,v 1.3 2009/12/09 15:21:10 alexb Exp $
 
 /**
  * Get a queue object for a given name.
@@ -23,6 +23,8 @@ function drupal_queue_include() {
   static $included = FALSE;
   if (!$included) {
     module_load_include('inc', 'drupal_queue', 'drupal_queue');
+    module_invoke_all('drupal_queue_load_classes');
+    
     $included = TRUE;
   }
 }

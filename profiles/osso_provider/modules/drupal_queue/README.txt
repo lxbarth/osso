@@ -1,4 +1,4 @@
-$Id: README.txt,v 1.4 2009/11/02 21:48:21 alexb Exp $
+$Id: README.txt,v 1.5 2010/01/26 20:47:10 alexb Exp $
 
 DRUPAL QUEUE
 ------------
@@ -22,6 +22,8 @@ INSTALLATION
   to your crontab just like cron.php
 - You can schedule as many workers concurrently as your server resources allow
   for.
+- Note: modules that use Drupal Queue may still require cron to be configured
+  http://drupal.org/cron
 
 USING DRUPAL QUEUE
 ------------------
