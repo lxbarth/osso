@@ -138,12 +138,12 @@ class PuSHSubscriber {
   public function verifySubscriptionRequest($verify_fields) {
     if ($subscription = $this->subscriptions->load($this->domain, $this->subscriber_id)) {
       if ($verify_fields['hub_verify_token'] == $subscription['post_fields']['hub.verify_token']) {
-        header('HTTP/1.0 200 "Found"', null, 200);
+        header('HTTP/1.1 200 "Found"', null, 200);
         print $verify_fields['hub_challenge'];
         exit();
       }
     }
-    header('HTTP/1.0 404 "Not Found"', null, 404);
+    header('HTTP/1.1 404 "Not Found"', null, 404);
     exit();
   }
 

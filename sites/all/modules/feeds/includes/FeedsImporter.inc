@@ -62,14 +62,11 @@ class FeedsImporter extends FeedsConfigurable {
   /**
    * Remove items older than $time. If $time is not given, processor settings
    * will be used.
+   *
+   * @throws Exception $e
    */
   public function expire($time = NULL) {
-    try {
-      $this->processor->expire($time);
-    }
-    catch (Exception $e) {
-      drupal_set_message($e->getMessage(), 'error');
-    }
+    $this->processor->expire($time);
   }
 
   /**
@@ -78,6 +75,8 @@ class FeedsImporter extends FeedsConfigurable {
    *
    * @param $feed_info
    *   FeedsScheduler feed infor array.
+   *
+   * @throws Exception $e
    *
    * @see FeedsScheduler::work().
    */

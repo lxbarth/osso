@@ -59,23 +59,8 @@ function sync_user_feeds_plugins() {
 function sync_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'insert':
-    case 'update':
-      $url = variable_get('sync_user_feed_url', 'http://example.com/');
       if (isset($edit['auth_openid'])) {
-        $url .= 'user/feed?openid='. urlencode($edit['auth_openid']);
-        if (valid_url($url)) {
-          $source = feeds_source('user_updates', $account->uid);
-          $source->addConfig(array(
-            'FeedsPubSubFetcher' => array(
-              'source' => $url,
-            ),
-          ));
-          $source->save();
-          // @todo: move this to FeedsSource class.
-          feeds_scheduler()->add('user_updates', 'import', $account->uid);
-          feeds_scheduler()->add('user_updates', 'subscribe', $account->uid);
-          feeds_scheduler()->add('user_updates', 'expire');
-        }
+        sync_user_subscribe($account->uid, sync_user_subscription_url($edit['auth_openid']));
       }
       break;
   }
@@ -95,7 +80,27 @@ function sync_user_form_alter(&$form, $form_state, $form_id) {
         '#title' => t('Synchronization feed'),
         '#description' => t('You can change this URL for all users on !sync_settings.', array('!sync_settings' => l(t('Synchronize users settings'), 'admin/user/sync'))),
       );
-      $form['sync_user_feed']['url']['#value'] = l(check_plain($source->config['FeedsPubSubFetcher']['source']), $source->config['FeedsPubSubFetcher']['source']);
+      if ($url = $source->config['FeedsPubSubFetcher']['source']) {
+        $form['sync_user_feed']['url']['#value'] = l(check_plain($url), $url);
+      }
+      else {
+        $form['sync_user_feed']['resubscribe'] = array(
+          '#value' => t('Subscribe'),
+          '#type' => 'submit',
+          '#submit' => array('sync_user_subscribe_submit'),
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Submit handler for subscription button.
+ */
+function sync_user_subscribe_submit($form, &$form_state) {
+  if ($openid = sync_user_openid($form_state['values']['_account']->uid)) {
+    if ($url = sync_user_subscription_url($openid)) {
+      sync_user_subscribe($form_state['values']['_account']->uid, $url);
     }
   }
 }
@@ -121,4 +126,41 @@ function sync_user_form() {
     '#default_value' => variable_get('sync_user_private_key', '@todo'),
   );
   return system_settings_form($form);
+}
+
+/**
+ * Construct a subscription URL.
+ */
+function sync_user_subscription_url($openid) {
+  $url = variable_get('sync_user_feed_url', 'http://example.com/');
+  $url .= 'user/feed?openid='. urlencode($openid);
+  return $url;
+}
+
+/**
+ * Retrieve the OpenID for a given user, assume only 1.
+ *
+ * @todo: resolve the one OpenID per user restriction.
+ */
+function sync_user_openid($uid) {
+  return db_result(db_query("SELECT authname FROM {authmap} WHERE uid = %d AND module = 'openid'", $uid));
+}
+
+/**
+ * Subscribe a user.
+ */
+function sync_user_subscribe($uid, $url) {
+  if (valid_url($url)) {
+    $source = feeds_source('user_updates', $uid);
+    $source->addConfig(array(
+      'FeedsPubSubFetcher' => array(
+        'source' => $url,
+      ),
+    ));
+    $source->save();
+    // @todo: move this to FeedsSource class.
+    feeds_scheduler()->add('user_updates', 'import', $uid);
+    feeds_scheduler()->add('user_updates', 'subscribe', $uid);
+    feeds_scheduler()->add('user_updates', 'expire');
+  }
 }

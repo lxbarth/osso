@@ -290,7 +290,12 @@ function feeds_nodeapi(&$node, $op, $form) {
         // Refresh feed if import on create is selected and suppress_import is
         // not set.
         if ($op == 'insert' && feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
-          $source->import();
+          try {
+            $source->import();
+          }
+          catch (Exception $e) {
+            drupal_set_message($e->getMessage(), 'error');
+          }
         }
         // Add import and subscribe to scheduler.
         feeds_scheduler()->add($importer_id, 'import', $node->nid);

@@ -109,18 +109,13 @@ class FeedsSource extends FeedsConfigurable {
    *
    * @todo Iron out and document potential Exceptions.
    * @todo Support batching.
-   * @todo catch exceptions outside of import(), clear() and expire().
+   *
+   * @throws Exception $e
    */
   public function import() {
-    try {
-      $feed = $this->importer->fetcher->fetch($this);
-      $this->importer->parser->parse($feed, $this);
-      $this->importer->processor->process($feed, $this);
-      unset($feed);
-    }
-    catch (Exception $e) {
-      drupal_set_message($e->getMessage(), 'error');
-    }
+    $feed = $this->importer->fetcher->fetch($this);
+    $this->importer->parser->parse($feed, $this);
+    $this->importer->processor->process($feed, $this);
     module_invoke_all('feeds_after_import', $this->importer, $this);
   }
 

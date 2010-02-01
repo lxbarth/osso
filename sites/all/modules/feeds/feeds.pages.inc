@@ -83,7 +83,12 @@ function feeds_import_form_submit($form, &$form_state) {
 
   // Refresh feed if import on create is selected.
   if ($source->importer->config['import_on_create']) {
-    $source->import();
+    try {
+      $source->import();
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
   }
 
   // Add importer to schedule.
@@ -109,7 +114,12 @@ function feeds_import_tab_form(&$form_state, $node) {
  * Submit handler for feeds_import_tab_form().
  */
 function feeds_import_tab_form_submit($form, $form_state) {
-  feeds_source($form['#importer_id'], $form['#feed_nid'])->import();
+  try {
+    feeds_source($form['#importer_id'], $form['#feed_nid'])->import();
+  }
+  catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
 }
 
 /**
@@ -149,9 +159,15 @@ function feeds_push_receive($importer, $feed_nid = 0) {
       $importer->fetcher->pushVerifySubscriptionRequest($_GET, $feed_nid);
     }
     // No subscription notification has ben sent, we are being notified.
-    // @todo: handle errors and do not respond with 2x if there are any.
     else {
-      feeds_source($importer->id, $feed_nid)->import();
+      try {
+        feeds_source($importer->id, $feed_nid)->import();
+      }
+      catch (Exception $e) {
+        // In case of an error, respond with a 503 Service (temporary) unavailable.
+        header('HTTP/1.1 503 "Not Found"', null, 503);
+        exit();
+      }
     }
   }
 }
