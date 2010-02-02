@@ -27,7 +27,7 @@ function _sync_user_feeds_importer_default() {
     'fetcher' => array(
       'plugin_key' => 'FeedsPubSubFetcher',
       'config' => array(
-        'auto_detect_feeds' => FALSE,
+        'subscription_period' => 86400,
       ),
     ),
     'parser' => array(
@@ -61,7 +61,7 @@ function _sync_user_feeds_importer_default() {
     ),
     'content_type' => 'page',
     'update' => 0,
-    'import_period' => '-1',
+    'import_period' => '604800',
     'expire_period' => 3600,
     'import_on_create' => 0,
   );
