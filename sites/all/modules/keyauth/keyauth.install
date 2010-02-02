@@ -3,7 +3,7 @@
 /**
  * Implementation of hook_schema().
  */
-function key_auth_schema() {
+function keyauth_schema() {
   $schema = array();
   $schema['keyauth_keys'] = array(
     'description' => 'Stores all authentication keys.',

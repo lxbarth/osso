@@ -77,14 +77,14 @@ function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
  */
 function keyauth_sign_url($public_key, $url) {
   // Normalize URL.
-  if ($fragment = parse_url($url, 'fragment')) {
+  if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
     $url = str_replace("#$fragment", '', $url);
   }
   $url = trim($url, '?&');
   // Sign.
   list($nonce, $timestamp, $hash) = keyauth_sign($public_key, $url);
   // Assemble.
-  $delimiter = parse_url($url, 'query') ? '&' : '?';
+  $delimiter = parse_url($url, PHP_URL_QUERY) ? '&' : '?';
   $url = $delimiter . 'hash='. urlencode($hash) .'&key='. urlencode($public_key) .'&nonce='. urlencode($nonce) .'&timestamp='. $timestamp;
   if ($fragment) {
     $url .= "#$fragment";
@@ -97,7 +97,7 @@ function keyauth_sign_url($public_key, $url) {
  */
 function keyauth_verify_url($public_key, $url) {
   // Noralize URL.
-  if ($fragment = parse_url($url, 'fragment')) {
+  if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
     $url = str_replace("#$fragment", '', $url);
   }
   // Parse URL.
