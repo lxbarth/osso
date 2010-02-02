@@ -39,7 +39,7 @@ function keyauth_menu() {
   $items['admin/build/keys/%/delete'] = array(
     'access arguments'   => array('administer authentication keys'),
     'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('keyauth_admin_keys_delete_confirm', 4),
+    'page arguments'    => array('keyauth_admin_keys_delete_confirm', 3),
     'file'              => 'keyauth.admin.inc',
     'type'              => MENU_CALLBACK,
   );

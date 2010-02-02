@@ -27,7 +27,7 @@ function keyauth_key($public_key) {
  *   'hash' - The hash of message, nonce and timestamp.
  */
 function keyauth_sign($public_key, $message) {
-  $nonce = _keyauth_nonce();
+  $nonce = keyauth_random();
   $timestamp = time();
   $hash = hash_hmac(KEYAUTH_ALGORITHM, $message . $nonce . $timestamp, keyauth_key($public_key));
   return array(
@@ -47,29 +47,6 @@ function keyauth_verify($public_key, $message, $nonce, $timestamp, $hash) {
     }
   }
   return FALSE;
-}
-
-/**
- * Provide a nonce.
- */
-function _keyauth_nonce() {
-  return md5(uniqid(rand(), true));
-}
-
-/**
- * Verify nonce.
- *
- * @todo - verify timestamp in separate step?
- */
-function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
-  if (db_result(db_query("SELECT nonce FROM {key_auth_timestamp_nonce} WHERE public_key = '%s' AND nonce = '%s'", $public_key, $nonce))) {
-    return FALSE;
-  }
-  $time - time();
-  if ($timestamp > $time + KEYAUTH_EXPIRY || $timestamp < $time - KEYAUTH_EXPIRY) {
-    return FALSE;
-  }
-  return TRUE;
 }
 
 /**
@@ -119,4 +96,28 @@ function keyauth_verify_url($public_key, $url) {
   $url = trim($url, '?&');
   // Verify.
   return keyauth_verify($key, $url, $nonce, $timestamp, $hash);
+}
+
+
+/**
+ * Privide a random, time dependent string.
+ */
+function keyauth_random($algorithm = 'md5') {
+  return hash($algorithm, uniqid(rand(), true));
+}
+
+/**
+ * Verify nonce.
+ *
+ * @todo - verify timestamp in separate step?
+ */
+function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
+  if (db_result(db_query("SELECT nonce FROM {key_auth_timestamp_nonce} WHERE public_key = '%s' AND nonce = '%s'", $public_key, $nonce))) {
+    return FALSE;
+  }
+  $time - time();
+  if ($timestamp > $time + KEYAUTH_EXPIRY || $timestamp < $time - KEYAUTH_EXPIRY) {
+    return FALSE;
+  }
+  return TRUE;
 }

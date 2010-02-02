@@ -10,16 +10,17 @@
 function keyauth_admin_keys_list() {
   $rows = array();
   $result = db_query("SELECT * FROM {keyauth_keys}");
-  while ($key = db_fetch_object($keys)) {
+  while ($key = db_fetch_object($result)) {
     $row = array();
-    $row[] = $key->public_key;
     $row[] = $key->title;
-    $row[] = $key->domain;
+    $row[] = $key->public_key;
+    $row[] = $key->private_key;
 
     // Populate the operations field.
     $operations = array();
-    $operations[] = array('data' => l(t('edit'), 'admin/build/services/keys/'. $key->public_key));
-    $operations[] = array('data' => l(t('delete'), 'admin/build/services/keys/'. $key->public_key .'/delete'));
+    $operations[] = array('data' => l(t('edit'), 'admin/build/keys/'. $key->public_key));
+    $operations[] = array('data' => l(t('regenerate'), 'admin/build/keys/'. $key->public_key .'/regenerate'));
+    $operations[] = array('data' => l(t('delete'), 'admin/build/keys/'. $key->public_key .'/delete'));
     foreach ($operations as $operation) {
       $row[] = $operation;
     }
@@ -34,107 +35,81 @@ function keyauth_admin_keys_list() {
 }
 
 /**
- * A form for creating
+ * Create/edit keys.
  */
-function keyauth_admin_keys_form($public_key) {
+function keyauth_admin_keys_form($form_state, $public_key = '') {
   $key = db_fetch_object(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
 
-  $key_kid = isset($key->kid) ? $key->kid : '';
-  $key_title = isset($key->title) ? $key->title : '';
-  $form['kid'] = array(
-    '#type'           => 'hidden',
-    '#default_value'  => $key_kid,
-  );
-
-  $accessible_methods = array();
-  if ($key_kid != '') {
-    $form['key'] = array(
-      '#type'           => 'markup',
-      '#title'          => t('Key'),
-      '#value'          => '<strong>'. t('API Key') .':</strong> '. $key_kid,
-    );
-    $result = db_query("SELECT method FROM {services_key_permissions} WHERE kid = '%s'", $key->kid);
-    while ($kid = db_fetch_object($result)) {
-      $accessible_methods[] = $kid->method;
-    }
-  }
-
+  $form = array();
+  $form['#public_key'] = isset($key->public_key) ? $key->public_key : '';
+  $form['#redirect'] = 'admin/build/keys';
   $form['title'] = array(
     '#title'          => t('Application title'),
     '#type'           => 'textfield',
-    '#default_value'  => $key_title,
+    '#default_value'  => isset($key->title) ? $key->title : '',
     '#description'    => t('The title of the application or website using the service.'),
-  );
-  $form['domain'] = array(
-    '#title'          => t('Allowed domain'),
-    '#type'           => 'textfield',
-    '#default_value'  => isset($key->domain) ? $key->domain : '',
-    '#description'    => t('External domain allowed to use this key.'),
     '#required'       => TRUE,
   );
-
   $form['submit'] = array(
     '#type'           => 'submit',
-    '#value'          => $key_title != '' ? t('Save key') : t('Create key'),
+    '#value'          => isset($key->title) ? t('Save key') : t('Create key'),
   );
-
   return $form;
 }
 
+/**
+ * Submit handler for keyauth_admin_keys_form().
+ */
 function keyauth_admin_keys_form_submit($form, &$form_state) {
-  services_keyauth_admin_keys_save($form_state['values']);
-
-  $form_state['redirect']  =  'admin/build/services/keys';
+  keyauth_admin_keys_save($form_state['values']['title'], $form['#public_key']);
 }
 
-function keyauth_admin_keys_save(&$key) {
-  $is_existing = FALSE;
-  $key['kid'] = !empty($key['kid']) ? $key['kid'] : md5(uniqid(mt_rand(), TRUE));
-  $is_existing =  db_result(db_query("SELECT count(*) FROM {services_keys}
-    WHERE kid = '%s'", $key['kid']));
-
-  if ($is_existing) {
-    db_query("UPDATE {services_keys} SET title = '%s', domain = '%s'
-      WHERE kid = '%s'", $key['title'], $key['domain'], $key['kid']);
-    db_query("DELETE FROM {services_key_permissions} WHERE kid = '%s'", $key['kid']);
-    $return = SAVED_UPDATED;
+/**
+ * Save a key, generate a pair of keys if new.
+ */
+function keyauth_admin_keys_save($title, $public_key = '') {
+  keyauth_include();
+  if (empty($public_key)) {
+    $save = array(
+      'title' => $title,
+      'public_key' => keyauth_random('md5'),
+      'private_key' => keyauth_random('sha1'),
+    );
+    drupal_write_record('keyauth_keys', $save);
   }
   else {
-    db_query("INSERT INTO {services_keys} (kid, title, domain)
-      VALUES ('%s', '%s', '%s')", $key['kid'], $key['title'], $key['domain']);
-    $return = SAVED_NEW;
+    $save = array(
+      'title' => $title,
+      'public_key' => $public_key,
+    );
+    drupal_write_record('keyauth_keys', $save, 'public_key');
   }
-  foreach ($key['method_access'] as $method => $value) {
-    if ($value) {
-      db_query("INSERT INTO {services_key_permissions} (kid, method) VALUES ('%s', '%s')", $key['kid'], $value);
-    }
-  }
-  return $return;
 }
 
-function keyauth_admin_keys_delete($kid) {
-  db_query("DELETE FROM {services_keys} WHERE kid = '%s'", $kid);
+/**
+ * Delete a key.
+ */
+function keyauth_admin_keys_delete($public_key) {
+  db_query("DELETE FROM {keyauth_keys} WHERE public_key = '%s'", $public_key);
 }
 
-function keyauth_admin_keys_delete_confirm(&$form_state, $kid = 0) {
-  $key = db_fetch_object(db_query("SELECT * FROM {services_keys} WHERE kid = '%s'", $kid));
-
-  $form['kid'] = array('#type' => 'value', '#value' => $key->kid);
-
-  $message = t('Are you sure you want to delete the key %key?', array('%key' => $key->kid));
+/**
+ * Delete confirmation.
+ */
+function keyauth_admin_keys_delete_confirm(&$form_state, $public_key = '') {
+  $form['#public_key'] = $public_key;
+  $form['#redirect'] = 'admin/build/keys';
+  $message = t('Are you sure you would like to delete the key @key?', array('@key' => $public_key));
   $caption = '';
-
   $caption .= '<p>'. t('This action cannot be undone.') .'</p>';
-
-  return confirm_form($form, $message, 'admin/build/services/keys', $caption, t('Delete'));
+  return confirm_form($form, $message, $form['#redirect'], $caption, t('Delete'));
 }
 
+/**
+ * Submit handler for keyauth_admin_keys_delete_confirm().
+ */
 function keyauth_admin_keys_delete_confirm_submit($form, &$form_state) {
-  keyauth_admin_keys_delete($form_state['values']['kid']);
-
-  $t_args = array('%key' => $form_state['kid']);
-  drupal_set_message(t('The key %key has been deleted.', $t_args));
-  watchdog('menu', 'Deleted key %key.', $t_args, WATCHDOG_NOTICE);
-
-  $form_state['redirect'] = 'admin/build/services/keys';
+  keyauth_admin_keys_delete($form['#public_key']);
+  drupal_set_message(t('The key @key has been deleted.', array('@key' => $form['#public_key'])));
+  watchdog('menu', 'Deleted key @key.', array('@key' => $form['#public_key']), WATCHDOG_NOTICE);
 }
