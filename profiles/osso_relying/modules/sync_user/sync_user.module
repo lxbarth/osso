@@ -64,9 +64,7 @@ function sync_user_user($op, &$edit, &$account, $category = NULL) {
       }
       break;
     case 'delete':
-      feeds_scheduler()->remove('user_updates', 'import', $account->uid);
-      feeds_scheduler()->remove('user_updates', 'subscribe', $account->uid);
-      feeds_source('user_updates', $account->uid)->delete();
+      sync_user_unsubscribe($account->uid);
       break;
   }
 }
@@ -86,15 +84,13 @@ function sync_user_form_alter(&$form, $form_state, $form_id) {
         '#description' => t('You can change this URL for all users on !sync_settings.', array('!sync_settings' => l(t('Synchronize users settings'), 'admin/user/sync'))),
       );
       if ($url = $source->config['FeedsPubSubFetcher']['source']) {
-        $form['sync_user_feed']['url']['#value'] = l(check_plain($url), $url);
+        $form['sync_user_feed']['url']['#value'] = '<div class="sub-url">'. l(check_plain($url), $url) .'</div>';
       }
-      else {
-        $form['sync_user_feed']['resubscribe'] = array(
-          '#value' => t('Subscribe'),
-          '#type' => 'submit',
-          '#submit' => array('sync_user_subscribe_submit'),
-        );
-      }
+      $form['sync_user_feed']['resubscribe'] = array(
+        '#value' => isset($url) ? t('Refresh subscription') : t('Subscribe'),
+        '#type' => 'submit',
+        '#submit' => array('sync_user_subscribe_submit'),
+      );
     }
   }
 }
@@ -103,9 +99,11 @@ function sync_user_form_alter(&$form, $form_state, $form_id) {
  * Submit handler for subscription button.
  */
 function sync_user_subscribe_submit($form, &$form_state) {
-  if ($openid = sync_user_openid($form_state['values']['_account']->uid)) {
+  $uid = $form_state['values']['_account']->uid;
+  if ($openid = sync_user_openid($uid)) {
     if ($url = sync_user_subscription_url($openid)) {
-      sync_user_subscribe($form_state['values']['_account']->uid, $url);
+      sync_user_unsubscribe($uid);
+      sync_user_subscribe($uid, $url);
     }
   }
 }
@@ -168,4 +166,13 @@ function sync_user_subscribe($uid, $url) {
     feeds_scheduler()->add('user_updates', 'subscribe', $uid);
     feeds_scheduler()->add('user_updates', 'expire');
   }
+}
+
+/**
+ * Unsubscribe a user.
+ */
+function sync_user_unsubscribe($uid) {
+  feeds_scheduler()->remove('user_updates', 'import', $uid);
+  feeds_scheduler()->remove('user_updates', 'subscribe', $uid);
+  feeds_source('user_updates', $uid)->delete();
 }
