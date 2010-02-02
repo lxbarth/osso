@@ -86,6 +86,7 @@ class PuSHSubscriber {
    *   The callback to unsubscribe.
    */
   public function unsubscribe($topic_url, $callback_url) {
+    $this->subscriptions->delete($this->domain, $this->subscriber_id);
   }
 
   /**

@@ -208,6 +208,11 @@ class FeedsSource extends FeedsConfigurable {
    * from database, does not delete configuration itself.
    */
   public function delete() {
+    // Alert implementers of FeedsSourceInterface to the fact that we're
+    // deleting.
+    foreach ($this->importer->plugin_types as $type) {
+      $this->importer->$type->sourceDelete($this);
+    }
     db_query('DELETE FROM {feeds_source} WHERE id = "%s" AND feed_nid = %d', $this->id, $this->feed_nid);
   }
 

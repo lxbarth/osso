@@ -27,6 +27,13 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   }
 
   /**
+   * Override sourceDelete() - unsubscribe from hub.
+   */
+  public function sourceDelete(FeedsSource $source) {
+    $this->unsubscribe($source);
+  }
+
+  /**
    * Implement FeedsFetcher::subscribe() - subscribe to hub.
    */
   public function subscribe(FeedsSource $source) {
