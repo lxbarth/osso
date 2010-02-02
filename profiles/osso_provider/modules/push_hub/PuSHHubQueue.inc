@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Modify the SystemQueues behavior slightly so that it supports delayed
+ * Modify the SystemQueue's default behaviour so that it supports delayed
  * dequeueing.
  */
 class PuSHHubQueue extends SystemQueue {

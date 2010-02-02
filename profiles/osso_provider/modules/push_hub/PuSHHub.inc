@@ -47,8 +47,6 @@ class PuSHHub {
    *
    * @param $subscriber
    *   A subscriber callback.
-   * @param $topic
-   *   URL of the topic that changed.
    * @param $changed
    *   The full or partial feed that contains the changed elements. If NULL,
    *   a light ping (without any content) will be issued to subscriber and
@@ -108,8 +106,15 @@ class PuSHHub {
   }
 
   /**
+   * Expire old subscriptions.
+   */
+  public function expire($time) {
+    $this->subscriptions->expire($time);
+  }
+
+  /**
    * Helper for posting a fat ping. Uses stream wrappers instead of cURL for
-   * posting non application/x-www-form-urlencoded content
+   * posting a message body that is not "application/x-www-form-urlencoded".
    */
   protected function fatPing($url, $content) {
     $result = FALSE;
@@ -156,22 +161,44 @@ class PuSHHub {
  * storage class.
  */
 interface PuSHHubSubscriptionsInterface {
-
   /**
    * Save a subscription.
+   *
+   * @param $topic
+   *   A topic URL.
+   * @param $subscriber
+   *   The subscriber URL that is the callback to be invoked when the topic
+   *   changes.
    */
   public function save($topic, $subscriber);
 
   /**
    * Delete a subscription.
+   *
+   * @param $topic
+   *   A topic URL.
+   * @param $subscriber
+   *   The subscriber URL that is the callback to be invoked when the topic
+   *   changes.
    */
   public function delete($topic, $subscriber);
 
   /**
    * Find all subscriber URLs for a given topic URL.
    *
+   * @param $topic
+   *   A topic URL.
+   *
    * @return
    *   An array of subscriber URLs.
    */
   public function all($topic);
+
+  /**
+   * Expire subscriptions older than $time.
+   *
+   * @param $time
+   *   Subscriptions older than time() - $time will be deleted.
+   */
+  public function expire($time);
 }
