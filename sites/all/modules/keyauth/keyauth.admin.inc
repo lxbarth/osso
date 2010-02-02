@@ -19,7 +19,7 @@ function keyauth_admin_keys_list() {
     // Populate the operations field.
     $operations = array();
     $operations[] = array('data' => l(t('edit'), 'admin/build/keys/'. $key->public_key));
-    $operations[] = array('data' => l(t('regenerate'), 'admin/build/keys/'. $key->public_key .'/regenerate'));
+    $operations[] = array('data' => l(t('generate'), 'admin/build/keys/'. $key->public_key .'/generate'));
     $operations[] = array('data' => l(t('delete'), 'admin/build/keys/'. $key->public_key .'/delete'));
     foreach ($operations as $operation) {
       $row[] = $operation;
@@ -30,15 +30,15 @@ function keyauth_admin_keys_list() {
   if (empty($rows)) {
     $rows[] = array(array('data' => t('No API keys created.'), 'colspan' => '5', 'class' => 'message'));
   }
-  $header = array(t('Key'), t('Title'), t('Domain'), array('data' => t('Operations'), 'colspan' => '2'));
+  $header = array(t('Title'), t('Public key'), t('Private key'), array('data' => t('Operations'), 'colspan' => '2'));
   return theme('table', $header, $rows);
 }
 
 /**
  * Create/edit keys.
  */
-function keyauth_admin_keys_form($form_state, $public_key = '') {
-  $key = db_fetch_object(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
+function keyauth_admin_keys_form($form_state, $arg = '') {
+  $key = db_fetch_object(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $arg));
 
   $form = array();
   $form['#public_key'] = isset($key->public_key) ? $key->public_key : '';
@@ -50,9 +50,32 @@ function keyauth_admin_keys_form($form_state, $public_key = '') {
     '#description'    => t('The title of the application or website using the service.'),
     '#required'       => TRUE,
   );
+  if ($arg == 'add') {
+    $form['public_key'] = array(
+      '#title'          => t('Public key'),
+      '#type'           => 'textfield',
+      '#default_value'  => isset($key->public_key) ? $key->public_key : '',
+      '#description'    => t('Public key for the service.'),
+    );
+    $form['private_key'] = array(
+      '#title'          => t('Application title'),
+      '#type'           => 'textfield',
+      '#default_value'  => isset($key->private_key) ? $key->private_key : '',
+      '#description'    => t('Private key for the service. This key is never sent over the network.'),
+    );
+  }
+  if ($arg == 'new') {
+    $value = t('Create key');
+  }
+  elseif ($arg == 'add') {
+    $value = t('Add key');
+  }
+  else {
+    $value = t('Save key');
+  }
   $form['submit'] = array(
     '#type'           => 'submit',
-    '#value'          => isset($key->title) ? t('Save key') : t('Create key'),
+    '#value'          => $value,
   );
   return $form;
 }
@@ -96,10 +119,10 @@ function keyauth_admin_keys_delete($public_key) {
 /**
  * Delete confirmation.
  */
-function keyauth_admin_keys_delete_confirm(&$form_state, $public_key = '') {
+function keyauth_admin_keys_delete_confirm(&$form_state, $public_key) {
   $form['#public_key'] = $public_key;
   $form['#redirect'] = 'admin/build/keys';
-  $message = t('Are you sure you would like to delete the key @key?', array('@key' => $public_key));
+  $message = t('Delete the key @key?', array('@key' => $public_key));
   $caption = '';
   $caption .= '<p>'. t('This action cannot be undone.') .'</p>';
   return confirm_form($form, $message, $form['#redirect'], $caption, t('Delete'));
@@ -112,4 +135,29 @@ function keyauth_admin_keys_delete_confirm_submit($form, &$form_state) {
   keyauth_admin_keys_delete($form['#public_key']);
   drupal_set_message(t('The key @key has been deleted.', array('@key' => $form['#public_key'])));
   watchdog('menu', 'Deleted key @key.', array('@key' => $form['#public_key']), WATCHDOG_NOTICE);
+}
+
+/**
+ * Generate confirmation.
+ */
+function keyauth_admin_keys_generate_confirm(&$form_state, $public_key) {
+  $form['#public_key'] = $public_key;
+  $form['#redirect'] = 'admin/build/keys';
+  $message = t('Generate a new <em>private key</em> for @key?', array('@key' => $public_key));
+  $caption = '';
+  $caption .= '<p>'. t('This action cannot be undone.') .'</p>';
+  return confirm_form($form, $message, $form['#redirect'], $caption, t('Generate new private key'));
+}
+
+/**
+ * Submit handler for keyauth_admin_keys_generate_confirm().
+ */
+function keyauth_admin_keys_generate_confirm_submit($form, &$form_state) {
+  keyauth_include();
+  $save = array(
+    'public_key' => $form['#public_key'],
+    'private_key' => keyauth_random('sha1'),
+  );
+  drupal_write_record('keyauth_keys', $save,  'public_key');
+  drupal_set_message(t('Your new private key is @key', array('@key' => $save['private_key'])));
 }
