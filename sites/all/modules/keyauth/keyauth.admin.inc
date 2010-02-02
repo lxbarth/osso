@@ -41,7 +41,10 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
   $key = db_fetch_object(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $arg));
 
   $form = array();
-  $form['#public_key'] = isset($key->public_key) ? $key->public_key : '';
+  $form['public_key'] = array(
+    '#type' => 'hidden',
+    '#value' => isset($key->public_key) ? $key->public_key : '',
+  );
   $form['#redirect'] = 'admin/build/keys';
   $form['title'] = array(
     '#title'          => t('Application title'),
@@ -84,29 +87,7 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
  * Submit handler for keyauth_admin_keys_form().
  */
 function keyauth_admin_keys_form_submit($form, &$form_state) {
-  keyauth_admin_keys_save($form_state['values']['title'], $form['#public_key']);
-}
-
-/**
- * Save a key, generate a pair of keys if new.
- */
-function keyauth_admin_keys_save($title, $public_key = '') {
-  keyauth_include();
-  if (empty($public_key)) {
-    $save = array(
-      'title' => $title,
-      'public_key' => keyauth_random('md5'),
-      'private_key' => keyauth_random('sha1'),
-    );
-    drupal_write_record('keyauth_keys', $save);
-  }
-  else {
-    $save = array(
-      'title' => $title,
-      'public_key' => $public_key,
-    );
-    drupal_write_record('keyauth_keys', $save, 'public_key');
-  }
+  keyauth_admin_keys_save($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
 }
 
 /**

@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * Unit tests for key auth.
+ *
+ */
+class KeyAuthWebTestCase extends DrupalWebTestCase {
+  /**
+   * Describe this test.
+   */
+  public function getInfo() {
+    return array(
+      'name' => t('Unit tests'),
+      'description' => t('Unit test authentication methods.'),
+      'group' => t('Key Authentication'),
+    );
+  }
+
+  /**
+   * Set up test.
+   */
+  public function setUp() {
+    parent::setUp('keyauth');
+  }
+
+  /**
+   * Run tests.
+   */
+  public function test() {
+    // Set up a key.
+    keyauth_include();
+    $key = keyauth_admin_keys_save('Test key');
+
+    // Sign a message, verify it. It should only verify once.
+    list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    $this->assertTrue(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verified message.');
+    $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verification of message failed.');
+    $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verification of message failed.');
+
+    // Try again with new signature.
+    list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    $this->assertTrue(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verified message.');
+  }
+}

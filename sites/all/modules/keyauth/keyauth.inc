@@ -9,7 +9,7 @@
  * Look up a private key.
  */
 function keyauth_key($public_key) {
-  return db_result(db_query("SELECT private_key FROM {key_auth_keys} WHERE public_key = '%s'", $public_key));
+  return db_result(db_query("SELECT private_key FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
 }
 
 /**
@@ -41,9 +41,9 @@ function keyauth_sign($public_key, $message) {
  * Verify a message.
  */
 function keyauth_verify($public_key, $message, $nonce, $timestamp, $hash) {
-  if ($key = keyauth_key($public_key)) {
+  if ($private_key = keyauth_key($public_key)) {
     if (_keyauth_verify_nonce($public_key, $nonce, $timestamp)) {
-      return $hash == hash_hmac(KEYAUTH_ALGORITHM, $message . $nonce . $timestamp);
+      return $hash == hash_hmac(KEYAUTH_ALGORITHM, $message . $nonce . $timestamp, $private_key);
     }
   }
   return FALSE;
@@ -79,7 +79,7 @@ function keyauth_verify_url($public_key, $url) {
   }
   // Parse URL.
   $parsed = parse_url($url);
-  if (!$parsed['query']) {
+  if (!isset($parsed['query'])) {
     return FALSE;
   }
   parse_str($parsed['query'], $query);
@@ -108,16 +108,20 @@ function keyauth_random($algorithm = 'md5') {
 
 /**
  * Verify nonce.
- *
- * @todo - verify timestamp in separate step?
  */
 function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
-  if (db_result(db_query("SELECT nonce FROM {key_auth_timestamp_nonce} WHERE public_key = '%s' AND nonce = '%s'", $public_key, $nonce))) {
+  if (db_result(db_query("SELECT nonce FROM {keyauth_timestamp_nonce} WHERE public_key = '%s' AND nonce = '%s'", $public_key, $nonce))) {
     return FALSE;
   }
-  $time - time();
+  $time = time();
   if ($timestamp > $time + KEYAUTH_EXPIRY || $timestamp < $time - KEYAUTH_EXPIRY) {
     return FALSE;
   }
+  $save = array(
+    'timestamp' => time(),
+    'public_key' => $public_key,
+    'nonce' => $nonce,
+  );
+  drupal_write_record('keyauth_timestamp_nonce', $save);
   return TRUE;
 }

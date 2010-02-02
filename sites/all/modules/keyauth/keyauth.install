@@ -6,10 +6,10 @@
 function keyauth_schema() {
   $schema = array();
   $schema['keyauth_keys'] = array(
-    'description' => 'Stores all authentication keys.',
+    'description' => 'Stores authentication keys.',
     'fields' => array(
       'title' => array(
-        'description' => 'The title of the service key.',
+        'description' => 'The title of a key.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
