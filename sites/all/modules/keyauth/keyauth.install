@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Implementation of hook_schema().
+ */
 function key_auth_schema() {
   $schema = array();
   $schema['keyauth_keys'] = array(
@@ -29,7 +32,6 @@ function key_auth_schema() {
     ),
     'primary key' => array('public_key'),
   );
-
   $schema['keyauth_timestamp_nonce'] = array(
     'description' => 'Stores timestamp against nonce for repeat attacks.',
     'fields' => array(
@@ -59,4 +61,19 @@ function key_auth_schema() {
       'public_key_nonce'  => array('public_key', 'nonce'),
     ),
   );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function keyauth_install() {
+  drupal_install_schema('keyauth');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function keyauth_uninstall() {
+  drupal_uninstall_schema('keyauth');
 }
