@@ -45,6 +45,11 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
   /**
    * Implement FeedsFetcher::subscriptionPeriod().
    * Indicate how often a subscription needs to be renewed.
+   *
+   * @todo subscription_period should actually be retrieved from the hub's
+   *   response to a subscription. This will mean a different subscription
+   *   period per source, hence a major change to FeedsScheduler which is
+   *   currently assuming a fixed period per task!
    */
   public function subscriptionPeriod() {
     return $this->config['subscription_period'];
