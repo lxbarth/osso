@@ -6,7 +6,7 @@
  */
 
 // TTL of a subscription.
-define('PUSH_HUB_LEASE_SECONDS', 3600*24);
+define('PUSH_HUB_LEASE_SECONDS', 3600*48);
 
 /**
  * A PubsubHubbub Hub.
