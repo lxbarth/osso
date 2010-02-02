@@ -1,0 +1,21 @@
+<?php
+
+define('KEYAUTH_EXPIRY', 30);
+define('KEYAUTH_ALGORITHM', 'sha1');
+
+/**
+ * Implementation of hook_cron().
+ *
+ * Clear down old values from the nonce table.
+ */
+function keyauth_cron() {
+  $expiry_time = time() - KEYAUTH_EXPIRY;
+  db_query("DELETE FROM {keyauth_timestamp_nonce} WHERE timestamp < '%s'", $expiry_time);
+}
+
+/**
+ * Include key auth functions.
+ */
+function keyauth_include() {
+  module_load_include('inc', 'keyauth');
+}

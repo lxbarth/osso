@@ -1,0 +1,62 @@
+<?php
+
+function key_auth_schema() {
+  $schema = array();
+  $schema['keyauth_keys'] = array(
+    'description' => 'Stores all authentication keys.',
+    'fields' => array(
+      'title' => array(
+        'description' => 'The title of the service key.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'public_key' => array(
+        'description' => 'The public key.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'private_key' => array(
+        'description' => 'The private key.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+    ),
+    'primary key' => array('public_key'),
+  );
+
+  $schema['keyauth_timestamp_nonce'] = array(
+    'description' => 'Stores timestamp against nonce for repeat attacks.',
+    'fields' => array(
+      'timestamp' => array(
+        'description' => 'The timestamp used with the Nonce.',
+        'type'        => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nonce' => array(
+        'description' => 'The random string used on the request.',
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE,
+        'default'     => ''
+      ),
+      'public_key' => array(
+        'description' => 'The public key that submitted the request.',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+        'default'     => ''
+      ),
+    ),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+      'public_key_nonce'  => array('public_key', 'nonce'),
+    ),
+  );
+}
