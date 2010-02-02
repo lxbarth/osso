@@ -63,6 +63,11 @@ function sync_user_user($op, &$edit, &$account, $category = NULL) {
         sync_user_subscribe($account->uid, sync_user_subscription_url($edit['auth_openid']));
       }
       break;
+    case 'delete':
+      feeds_scheduler()->remove('user_updates', 'import', $account->uid);
+      feeds_scheduler()->remove('user_updates', 'subscribe', $account->uid);
+      feeds_source('user_updates', $account->uid)->delete();
+      break;
   }
 }
 
