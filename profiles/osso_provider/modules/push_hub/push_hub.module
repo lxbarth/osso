@@ -8,7 +8,6 @@
 
 include_once('PuSHHub.inc');
 define('PUSH_HUB_NOTIFICATIONS_QUEUE', 'push_hub_notifications');
-define('PUSH_HUB_EXPIRE', 3600*24);
 
 /**
  * Implementation of hook_enable().
@@ -37,7 +36,7 @@ function push_hub_menu() {
  * Implementation of hook_cron().
  */
 function push_hub_cron() {
-  push_hub()->expire(PUSH_HUB_EXPIRE);
+  push_hub()->expire();
 }
 
 /**

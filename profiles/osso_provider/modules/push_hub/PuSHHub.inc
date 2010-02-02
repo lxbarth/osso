@@ -5,6 +5,9 @@
  * PubsubHubbub library.
  */
 
+// TTL of a subscription.
+define('PUSH_HUB_LEASE_SECONDS', 3600*24);
+
 /**
  * A PubsubHubbub Hub.
  */
@@ -73,7 +76,7 @@ class PuSHHub {
       'hub.mode='. $post['hub_mode'],
       'hub.topic='. urlencode($post['hub_topic']),
       'hub.challenge='. $challenge,
-      'hub.lease_seconds='. $post['hub_lease_seconds'],
+      'hub.lease_seconds='. PUSH_HUB_LEASE_SECONDS, // disregard what's been requested ($post['hub_lease_seconds'])
       'hub.verify_token='. $post['hub_verify_token'],
     );
     $parsed = parse_url($post['hub_callback']);
@@ -108,8 +111,8 @@ class PuSHHub {
   /**
    * Expire old subscriptions.
    */
-  public function expire($time) {
-    $this->subscriptions->expire($time);
+  public function expire() {
+    $this->subscriptions->expire(PUSH_HUB_LEASE_SECONDS);
   }
 
   /**
