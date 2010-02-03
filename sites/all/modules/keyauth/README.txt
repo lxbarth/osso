@@ -25,7 +25,7 @@ $key = keyauth_insert('Test key');
 2) Sign a message
 
 keyauth_include();
-list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+list($nonce, $timestamp, $hash) = keyauth_sign($key['public_key'], 'Lorem ipsum');
 
 3) Verify a message
 

@@ -143,19 +143,19 @@ function keyauth_save_nonce($record) {
  *   A string that is the message to hash.
  *
  * @return
- *   An array with the following keys:
- *   'nonce' - A random unique nonce.
- *   'timestamp' - The timestamp denoting the validity of the nonce.
- *   'hash' - The hash of message, nonce and timestamp.
+ *   An array with the following values:
+ *   0 - A random unique nonce.
+ *   1 - The timestamp denoting the validity of the nonce.
+ *   2 - The hash of message, nonce and timestamp.
  */
 function keyauth_sign($public_key, $message) {
   $nonce = keyauth_random();
   $timestamp = time();
   $hash = hash_hmac(KEYAUTH_ALGORITHM, $message . $nonce . $timestamp, keyauth_key($public_key));
   return array(
-    'nonce' => $nonce,
-    'timestamp' => $timestamp,
-    'hash' => $hash,
+    $nonce,
+    $timestamp,
+    $hash,
   );
 }
 
@@ -190,7 +190,7 @@ function keyauth_sign_url($public_key, $url) {
   // Normalize URL.
   list($scheme, $url, $fragment) = keyauth_normalize_url($url);
   // Sign.
-  list($nonce, $timestamp, $hash) = array_values(keyauth_sign($public_key, $url));
+  list($nonce, $timestamp, $hash) = keyauth_sign($public_key, $url);
   // Assemble.
   $delimiter = parse_url($url, PHP_URL_QUERY) ? '&' : '?';
   $url .= $delimiter . 'hash='. urlencode($hash) .'&key='. urlencode($public_key) .'&nonce='. urlencode($nonce) .'&timestamp='. $timestamp;

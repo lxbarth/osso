@@ -36,7 +36,7 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
     }
 
     // Sign a message, verify it. It should only verify once.
-    list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    list($nonce, $timestamp, $hash) = keyauth_sign($key['public_key'], 'Lorem ipsum');
     $this->assert('pass', 'Nonce: '. $nonce);
     $this->assert('pass', 'Timestamp: '. $timestamp);
     $this->assert('pass', 'Hash: '. $hash);
@@ -46,11 +46,11 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
     $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verification of message failed.');
 
     // Try again with new signature.
-    list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    list($nonce, $timestamp, $hash) = keyauth_sign($key['public_key'], 'Lorem ipsum');
     $this->assertTrue(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verified message.');
 
     // Try with random key - should fail.
-    list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    list($nonce, $timestamp, $hash) = keyauth_sign($key['public_key'], 'Lorem ipsum');
     $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, hash_hmac(KEYAUTH_ALGORITHM, 'Lorem ipsum', $key['public_key'])), 'Verification of message failed.');
 
     // Test URL signing.
