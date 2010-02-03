@@ -1,4 +1,4 @@
-name = Key Authentication API
-description = Provides HMAC/nonce based authentication for web services.
+name = KeyAuth
+description = Provides message based authentication for web services.
 dependencies[] = ctools
 core = 6.x

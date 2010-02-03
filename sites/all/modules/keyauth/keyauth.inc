@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup db Database manipulation - Drupal specific.
+ * @defgroup keyauth_db Database integration for KeyAuth - Drupal specific.
  * @{
  */
 
@@ -126,7 +126,12 @@ function keyauth_save_nonce($record) {
 }
 
 /**
- * @} End of "defgroup db".
+ * @} End of "defgroup keyauth_db".
+ */
+
+/**
+ * @defgroup keyauth_library KeyAuth library - Drupal independent.
+ * @{
  */
 
 /**
@@ -250,3 +255,7 @@ function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
   keyauth_save_nonce($save);
   return TRUE;
 }
+
+/**
+ * @} End of "defgroup keyauth_library".
+ */

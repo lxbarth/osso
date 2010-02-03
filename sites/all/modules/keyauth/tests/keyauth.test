@@ -11,8 +11,8 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
   public function getInfo() {
     return array(
       'name' => t('Unit tests'),
-      'description' => t('Unit test authentication methods.'),
-      'group' => t('Key Authentication API'),
+      'description' => t('Test authentication methods.'),
+      'group' => t('KeyAuth'),
     );
   }
 
