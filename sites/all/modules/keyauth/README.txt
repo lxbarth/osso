@@ -55,11 +55,10 @@ $verified = keyauth_verify_url($key['public_key'], $signed);
 
 /**
  * Access callback for protected resource URLs.
- * 7fb5490cce31840608ec635a931c00aa is the shared public key.
  */
 function myresource_access() {
   keyauth_include();
-  return keyauth_verify_url('7fb5490cce31840608ec635a931c00aa', $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+  return keyauth_verify_url($_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
 }
 
 3) Create a module 'myconsumer' that pulls the protected path of 'myresource'
