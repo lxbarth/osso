@@ -36,13 +36,16 @@ function keyauth_insert($title, $public_key = NULL, $private_key = NULL) {
  *   Public key.
  * @param $title
  *   Tite of key set.
+ * @param $private_key
+ *   Private key.
  *
  * @return
  *   Complete key set as an array.
  */
-function keyauth_update($public_key, $title) {
+function keyauth_update($public_key, $title, $private_key) {
   $save = array(
     'title' => $title,
+    'public_key' => $public_key,
     'public_key' => $public_key,
   );
   drupal_write_record('keyauth_keys', $save, 'public_key');

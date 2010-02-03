@@ -51,7 +51,7 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
     '#required'       => TRUE,
     '#weight'         => -1,
   );
-  if ($arg == 'add') {
+  if ($arg != 'new') {
     $form['public_key'] = array(
       '#title'          => t('Public key'),
       '#type'           => 'textfield',
@@ -87,7 +87,7 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
  * Validation handler for keyauth_admin_keys_form().
  */
 function keyauth_admin_keys_form_validate($form, &$form_state) {
-  if (!empty($form_state['values']['public_key']) && db_result(db_query("SELECT public_key FROM {keyauth_keys} WHERE public_key = '%s'", $form_state['values']['public_key']))) {
+  if (!empty($form_state['values']['public_key']) && $form['#public_key'] != $form_state['values']['public_key'] && db_result(db_query("SELECT public_key FROM {keyauth_keys} WHERE public_key = '%s'", $form_state['values']['public_key']))) {
     form_set_error('public_key', t('Public key exists already.'));
   }
 }
@@ -97,14 +97,14 @@ function keyauth_admin_keys_form_validate($form, &$form_state) {
  */
 function keyauth_admin_keys_form_submit($form, &$form_state) {
   keyauth_include();
-  if (!empty($form_state['values']['public_key'])) {
+  if (empty($form['#public_key']) && empty($form_state['values']['public_key'])) {
+    keyauth_insert($form_state['values']['title']);
+  }
+  elseif (empty($form['#public_key']) && !empty($form_state['values']['public_key'])) {
     keyauth_insert($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
   }
   elseif (!empty($form['#public_key'])) {
-    keyauth_update($form['#public_key'], $form_state['values']['title']);
-  }
-  else {
-    keyauth_insert($form_state['values']['title']);
+    keyauth_update($form['#public_key'], $form_state['values']['title'], $form_state['values']['private_key']);
   }
 }
 
