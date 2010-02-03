@@ -48,8 +48,28 @@ $verified = keyauth_verify_url($key['public_key'], $signed);
 
 1) Set up Key Authorization on two Drupal sites, create a new key on one of the
    sites and add the same key (public key and private key) to the other site.
+
 2) Create a module 'myresource' that exposes a path that should be protected, use
    keyauth_verify_url in the path's access check. Enable the module on one of
    the sites.
+
+/**
+ * Access callback for protected resource URLs.
+ * 7fb5490cce31840608ec635a931c00aa is the shared public key.
+ */
+function myresource_access() {
+  keyauth_include();
+  return keyauth_verify_url('7fb5490cce31840608ec635a931c00aa', $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+}
+
 3) Create a module 'myconsumer' that pulls the protected path of 'myresource'
-   using drupal_http_request() and keyauth_sign().
+   using drupal_http_request() and keyauth_sign(). Enable myconsumer on the
+   site where you have not enabled myresources module.
+
+/**
+ * Download URL, authenticate with Key Authentication module.
+ * 7fb5490cce31840608ec635a931c00aa is the shared public key.
+ */
+function myconsumer_request($url) {
+  return drupal_http_request(keyauth_sign_url('7fb5490cce31840608ec635a931c00aa', $url));
+}
