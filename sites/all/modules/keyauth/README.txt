@@ -1,7 +1,7 @@
 
 
-Key Authentication
-------------------
+KeyAuth
+-------
 
 Provides an API and a basic UI for key based authentication. Modeled after
 services_keyauth module.
