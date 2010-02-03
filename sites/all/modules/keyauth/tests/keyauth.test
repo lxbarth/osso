@@ -26,7 +26,7 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
   /**
    * Run tests.
    */
-  public function test() {return;
+  public function test() {
     // Set up a key.
     keyauth_include();
     $key = keyauth_insert('Test key');
