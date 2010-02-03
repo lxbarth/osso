@@ -1,3 +1,4 @@
 name = Key Authentication API
 description = Provides HMAC/nonce based authentication for web services.
+dependencies[] = ctools
 core = 6.x

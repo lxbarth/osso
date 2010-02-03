@@ -71,10 +71,24 @@ function keyauth_regenerate($public_key) {
 }
 
 /**
+ * Get all keys.
+ */
+function keyauth_all_keys() {
+  ctools_include('export');
+  $configs = ctools_export_load_object('keyauth_keys', 'all');
+  return $configs;
+}
+
+/**
  * Look up a private key.
  */
 function keyauth_key($public_key) {
-  return db_result(db_query("SELECT private_key FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
+  $keys = keyauth_all_keys();
+  foreach ($keys as $p => $key) {
+    if ($p == $public_key) {
+      return $key->private_key;
+    }
+  }
 }
 
 /**
@@ -122,6 +136,8 @@ function keyauth_sign_url($public_key, $url) {
   if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
     $url = str_replace("#$fragment", '', $url);
   }
+  $scheme = parse_url($url, PHP_URL_SCHEME);
+  $url = str_replace("$scheme://", '', $url);
   $url = trim($url, '?&');
   // Sign.
   list($nonce, $timestamp, $hash) = array_values(keyauth_sign($public_key, $url));
@@ -131,7 +147,7 @@ function keyauth_sign_url($public_key, $url) {
   if ($fragment) {
     $url .= "#$fragment";
   }
-  return $url;
+  return "$scheme://$url";
 }
 
 /**
@@ -142,6 +158,8 @@ function keyauth_verify_url($public_key, $url) {
   if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
     $url = str_replace("#$fragment", '', $url);
   }
+  $scheme = parse_url($url, PHP_URL_SCHEME);
+  $url = str_replace("$scheme://", '', $url);
   // Parse URL.
   $parsed = parse_url($url);
   if (!isset($parsed['query'])) {

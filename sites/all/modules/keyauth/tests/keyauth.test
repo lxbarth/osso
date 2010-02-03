@@ -20,7 +20,7 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
    * Set up test.
    */
   public function setUp() {
-    parent::setUp('keyauth');
+    parent::setUp('ctools', 'keyauth');
   }
 
   /**
@@ -62,13 +62,14 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
    */
   public function myTestURLs() {
     return array(
-      'http://developmentseed.org/blog/feed',
-      'http://developmentseed.org/blog/feed?',
-      'http://developmentseed.org/blog/feed?view=top',
-      'http://developmentseed.org/blog/feed?view=top&',
-      'http://developmentseed.org/blog/feed?view=top&mode=map',
-      'http://developmentseed.org/blog/feed?view=top&mode=tense#toc',
-      'http://developmentseed.org/blog/feed?view=top&mode=tense&#toc',
+      'http://example.com/blog/feed',
+      'http://example.com/blog/feed?',
+      'http://example.com/blog/feed?view=top',
+      'http://example.com/blog/feed?view=top&',
+      'http://example.com/blog/feed?view=top&mode=map',
+      'http://example.com/blog/feed?view=top&mode=tense#toc',
+      'http://example.com/blog/feed?view=top&mode=tense&#toc',
+      'http://example.com/user/feed?openid=http%3A%2F%2Flocalhost%2Fop%2Fuser%2F22%2Fidentity',
     );
   }
 }
