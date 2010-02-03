@@ -131,6 +131,8 @@ function keyauth_verify($public_key, $message, $nonce, $timestamp, $hash) {
 
 /**
  * Sign a URL.
+ *
+ * @todo Clean up, document.
  */
 function keyauth_sign_url($public_key, $url) {
   // Normalize URL.
@@ -153,6 +155,8 @@ function keyauth_sign_url($public_key, $url) {
 
 /**
  * Verify a URL.
+ *
+ * @todo Clean up, document.
  */
 function keyauth_verify_url($url) {
   // Normalize URL.
@@ -184,7 +188,7 @@ function keyauth_verify_url($url) {
 
 
 /**
- * Privide a random, time dependent string.
+ * Provide a random, time dependent string.
  */
 function keyauth_random($algorithm = 'md5') {
   return hash($algorithm, uniqid(rand(), true));
