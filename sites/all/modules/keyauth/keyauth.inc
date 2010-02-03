@@ -75,6 +75,7 @@ function keyauth_regenerate($public_key) {
  */
 function keyauth_all_keys() {
   ctools_include('export');
+  ctools_export_load_object_reset('keyauth_keys');
   $configs = ctools_export_load_object('keyauth_keys', 'all');
   return $configs;
 }
