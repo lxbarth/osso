@@ -6,6 +6,11 @@
  */
 
 /**
+ * @defgroup db Database manipulation - Drupal specific.
+ * @{
+ */
+
+/**
  * Load a key.
  */
 function keyauth_load($public_key) {
@@ -73,29 +78,6 @@ function keyauth_save($key) {
 }
 
 /**
- * Update a key set.
- *
- * @param $public_key
- *   Public key.
- * @param $title
- *   Tite of key set.
- * @param $private_key
- *   Private key.
- *
- * @return
- *   Complete key set as an array.
- */
-function keyauth_update($public_key, $title, $private_key) {
-  $save = array(
-    'title' => $title,
-    'public_key' => $public_key,
-    'public_key' => $public_key,
-  );
-  drupal_write_record('keyauth_keys', $save, 'public_key');
-  return db_fetch_array(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
-}
-
-/**
  * Delete a key.
  */
 function keyauth_delete($public_key) {
@@ -119,6 +101,33 @@ function keyauth_regenerate($public_key) {
   drupal_write_record('keyauth_keys', $save, 'public_key');
   return db_fetch_array(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
 }
+
+/**
+ * Load from db.
+ */
+function keyauth_load_nonce($public_key, $nonce) {
+  return db_result(db_query("SELECT nonce FROM {keyauth_timestamp_nonce} WHERE public_key = '%s' AND nonce = '%s'", $public_key, $nonce));
+}
+
+/**
+ * Save nonce to db.
+ *
+ * @param $record
+ *   Array of the pattern
+ *
+ *  $record = array(
+ *    'timestamp' => time(),
+ *    'public_key' => $public_key,
+ *    'nonce' => $nonce,
+ *  );
+ */
+function keyauth_save_nonce($record) {
+  drupal_write_record('keyauth_timestamp_nonce', $record);
+}
+
+/**
+ * @} End of "defgroup db".
+ */
 
 /**
  * Sign a message.
@@ -226,7 +235,7 @@ function keyauth_random($algorithm = 'md5') {
  * Verify nonce.
  */
 function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
-  if (db_result(db_query("SELECT nonce FROM {keyauth_timestamp_nonce} WHERE public_key = '%s' AND nonce = '%s'", $public_key, $nonce))) {
+  if (keyauth_load_nonce($public_key, $nonce)) {
     return FALSE;
   }
   $time = time();
@@ -238,6 +247,6 @@ function _keyauth_verify_nonce($public_key, $nonce, $timestamp) {
     'public_key' => $public_key,
     'nonce' => $nonce,
   );
-  drupal_write_record('keyauth_timestamp_nonce', $save);
+  keyauth_save_nonce($save);
   return TRUE;
 }
