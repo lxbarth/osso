@@ -33,12 +33,42 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
 
     // Sign a message, verify it. It should only verify once.
     list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    $this->assert('pass', 'Nonce: '. $nonce);
+    $this->assert('pass', 'Timestamp: '. $timestamp);
+    $this->assert('pass', 'Hash: '. $hash);
     $this->assertTrue(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verified message.');
+    keyauth_cron();
     $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verification of message failed.');
     $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verification of message failed.');
 
     // Try again with new signature.
     list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
     $this->assertTrue(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verified message.');
+
+    // Test URL signing.
+    foreach ($this->myTestURLs() as $url) {
+      $this->assert('pass', 'Test '. $url);
+      $signed = keyauth_sign_url($key['public_key'], $url);
+      $this->assert('pass', 'Test URL '. $url);
+      $this->assert('pass', 'Signed URL '. $signed);
+      $this->assertTrue(keyauth_verify_url($key['public_key'], $signed));
+      keyauth_cron();
+      $this->assertFalse(keyauth_verify_url($key['public_key'], $signed));
+    }
+  }
+
+  /**
+   * A series of test URLs.
+   */
+  public function myTestURLs() {
+    return array(
+      'http://developmentseed.org/blog/feed',
+      'http://developmentseed.org/blog/feed?',
+      'http://developmentseed.org/blog/feed?view=top',
+      'http://developmentseed.org/blog/feed?view=top&',
+      'http://developmentseed.org/blog/feed?view=top&mode=map',
+      'http://developmentseed.org/blog/feed?view=top&mode=tense#toc',
+      'http://developmentseed.org/blog/feed?view=top&mode=tense&#toc',
+    );
   }
 }

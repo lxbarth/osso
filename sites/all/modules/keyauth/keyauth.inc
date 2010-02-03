@@ -59,10 +59,10 @@ function keyauth_sign_url($public_key, $url) {
   }
   $url = trim($url, '?&');
   // Sign.
-  list($nonce, $timestamp, $hash) = keyauth_sign($public_key, $url);
+  list($nonce, $timestamp, $hash) = array_values(keyauth_sign($public_key, $url));
   // Assemble.
   $delimiter = parse_url($url, PHP_URL_QUERY) ? '&' : '?';
-  $url = $delimiter . 'hash='. urlencode($hash) .'&key='. urlencode($public_key) .'&nonce='. urlencode($nonce) .'&timestamp='. $timestamp;
+  $url .= $delimiter . 'hash='. urlencode($hash) .'&key='. urlencode($public_key) .'&nonce='. urlencode($nonce) .'&timestamp='. $timestamp;
   if ($fragment) {
     $url .= "#$fragment";
   }
@@ -73,7 +73,7 @@ function keyauth_sign_url($public_key, $url) {
  * Verify a URL.
  */
 function keyauth_verify_url($public_key, $url) {
-  // Noralize URL.
+  // Normalize URL.
   if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
     $url = str_replace("#$fragment", '', $url);
   }
@@ -83,8 +83,8 @@ function keyauth_verify_url($public_key, $url) {
     return FALSE;
   }
   parse_str($parsed['query'], $query);
-  if (isset($query['hash']) && isset($query['key']) && isset($query['nonce'])) {
-    $url = str_replace("hash={$query['hash']}&key={$query['key']}&nonce={$query['nonce']}", '', $url);
+  if (isset($query['hash']) && isset($query['key']) && isset($query['nonce']) && isset($query['timestamp'])) {
+    $url = str_replace("hash={$query['hash']}&key={$query['key']}&nonce={$query['nonce']}&timestamp={$query['timestamp']}", '', $url);
     $hash = urldecode($query['hash']);
     $key = urldecode($query['key']);
     $nonce = urldecode($query['nonce']);
