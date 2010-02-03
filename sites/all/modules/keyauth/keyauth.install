@@ -7,6 +7,17 @@ function keyauth_schema() {
   $schema = array();
   $schema['keyauth_keys'] = array(
     'description' => 'Stores authentication keys.',
+    'export' => array(
+      'key' => 'public_key',
+      'identifier' => 'keyauth_key',
+      'default hook' => 'keyauth_key_default',  // Function hook name.
+      'api' => array(
+        'owner' => 'keyauth',
+        'api' => 'keyauth_key_default',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
     'fields' => array(
       'title' => array(
         'description' => 'The title of a key.',
