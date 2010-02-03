@@ -87,7 +87,7 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
  * Submit handler for keyauth_admin_keys_form().
  */
 function keyauth_admin_keys_form_submit($form, &$form_state) {
-  keyauth_admin_keys_save($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
+  keyauth_save($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
 }
 
 /**

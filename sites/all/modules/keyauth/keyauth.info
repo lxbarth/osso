@@ -1,3 +1,3 @@
-name = Key authentication
+name = Key Authentication
 description = Provides HMAC/nonce based authentication for web services.
 core = 6.x

@@ -102,7 +102,7 @@ function keyauth_include() {
  * @return
  *   Complete key set as an array.
  */
-function keyauth_admin_keys_save($title = '', $public_key = '', $private_key = '') {
+function keyauth_save($title = '', $public_key = '', $private_key = '') {
   keyauth_include();
   $save = array(
     'public_key' => empty($public_key) ? keyauth_random('md5') : $public_key,

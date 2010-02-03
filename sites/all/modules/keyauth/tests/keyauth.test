@@ -29,7 +29,7 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
   public function test() {
     // Set up a key.
     keyauth_include();
-    $key = keyauth_admin_keys_save('Test key');
+    $key = keyauth_save('Test key');
 
     // Sign a message, verify it. It should only verify once.
     list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
