@@ -9,28 +9,39 @@
  */
 function keyauth_admin_keys_list() {
   $rows = array();
-  $result = db_query("SELECT * FROM {keyauth_keys}");
-  while ($key = db_fetch_object($result)) {
+  keyauth_include();
+  foreach (keyauth_all_keys() as $key) {
+    unset($delete);
     $row = array();
     $row[] = $key->title;
     $row[] = $key->public_key;
     $row[] = $key->private_key;
-
-    // Populate the operations field.
-    $operations = array();
-    $operations[] = array('data' => l(t('edit'), 'admin/build/keys/'. $key->public_key));
-    $operations[] = array('data' => l(t('generate'), 'admin/build/keys/'. $key->public_key .'/generate'));
-    $operations[] = array('data' => l(t('delete'), 'admin/build/keys/'. $key->public_key .'/delete'));
-    foreach ($operations as $operation) {
-      $row[] = $operation;
+    if ($key->export_type == EXPORT_IN_CODE) {
+      $status = t('default');
+      $edit = t('override');
+    }
+    elseif ($key->export_type == EXPORT_IN_DATABASE) {
+      $status = t('normal');
+      $edit = t('edit');
+      $delete = t('revert');
+    }
+    else {
+      $status = t('overridden');
+      $edit = t('edit');
+      $delete = t('revert');
+    }
+    $row[] = $status;
+    $row[] = l($edit, 'admin/build/keys/'. $key->public_key);
+    $row[] =  l(t('generate'), 'admin/build/keys/'. $key->public_key .'/generate');
+    if ($delete) {
+      $row[] = l($delete, 'admin/build/keys/'. $key->public_key .'/delete');
     }
     $rows[] = $row;
   }
-
   if (empty($rows)) {
     $rows[] = array(array('data' => t('No API keys created.'), 'colspan' => '5', 'class' => 'message'));
   }
-  $header = array(t('Title'), t('Public key'), t('Private key'), array('data' => t('Operations'), 'colspan' => '2'));
+  $header = array(t('Title'), t('Public key'), t('Private key'), t('Status'), array('data' => t('Operations'), 'colspan' => '3'));
   return theme('table', $header, $rows);
 }
 
@@ -38,7 +49,8 @@ function keyauth_admin_keys_list() {
  * Create/edit keys.
  */
 function keyauth_admin_keys_form($form_state, $arg = '') {
-  $key = db_fetch_object(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $arg));
+  keyauth_include();
+  $key = keyauth_load($arg);
 
   $form = array();
   $form['#public_key'] = isset($key->public_key) ? $key->public_key : '';
@@ -97,22 +109,18 @@ function keyauth_admin_keys_form_validate($form, &$form_state) {
  */
 function keyauth_admin_keys_form_submit($form, &$form_state) {
   keyauth_include();
+  dsm($form);
   if (empty($form['#public_key']) && empty($form_state['values']['public_key'])) {
-    keyauth_insert($form_state['values']['title']);
+    $result = keyauth_insert($form_state['values']['title']);
   }
   elseif (empty($form['#public_key']) && !empty($form_state['values']['public_key'])) {
-    keyauth_insert($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
+    $result = keyauth_insert($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
   }
   elseif (!empty($form['#public_key'])) {
-    keyauth_update($form['#public_key'], $form_state['values']['title'], $form_state['values']['private_key']);
+    dsm('here');
+    $result = keyauth_update($form['#public_key'], $form_state['values']['title'], $form_state['values']['private_key']);
   }
-}
-
-/**
- * Delete a key.
- */
-function keyauth_admin_keys_delete($public_key) {
-  db_query("DELETE FROM {keyauth_keys} WHERE public_key = '%s'", $public_key);
+  drupal_set_message(t('Key @key has been saved.', array('@key' => $result['public_key'])));
 }
 
 /**
@@ -131,7 +139,8 @@ function keyauth_admin_keys_delete_confirm(&$form_state, $public_key) {
  * Submit handler for keyauth_admin_keys_delete_confirm().
  */
 function keyauth_admin_keys_delete_confirm_submit($form, &$form_state) {
-  keyauth_admin_keys_delete($form['#public_key']);
+  keyauth_include();
+  keyauth_delete($form['#public_key']);
   drupal_set_message(t('The key @key has been deleted.', array('@key' => $form['#public_key'])));
   watchdog('menu', 'Deleted key @key.', array('@key' => $form['#public_key']), WATCHDOG_NOTICE);
 }

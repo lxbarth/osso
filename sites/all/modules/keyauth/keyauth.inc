@@ -6,6 +6,39 @@
  */
 
 /**
+ * Load a key.
+ */
+function keyauth_load($public_key) {
+  ctools_include('export');
+  $result = ctools_export_load_object('keyauth_keys', 'names', array('public_key' => $public_key));
+  if (isset($result[$public_key])) {
+    return $result[$public_key];
+  }
+}
+
+/**
+ * Load all keys.
+ */
+function keyauth_all_keys() {
+  ctools_include('export');
+  ctools_export_load_object_reset('keyauth_keys');
+  $configs = ctools_export_load_object('keyauth_keys', 'all');
+  return $configs;
+}
+
+/**
+ * Look up a private key.
+ */
+function keyauth_key($public_key) {
+  $keys = keyauth_all_keys();
+  foreach ($keys as $p => $key) {
+    if ($p == $public_key) {
+      return $key->private_key;
+    }
+  }
+}
+
+/**
  * Insert new key set, public key and private key will be generated.
  *
  * @param $title
@@ -53,6 +86,13 @@ function keyauth_update($public_key, $title, $private_key) {
 }
 
 /**
+ * Delete a key.
+ */
+function keyauth_delete($public_key) {
+  db_query("DELETE FROM {keyauth_keys} WHERE public_key = '%s'", $public_key);
+}
+
+/**
  * Regenerate a private key for a given keyset.
  *
  * @param $public_key
@@ -68,28 +108,6 @@ function keyauth_regenerate($public_key) {
   );
   drupal_write_record('keyauth_keys', $save, 'public_key');
   return db_fetch_array(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
-}
-
-/**
- * Get all keys.
- */
-function keyauth_all_keys() {
-  ctools_include('export');
-  ctools_export_load_object_reset('keyauth_keys');
-  $configs = ctools_export_load_object('keyauth_keys', 'all');
-  return $configs;
-}
-
-/**
- * Look up a private key.
- */
-function keyauth_key($public_key) {
-  $keys = keyauth_all_keys();
-  foreach ($keys as $p => $key) {
-    if ($p == $public_key) {
-      return $key->private_key;
-    }
-  }
 }
 
 /**
