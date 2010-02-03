@@ -50,7 +50,7 @@ function push_user_theme() {
  */
 function push_user_feed_access() {
   keyauth_include();
-  return keyauth_verify_url('7fb5490cce31840608ec635a931c00aa', $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+  return keyauth_verify_url($_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
 }
 
 /**

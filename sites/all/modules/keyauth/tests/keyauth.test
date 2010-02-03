@@ -30,6 +30,10 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
     // Set up a key.
     keyauth_include();
     $key = keyauth_insert('Test key');
+    $result = db_query('SELECT * FROM {keyauth_keys}');
+    while ($row = db_fetch_object($result)) {
+      $this->assert('pass', print_r($row, true));
+    }
 
     // Sign a message, verify it. It should only verify once.
     list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
@@ -45,15 +49,25 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
     list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
     $this->assertTrue(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, $hash), 'Verified message.');
 
+    // Try with random key.
+    list($nonce, $timestamp, $hash) = array_values(keyauth_sign($key['public_key'], 'Lorem ipsum'));
+    $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, hash_hmac(KEYAUTH_ALGORITHM, 'Lorem ipsum', $key['public_key'])), 'Verification of message failed.');
+
     // Test URL signing.
+    $key = keyauth_insert('New key');
+      $this->assert('pass', print_r($key, true));
+    $result = db_query('SELECT * FROM {keyauth_keys}');
+    while ($row = db_fetch_object($result)) {
+      $this->assert('pass', print_r($row, true));
+    }
     foreach ($this->myTestURLs() as $url) {
       $this->assert('pass', 'Test '. $url);
       $signed = keyauth_sign_url($key['public_key'], $url);
       $this->assert('pass', 'Test URL '. $url);
       $this->assert('pass', 'Signed URL '. $signed);
-      $this->assertTrue(keyauth_verify_url($key['public_key'], $signed));
+      $this->assertTrue(keyauth_verify_url($signed));
       keyauth_cron();
-      $this->assertFalse(keyauth_verify_url($key['public_key'], $signed));
+      $this->assertFalse(keyauth_verify_url($signed));
     }
   }
 

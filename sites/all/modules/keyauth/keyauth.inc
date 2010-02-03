@@ -153,7 +153,7 @@ function keyauth_sign_url($public_key, $url) {
 /**
  * Verify a URL.
  */
-function keyauth_verify_url($public_key, $url) {
+function keyauth_verify_url($url) {
   // Normalize URL.
   if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
     $url = str_replace("#$fragment", '', $url);
