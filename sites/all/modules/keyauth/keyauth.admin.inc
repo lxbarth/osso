@@ -41,10 +41,7 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
   $key = db_fetch_object(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $arg));
 
   $form = array();
-  $form['public_key'] = array(
-    '#type' => 'hidden',
-    '#value' => isset($key->public_key) ? $key->public_key : '',
-  );
+  $form['#public_key'] = isset($key->public_key) ? $key->public_key : '';
   $form['#redirect'] = 'admin/build/keys';
   $form['title'] = array(
     '#title'          => t('Application title'),
@@ -52,6 +49,7 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
     '#default_value'  => isset($key->title) ? $key->title : '',
     '#description'    => t('The title of the application or website using the service.'),
     '#required'       => TRUE,
+    '#weight'         => -1,
   );
   if ($arg == 'add') {
     $form['public_key'] = array(
@@ -59,12 +57,14 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
       '#type'           => 'textfield',
       '#default_value'  => isset($key->public_key) ? $key->public_key : '',
       '#description'    => t('Public key for the service.'),
+      '#required'       => TRUE,
     );
     $form['private_key'] = array(
-      '#title'          => t('Application title'),
+      '#title'          => t('Private key'),
       '#type'           => 'textfield',
       '#default_value'  => isset($key->private_key) ? $key->private_key : '',
       '#description'    => t('Private key for the service. This key is never sent over the network.'),
+      '#required'       => TRUE,
     );
   }
   if ($arg == 'new') {
@@ -84,10 +84,28 @@ function keyauth_admin_keys_form($form_state, $arg = '') {
 }
 
 /**
+ * Validation handler for keyauth_admin_keys_form().
+ */
+function keyauth_admin_keys_form_validate($form, &$form_state) {
+  if (!empty($form_state['values']['public_key']) && db_result(db_query("SELECT public_key FROM {keyauth_keys} WHERE public_key = '%s'", $form_state['values']['public_key']))) {
+    form_set_error('public_key', t('Public key exists already.'));
+  }
+}
+
+/**
  * Submit handler for keyauth_admin_keys_form().
  */
 function keyauth_admin_keys_form_submit($form, &$form_state) {
-  keyauth_save($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
+  keyauth_include();
+  if (!empty($form_state['values']['public_key'])) {
+    keyauth_insert($form_state['values']['title'], $form_state['values']['public_key'], $form_state['values']['private_key']);
+  }
+  elseif (!empty($form['#public_key'])) {
+    keyauth_update($form['#public_key'], $form_state['values']['title']);
+  }
+  else {
+    keyauth_insert($form_state['values']['title']);
+  }
 }
 
 /**
@@ -135,10 +153,6 @@ function keyauth_admin_keys_generate_confirm(&$form_state, $public_key) {
  */
 function keyauth_admin_keys_generate_confirm_submit($form, &$form_state) {
   keyauth_include();
-  $save = array(
-    'public_key' => $form['#public_key'],
-    'private_key' => keyauth_random('sha1'),
-  );
-  drupal_write_record('keyauth_keys', $save,  'public_key');
-  drupal_set_message(t('Your new private key is @key', array('@key' => $save['private_key'])));
+  $keyset = keyauth_regenerate($form['#public_key']);
+  drupal_set_message(t('Your new private key is @key', array('@key' => $keyset['private_key'])));
 }

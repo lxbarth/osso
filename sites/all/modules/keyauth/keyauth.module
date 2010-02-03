@@ -87,30 +87,3 @@ function keyauth_perm() {
 function keyauth_include() {
   module_load_include('inc', 'keyauth');
 }
-
-/**
- * Save a key set.
- *
- * @param $title
- *   Tite of key set. If empty, title will not be changed.
- * @param $public_key
- *   Public key. If empty, a new public key will generated. A key set is
- *   identified by its public key.
- * @param $private_key
- *   Private key, if omitted, a new private key will be generated.
- *
- * @return
- *   Complete key set as an array.
- */
-function keyauth_save($title = '', $public_key = '', $private_key = '') {
-  keyauth_include();
-  $save = array(
-    'public_key' => empty($public_key) ? keyauth_random('md5') : $public_key,
-    'private_key' => empty($private_key) ? keyauth_random('sha1') : $private_key,
-  );
-  if (!empty($title)) {
-    $save['title'] = $title;
-  }
-  drupal_write_record('keyauth_keys', $save, empty($public_key) ? NULL : $public_key);
-  return $save;
-}

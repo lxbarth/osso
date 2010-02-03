@@ -19,7 +19,8 @@ Basic usage
 
 1) Generate a key through UI or through calling keyauth_save()
 
-$key = keyauth_save('Test key');
+keyauth_include();
+$key = keyauth_insert('Test key');
 
 2) Sign a message
 

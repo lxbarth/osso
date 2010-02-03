@@ -6,6 +6,68 @@
  */
 
 /**
+ * Insert new key set, public key and private key will be generated.
+ *
+ * @param $title
+ *   Tite of key set. If empty, existing title will not be changed.
+ * @param $public_key
+ *   Public key. If empty, a new public key will generated. A key set is
+ *   identified by its public key.
+ * @param $private_key
+ *   Private key, if omitted, a new private key will be generated.
+ *
+ * @return
+ *   Complete key set as an array.
+ */
+function keyauth_insert($title, $public_key = NULL, $private_key = NULL) {
+  $save = array(
+    'title' => $title,
+    'public_key' => empty($public_key) ? keyauth_random('md5') : $public_key,
+    'private_key' => empty($private_key) ? keyauth_random('sha1') : $private_key,
+  );
+  drupal_write_record('keyauth_keys', $save);
+  return $save;
+}
+
+/**
+ * Update a key set.
+ *
+ * @param $public_key
+ *   Public key.
+ * @param $title
+ *   Tite of key set.
+ *
+ * @return
+ *   Complete key set as an array.
+ */
+function keyauth_update($public_key, $title) {
+  $save = array(
+    'title' => $title,
+    'public_key' => $public_key,
+  );
+  drupal_write_record('keyauth_keys', $save, 'public_key');
+  return db_fetch_array(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
+}
+
+/**
+ * Regenerate a private key for a given keyset.
+ *
+ * @param $public_key
+ *   Public key.
+ *
+ * @return
+ *   Complete key set as an array.
+ */
+function keyauth_regenerate($public_key) {
+  $save = array(
+    'public_key' => $public_key,
+    'private_key' => keyauth_random('sha1'),
+  );
+  drupal_write_record('keyauth_keys', $save, 'public_key');
+  return db_fetch_array(db_query("SELECT * FROM {keyauth_keys} WHERE public_key = '%s'", $public_key));
+}
+
+/**
  * Look up a private key.
  */
 function keyauth_key($public_key) {
