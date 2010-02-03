@@ -23,7 +23,7 @@ function keyauth_admin_keys_list() {
     elseif ($key['export_type'] == EXPORT_IN_DATABASE) {
       $status = t('normal');
       $edit = t('edit');
-      $delete = t('revert');
+      $delete = t('delete');
     }
     else {
       $status = t('overridden');
