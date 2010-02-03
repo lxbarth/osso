@@ -1,5 +1,7 @@
 <?php
 
+include_once('push_user.features.inc');
+
 /**
  * Implementation of hook_menu().
  */
@@ -47,7 +49,8 @@ function push_user_theme() {
  * Access callback for user feed.
  */
 function push_user_feed_access() {
-  return TRUE;
+  keyauth_include();
+  return keyauth_verify_url('7fb5490cce31840608ec635a931c00aa', $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
 }
 
 /**

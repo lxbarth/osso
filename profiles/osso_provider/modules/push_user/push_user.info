@@ -1,4 +1,9 @@
-name = "PuSH User"
+core = "6.x"
+dependencies[] = "ctools"
+dependencies[] = "push_hub"
+dependencies[] = "keyauth"
+dependencies[] = "keyauth""
 description = "Syndicates changes to user accounts."
-dependencies[] = push_hub
-core = 6.x
+features[ctools][] = "keyauth_keys"
+features[keyauth_keys][] = "7fb5490cce31840608ec635a931c00aa"
+name = "PuSH User"

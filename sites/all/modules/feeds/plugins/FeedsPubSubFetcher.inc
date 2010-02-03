@@ -16,7 +16,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
     if ($raw = feeds_push_subscriber($this->id, $source->feed_nid)->receive()) {
       return new FeedsImportBatch($source_config['source'], NULL, $raw);
     }
-    return new FeedsImportBatch($source_config['source']);
+    return parent::fetch($source);
   }
 
   /**
@@ -66,7 +66,8 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    * Return defaults for configuration.
    */
   public function configDefaults() {
-    return array(
+    $defaults = parent::configDefaults();
+    return $defaults + array(
       'subscription_period' => 3600*24, // Renew subscription in 24 hours.
     );
   }
@@ -75,7 +76,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    * Override parent::configForm().
    */
   public function configForm(&$form_state) {
-    $form = array();
+    $form = parent::configForm($form_state);
     $period = drupal_map_assoc(array(0, 900, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800, 2419200), 'format_interval');
     $period[FEEDS_SCHEDULE_NEVER] = t('Never renew');
     $period[0] = t('Renew as often as possible');

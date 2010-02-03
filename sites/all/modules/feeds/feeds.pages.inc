@@ -161,9 +161,11 @@ function feeds_push_receive($importer, $feed_nid = 0) {
     // No subscription notification has ben sent, we are being notified.
     else {
       try {
+        error_log('try');
         feeds_source($importer->id, $feed_nid)->import();
       }
       catch (Exception $e) {
+        error_log($e->getMessage());
         // In case of an error, respond with a 503 Service (temporary) unavailable.
         header('HTTP/1.1 503 "Not Found"', null, 503);
         exit();
