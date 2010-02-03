@@ -38,7 +38,12 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
    */
   public function subscribe(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    feeds_push_subscriber($this->id, $source->feed_nid)->subscribe($source_config['source'], url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $source->feed_nid, array('absolute' => TRUE)));
+    $url = $source_config['source'];
+    if (module_exists('keyauth') && $this->config['use_keyauth']) {
+      keyauth_include();
+      $url = keyauth_sign_url($this->config['keyauth_public'], $url);
+    }
+    feeds_push_subscriber($this->id, $source->feed_nid)->subscribe($url, url('feeds/pubsubhubbub/notify/'. $this->id .'/'. $source->feed_nid, array('absolute' => TRUE)));
   }
 
   /**
