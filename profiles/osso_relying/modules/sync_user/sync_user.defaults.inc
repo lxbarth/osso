@@ -10,6 +10,9 @@ function _sync_user_ctools_plugin_api() {
   if ($module == "feeds" && $api == "feeds_importer_default") {
     return array("version" => 1);
   }
+  else if ($module == "keyauth" && $api == "keyauth_key_default") {
+    return array("version" => 1);
+  }
 }
 
 /**
@@ -27,7 +30,9 @@ function _sync_user_feeds_importer_default() {
     'fetcher' => array(
       'plugin_key' => 'FeedsPubSubFetcher',
       'config' => array(
-        'subscription_period' => 86400,
+        'subscription_period' => '43200',
+        'use_keyauth' => 1,
+        'keyauth_public' => '7fb5490cce31840608ec635a931c00aa',
       ),
     ),
     'parser' => array(
@@ -67,5 +72,21 @@ function _sync_user_feeds_importer_default() {
   );
 
   $export['user_updates'] = $feeds_importer;
+  return $export;
+}
+
+/**
+ * Helper to implementation of hook_keyauth_key_default().
+ */
+function _sync_user_keyauth_key_default() {
+  $export = array();
+  $keyauth_keys = new stdClass;
+  $keyauth_keys->disabled = FALSE; /* Edit this to true to make a default keyauth_keys disabled initially */
+  $keyauth_keys->api_version = 1;
+  $keyauth_keys->title = 'OpenID Simple Sign-On';
+  $keyauth_keys->public_key = '7fb5490cce31840608ec635a931c00aa';
+  $keyauth_keys->private_key = '9315217ea879390698f2562476fd02de974998b7';
+
+  $export['7fb5490cce31840608ec635a931c00aa'] = $keyauth_keys;
   return $export;
 }
