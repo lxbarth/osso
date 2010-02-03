@@ -178,12 +178,7 @@ function keyauth_verify($public_key, $message, $nonce, $timestamp, $hash) {
  */
 function keyauth_sign_url($public_key, $url) {
   // Normalize URL.
-  if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
-    $url = str_replace("#$fragment", '', $url);
-  }
-  $scheme = parse_url($url, PHP_URL_SCHEME);
-  $url = str_replace("$scheme://", '', $url);
-  $url = trim($url, '?&');
+  list($scheme, $url, $fragment) = keyauth_normalize_url($url);
   // Sign.
   list($nonce, $timestamp, $hash) = array_values(keyauth_sign($public_key, $url));
   // Assemble.
@@ -201,12 +196,6 @@ function keyauth_sign_url($public_key, $url) {
  * @todo Clean up, document.
  */
 function keyauth_verify_url($url) {
-  // Normalize URL.
-  if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
-    $url = str_replace("#$fragment", '', $url);
-  }
-  $scheme = parse_url($url, PHP_URL_SCHEME);
-  $url = str_replace("$scheme://", '', $url);
   // Parse URL.
   $parsed = parse_url($url);
   if (!isset($parsed['query'])) {
@@ -223,9 +212,35 @@ function keyauth_verify_url($url) {
   else {
     return FALSE;
   }
-  $url = trim($url, '?&');
+  // Normalize URL.
+  list($scheme, $url, $fragment) = keyauth_normalize_url($url);
   // Verify.
   return keyauth_verify($key, $url, $nonce, $timestamp, $hash);
+}
+
+/**
+ * Normalize a URL for signing or verifying it. Scheme and fragments are not
+ * being signed.
+ *
+ * @param $url
+ *   The URL to be normalized.
+ *
+ * @return
+ *   An array where the first item is the scheme, the second item is the URL
+ *   without the scheme and the fragment and the third item is the fragment if
+ *   there was one in the given URL.
+ *
+ * @todo Make RFC2396 compliant.
+ * http://labs.apache.org/webarch/uri/rev-2002/rfc2396bis.html#comparison
+ */
+function keyauth_normalize_url($url) {
+  if ($fragment = parse_url($url, PHP_URL_FRAGMENT)) {
+    $url = str_replace("#$fragment", '', $url);
+  }
+  $scheme = parse_url($url, PHP_URL_SCHEME);
+  $url = str_replace("$scheme://", '', $url);
+  $url = trim($url, '?&');
+  return array($scheme, $url, $fragment);
 }
 
 
