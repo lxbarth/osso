@@ -174,7 +174,17 @@ function keyauth_verify($public_key, $message, $nonce, $timestamp, $hash) {
 /**
  * Sign a URL.
  *
- * @todo Clean up, document.
+ * @param $public_key
+ *   The public key identifying the private key to sign this URL with. MUST be
+ *   a valid public key.
+ * @param $url
+ *   The URL to sign. MUST NOT contain a query paramter 'hash', 'key', 'nonce'
+ *   or 'timestamp.
+ *
+ * @return
+ *   The signed URL. The signed URL can be verified once with
+ *   keyauth_verify_url() on a system that has the same public key/private key
+ *   pair configured.
  */
 function keyauth_sign_url($public_key, $url) {
   // Normalize URL.
@@ -193,7 +203,11 @@ function keyauth_sign_url($public_key, $url) {
 /**
  * Verify a URL.
  *
- * @todo Clean up, document.
+ * @param $url
+ *   A URL that has been signed with keyauth_sign_url().
+ *
+ * @return
+ *   TRUE if the URL's authenticity could be verified, FALSE otherwise.
  */
 function keyauth_verify_url($url) {
   // Parse URL.
