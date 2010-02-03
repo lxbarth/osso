@@ -12,7 +12,7 @@ function keyauth_load($public_key) {
   ctools_include('export');
   $result = ctools_export_load_object('keyauth_keys', 'names', array('public_key' => $public_key));
   if (isset($result[$public_key])) {
-    return $result[$public_key];
+    return (array) $result[$public_key];
   }
 }
 
@@ -23,6 +23,9 @@ function keyauth_all_keys() {
   ctools_include('export');
   ctools_export_load_object_reset('keyauth_keys');
   $configs = ctools_export_load_object('keyauth_keys', 'all');
+  foreach ($configs as $k => $v) {
+    $configs[$k] = (array)$v;
+  }
   return $configs;
 }
 
@@ -33,33 +36,40 @@ function keyauth_key($public_key) {
   $keys = keyauth_all_keys();
   foreach ($keys as $p => $key) {
     if ($p == $public_key) {
-      return $key->private_key;
+      return $key['private_key'];
     }
   }
 }
 
 /**
- * Insert new key set, public key and private key will be generated.
+ * Save a key set, public key and private key will be generated.
  *
- * @param $title
- *   Tite of key set. If empty, existing title will not be changed.
- * @param $public_key
- *   Public key. If empty, a new public key will generated. A key set is
- *   identified by its public key.
- * @param $private_key
- *   Private key, if omitted, a new private key will be generated.
+ * @param $key
+ *   If $key is a string it will be interpreted as a title and a new key pair
+ *   will be generated.
+ *   If $key is an array it will be interpreted as a full key and saved as-is
+ *   to the database. Users of this funciton are responsible for not
+ *   accidentally overriding existing keys.
  *
  * @return
  *   Complete key set as an array.
+ *
+ * @todo Does not handle collisions on $public_key.
  */
-function keyauth_insert($title, $public_key = NULL, $private_key = NULL) {
-  $save = array(
-    'title' => $title,
-    'public_key' => empty($public_key) ? keyauth_random('md5') : $public_key,
-    'private_key' => empty($private_key) ? keyauth_random('sha1') : $private_key,
-  );
+function keyauth_save($key) {
+  if (is_string($key)) {
+    $save = array(
+      'public_key' => keyauth_random('md5'),
+      'private_key' => keyauth_random('sha1'),
+      'title' => $key,
+    );
+  }
+  else {
+    $save = $key;
+  }
+  keyauth_delete($save['public_key']);
   drupal_write_record('keyauth_keys', $save);
-  return $save;
+  return keyauth_load($save['public_key']);
 }
 
 /**

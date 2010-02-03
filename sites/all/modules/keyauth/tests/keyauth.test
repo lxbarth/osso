@@ -29,7 +29,7 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
   public function test() {
     // Set up a key.
     keyauth_include();
-    $key = keyauth_insert('Test key');
+    $key = keyauth_save('Test key');
     $result = db_query('SELECT * FROM {keyauth_keys}');
     while ($row = db_fetch_object($result)) {
       $this->assert('pass', print_r($row, true));
@@ -54,7 +54,7 @@ class KeyAuthWebTestCase extends DrupalWebTestCase {
     $this->assertFalse(keyauth_verify($key['public_key'], 'Lorem ipsum', $nonce, $timestamp, hash_hmac(KEYAUTH_ALGORITHM, 'Lorem ipsum', $key['public_key'])), 'Verification of message failed.');
 
     // Test URL signing.
-    $key = keyauth_insert('New key');
+    $key = keyauth_save('New key');
     foreach ($this->myTestURLs() as $url) {
       $this->assert('pass', 'Test '. $url);
       $signed = keyauth_sign_url($key['public_key'], $url);
