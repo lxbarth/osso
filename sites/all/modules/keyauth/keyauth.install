@@ -9,7 +9,7 @@ function keyauth_schema() {
     'description' => 'Stores authentication keys.',
     'export' => array(
       'key' => 'public_key',
-      'identifier' => 'keyauth_key',
+      'identifier' => 'keyauth_keys',
       'default hook' => 'keyauth_key_default',  // Function hook name.
       'api' => array(
         'owner' => 'keyauth',
