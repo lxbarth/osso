@@ -24,6 +24,11 @@ function osso_relying_profile_modules() {
     'views_ui',
     'views_rss',
     'simple_blog',
+    'ctools',
+    'sync_user',
+    'feeds',
+    'feeds_ui',
+    'keyauth',
   );
 }
 
