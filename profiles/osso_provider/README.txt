@@ -14,13 +14,13 @@ Installation
 
 1.
 
-Run install profile, set up OpenID Relying Party information as described in 
+Run install profile, set up OpenID Relying Party information as described in
 OpenID Provider SSO module README.
 
-2.
+2. (optional)
 
 Go to node/add/activity-feed and add a feed for activity/comments and for
-activity/posts for every Relying Party. Set the activity type ("Post" or 
+activity/posts for every Relying Party. Set the activity type ("Post" or
 "Comment" accordingly).
 
 Example:
@@ -33,7 +33,7 @@ Feed URL: http://blogexample.com/activity/comments, Activity type: "Comment"
 Feed URL: http://shopexample.com/activity/posts, Activity type: "Post"
 Feed URL: http://shopexample.com/activity/comments, Activity type: "Comment"
 
-3. 
+3. (optional)
 
 Create some content (story nodes, comments) on Relying Parties with different
 users and hit cron on the Provider to see user activity on the Provider.
