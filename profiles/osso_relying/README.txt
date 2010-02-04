@@ -14,10 +14,14 @@ Installation
 
 1.
 
-Run install profile, set up OpenID Provider information as described in OpenID 
+Run install profile, set up OpenID Provider information as described in OpenID
 SSO module README.
 
 2.
+
+Go to admin/sync/user and enter OpenID Provider URL.
+
+3.
 
 To distinguish particular sites better, use admin/build/themes/settings/hubnet
 to customize a site's color.

@@ -110,23 +110,14 @@ function sync_user_subscribe_submit($form, &$form_state) {
 
 /**
  * Settings form.
- *
- * @todo Add private key authentication.
- * @todo Verify private key and feed url.
  */
 function sync_user_form() {
   $form = array();
   $form['sync_user_feed_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Provider site URL'),
-    '#description' => t('URL to synchronize users from. Point to the root of a trusted Drupal site with PuSH user module installed.'),
+    '#description' => t('URL to synchronize users from. Point to the root of a trusted Drupal site with PuSH user module installed. URL must have a trailing slash.'),
     '#default_value' => variable_get('sync_user_feed_url', 'http://example.com/'),
-  );
-  $form['sync_user_private_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Private key'),
-    '#description' => t('Private key to authenticate this site on the Provider.'),
-    '#default_value' => variable_get('sync_user_private_key', '@todo'),
   );
   return system_settings_form($form);
 }
