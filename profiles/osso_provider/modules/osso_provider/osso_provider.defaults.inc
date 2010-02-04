@@ -9,7 +9,9 @@ function _osso_provider_user_default_permissions() {
   // Exported permission: change own username
   $permissions[] = array(
     'name' => 'change own username',
-    'roles' => array(),
+    'roles' => array(
+      '0' => 'authenticated user',
+    ),
   );
 
   return $permissions;
