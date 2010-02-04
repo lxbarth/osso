@@ -154,6 +154,5 @@ function _ctools_features_get_info($reset = FALSE) {
       }
     }
   }
-error_log(print_r($components, true));
   return $components;
 }
