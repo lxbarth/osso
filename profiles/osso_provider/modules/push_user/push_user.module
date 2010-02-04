@@ -23,9 +23,12 @@ function push_user_user($op, &$edit, &$account, $category = NULL) {
     case 'insert':
     case 'after_update':
       // Issue a light ping to force authentication for content, underneath an
-      // example how a fat ping would look like.
-      push_hub_notify(push_user_feed_url($account->uid), NULL, TRUE);
-      // push_hub_notify(push_user_feed_url($account->uid), theme('push_user_feed', $account), TRUE);
+      // example how a fat ping would look like. Supress notifications on
+      // install.
+      if (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install') {
+        push_hub_notify(push_user_feed_url($account->uid), NULL, TRUE);
+        // push_hub_notify(push_user_feed_url($account->uid), theme('push_user_feed', $account), TRUE);
+      }
       break;
   }
 }

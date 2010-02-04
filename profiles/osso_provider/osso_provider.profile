@@ -25,10 +25,9 @@ function osso_provider_profile_modules() {
     'openid_provider_sso',
     'osso_provider',
     'path',
-    'push_hub',
-    'push_user',
     'keyauth',
     'drupal_queue',
+    'push_hub',
     'strongarm',
     'xrds_simple',
     'features',
@@ -39,6 +38,7 @@ function osso_provider_profile_modules() {
     'feeds',
     'feeds_ui',
     'activity_feeds',
+    'push_user',
   );
 }
 
