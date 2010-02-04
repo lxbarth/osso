@@ -1,5 +1,7 @@
 <?php
 
+include_once('osso_provider.features.inc');
+
 /**
  * Implementation of hook_block().
  */

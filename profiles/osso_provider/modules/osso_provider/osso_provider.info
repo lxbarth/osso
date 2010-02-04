@@ -1,5 +1,7 @@
-name = "OpenID Provider SSO Demo"
+core = "6.x"
+dependencies[] = "features"
+dependencies[] = "openid_provider_sso"
 description = "Custom module for OpenID Single Sign-On demo."
-core = 6.x
-dependencies[] = openid_provider_sso
-package = Custom
+features[user][] = "change own username"
+name = "OpenID Provider SSO Demo"
+package = "Custom"
