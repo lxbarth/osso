@@ -57,9 +57,6 @@ function osso_relying_profile_details() {
  *   task list.
  */
 function osso_relying_profile_task_list() {
-  return array(
-    'configure' => st('Site configuration'),
-  );
 }
 
 /**
@@ -160,9 +157,7 @@ function osso_relying_profile_tasks(&$task, $url) {
 
     // Update the menu router information.
     menu_rebuild();
-  }
 
-  if ('configure') {
     // Clear caches.
     drupal_flush_all_caches();
 
