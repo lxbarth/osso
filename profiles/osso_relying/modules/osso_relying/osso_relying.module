@@ -73,7 +73,7 @@ function osso_hub_bar() {
     }
   }
   else {
-    drupal_set_message($result->error, 'error');
+    drupal_set_message($result->error .t(' - !sso configured?', array('!sso' => l(t('OpenID Simple Sign-On'), 'admin/settings/openid-sso'))), 'error');
   }
 
   // Generate links to hub and other relying parties.
@@ -82,11 +82,13 @@ function osso_hub_bar() {
     'data' => l(check_plain($provider['name']), $provider['url']),
     'class' => 'provider',
   );
-  foreach ($data['items'] as $rp) {
-    $items[] = array(
-      'data' => l(check_plain($rp['title']), $rp['htmlurl']),
-      'class' => 'relying',
-    );
+  if (isset($data['items'])) {
+    foreach ($data['items'] as $rp) {
+      $items[] = array(
+        'data' => l(check_plain($rp['title']), $rp['htmlurl']),
+        'class' => 'relying',
+      );
+    }
   }
   $output = theme('item_list', $items, NULL, 'ul', array('class' => 'links hub-links'));
 
