@@ -104,14 +104,13 @@ class FeedsImporter extends FeedsConfigurable {
     switch ($job['callback']) {
       case 'import':
         return feeds_source($job['id'], $job['feed_nid'])->import();
-        break;
       case 'expire':
-        $this->expire();
-        break;
+        return $this->expire();
       case 'subscribe':
         feeds_source($feed_info['importer_id'], $feed_info['feed_nid'])->subscribe();
-        return;
+        break;
     }
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
