@@ -1,11 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.43 2010/02/17 22:58:18 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.44 2010/02/17 22:58:54 alexb Exp $
 
 Feeds 6.x 1.0 xxxxx xx, xxxx-xx-xx
 ----------------------------------
 
 - alex_b: Support mapping to OpenID, using OpenID as a unique mapping target.
 - alex_b: Handle exceptions outside of Importer/Source facade methods.
-- #600584 alexb: Use Batch API. NOTE: third party plugins/extensions
+- #600584 alex_b: Use Batch API. NOTE: third party plugins/extensions
   implementing FeedsProcessor::process(), FeedsProcessor::clear() or
   FeedsImporter::expire() need to adjust their implementations. Modules that
   directly use Feeds' API for importing or clearing sources need may want to
