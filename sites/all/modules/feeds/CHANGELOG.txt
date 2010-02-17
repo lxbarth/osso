@@ -1,8 +1,9 @@
-// $Id: CHANGELOG.txt,v 1.42 2010/02/11 00:27:41 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.43 2010/02/17 22:58:18 alexb Exp $
 
 Feeds 6.x 1.0 xxxxx xx, xxxx-xx-xx
 ----------------------------------
 
+- alex_b: Support mapping to OpenID, using OpenID as a unique mapping target.
 - alex_b: Handle exceptions outside of Importer/Source facade methods.
 - #600584 alexb: Use Batch API. NOTE: third party plugins/extensions
   implementing FeedsProcessor::process(), FeedsProcessor::clear() or
