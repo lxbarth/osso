@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsProcessor.inc,v 1.6 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsProcessor.inc,v 1.7 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * Abstract class, defines interface for processors.
@@ -14,6 +14,10 @@ abstract class FeedsProcessor extends FeedsPlugin {
    *   The current feed import data passed in from the parsing stage.
    * @param FeedsSource $source
    *   Source information about this import.
+   *
+   * @return
+   *   FEEDS_BATCH_COMPLETE if all items have been processed, a float between 0
+   *   and 0.99* indicating progress otherwise.
    */
   public abstract function process(FeedsImportBatch $batch, FeedsSource $source);
 
@@ -21,26 +25,41 @@ abstract class FeedsProcessor extends FeedsPlugin {
    * Remove all stored results or stored results up to a certain time for this
    * configuration/this source.
    *
+   * @param FeedsBatch $batch
+   *   A FeedsBatch object for tracking information such as how many
+   *   items have been deleted total between page loads.
    * @param FeedsSource $source
    *   Source information for this expiry. Implementers should only delete items
    *   pertaining to this source. The preferred way of determining whether an
    *   item pertains to a certain souce is by using $source->feed_nid. It is the
    *   processor's responsibility to store the feed_nid of an imported item in
    *   the processing stage.
+   *
+   * @return
+   *   FEEDS_BATCH_COMPLETE if all items have been processed, a float between 0
+   *   and 0.99* indicating progress otherwise.
    */
-  public abstract function clear(FeedsSource $source);
+  public abstract function clear(FeedsBatch $batch, FeedsSource $source);
 
   /**
-   * Delete feed items younger than now - $time.
+   * Delete feed items younger than now - $time. Do not invoke expire on a
+   * processor directly, but use FeedsImporter::expire() instead.
    *
+   * @see FeedsImporter::expire().
    * @see FeedsDataProcessor::expire().
    *
    * @param $time
    *   If implemented, all items produced by this configuration that are older
-   *   than FEEDS_REQUEST_TIME - $time
+   *   than FEEDS_REQUEST_TIME - $time should be deleted.
    *   If $time === NULL processor should use internal configuration.
+   *
+   * @return
+   *   FEEDS_BATCH_COMPLETE if all items have been processed, a float between 0
+   *   and 0.99* indicating progress otherwise.
    */
-  public function expire($time = NULL) {}
+  public function expire($time = NULL) {
+    return FEEDS_BATCH_COMPLETE;
+  }
 
   /**
    * Execute mapping on an item.

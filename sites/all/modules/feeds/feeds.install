@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.install,v 1.5 2009/12/03 20:55:05 alexb Exp $
+// $Id: feeds.install,v 1.6 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * @file
@@ -70,6 +70,13 @@ function feeds_schema() {
         'not null' => TRUE,
         'description' => t('Main source resource identifier. E. g. a path or a URL.'),
       ),
+      'batch' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+        'description' => t('Cache for batching.'),
+        'serialize' => TRUE,
+      ),
     ),
     'primary key' => array('id', 'feed_nid'),
     'indexes' => array(
@@ -102,27 +109,26 @@ function feeds_schema() {
         'default' => '',
         'description' => 'Callback to be invoked.',
       ),
-      'last_scheduled_time' => array(
+      'last_executed_time' => array(
         'type' => 'int',
-        'unsigned' => FALSE,
+        'unsigned' => TRUE,
         'default' => 0,
         'not null' => TRUE,
-        'description' => 'Timestamp when this feed was last scheduled to be refreshed.',
+        'description' => 'Timestamp when a job was last executed.',
       ),
       'scheduled' => array(
         'type' => 'int',
-        'unsigned' => FALSE,
-        'size' => 'tiny',
+        'unsigned' => TRUE,
         'default' => 0,
         'not null' => TRUE,
-        'description' => 'Flags whether a feed is scheduled to be refreshed or not.',
+        'description' => 'Timestamp when a job was scheduled. 0 if a job is currently not scheduled.',
       ),
     ),
     'indexes' => array(
       'feed_nid' => array('feed_nid'),
       'id' => array('id'),
       'id_callback' => array('id', 'callback'),
-      'last_scheduled_time' => array('last_scheduled_time'),
+      'last_executed_time' => array('last_executed_time'),
       'scheduled' => array('scheduled'),
     ),
   );
@@ -372,7 +378,7 @@ function feeds_update_6007() {
 }
 
 /**
- * Add a table for Pubsub Subscriber.
+ * Add batch field to feeds_source table, adjust feeds_schedule table.
  */
 function feeds_update_6008() {
   $ret = array();
@@ -428,7 +434,38 @@ function feeds_update_6008() {
     'indexes' => array(
       'timestamp' => array('timestamp'),
     ),
+
+  $spec = array(
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => FALSE,
+    'description' => t('Cache for batching.'),
+    'serialize' => TRUE,
+  );
+  db_add_field($ret, 'feeds_source', 'batch', $spec);
+
+  // Make scheduled flag a timestamp.
+  $spec = array(
+    'type' => 'int',
+    'size' => 'normal',
+    'unsigned' => TRUE,
+    'default' => 0,
+    'not null' => TRUE,
+    'description' => 'Timestamp when a job was scheduled. 0 if a job is currently not scheduled.',
   );
   db_create_table($ret, 'feeds_push_subscriptions', $table);
+  db_change_field($ret, 'feeds_schedule', 'scheduled', 'scheduled', $spec);
+
+  // Rename last_scheduled_time to last_executed_time, fix unsigned property.
+  $spec = array(
+    'type' => 'int',
+    'size' => 'normal',
+    'unsigned' => TRUE,
+    'default' => 0,
+    'not null' => TRUE,
+    'description' => 'Timestamp when a job was last executed.',
+  );
+  db_change_field($ret, 'feeds_schedule', 'last_scheduled_time', 'last_executed_time', $spec);
+
   return $ret;
 }

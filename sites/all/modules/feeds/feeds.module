@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.module,v 1.28 2010/01/27 15:26:32 alexb Exp $
+// $Id: feeds.module,v 1.29 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * @file
@@ -290,12 +290,7 @@ function feeds_nodeapi(&$node, $op, $form) {
         // Refresh feed if import on create is selected and suppress_import is
         // not set.
         if ($op == 'insert' && feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
-          try {
-            $source->import();
-          }
-          catch (Exception $e) {
-            drupal_set_message($e->getMessage(), 'error');
-          }
+          feeds_batch_set(t('Importing'), 'import', $importer_id, $node->nid);
         }
         // Add import and subscribe to scheduler.
         feeds_scheduler()->add($importer_id, 'import', $node->nid);
@@ -381,6 +376,68 @@ function feeds_scheduler_work($feed_info) {
 
 /**
  * @} End of "defgroup hooks".
+ */
+
+/**
+ * @defgroup batch Batch functions.
+ */
+
+/**
+ * Batch helper.
+ *
+ * @param $title
+ *   Title to show to user when executing batch.
+ * @param $method
+ *   Method to execute on importer; one of 'import', 'clear' or 'expire'.
+ * @param $importer_id
+ *   Identifier of a FeedsImporter object.
+ * @param $feed_nid
+ *   If importer is attached to content type, feed node id identifying the
+ *   source to be imported.
+ */
+function feeds_batch_set($title, $method, $importer_id, $feed_nid = 0) {
+  $batch = array(
+    'title' => $title,
+    'operations' => array(
+      array('feeds_batch', array($method, $importer_id, $feed_nid)),
+    ),
+    'progress_message' => '',
+  );
+  batch_set($batch);
+}
+
+/**
+ * Batch callback.
+ *
+ * @param $method
+ *   Method to execute on importer; one of 'import' or 'clear'.
+ * @param $importer_id
+ *   Identifier of a FeedsImporter object.
+ * @param $feed_nid
+ *   If importer is attached to content type, feed node id identifying the
+ *   source to be imported.
+ * @param $context
+ *   Batch context.
+ */
+function feeds_batch($method, $importer_id, $feed_nid = 0, &$context) {
+  $context['finished'] = 1;
+  try {
+    switch ($method) {
+      case 'import':
+        $context['finished'] = feeds_source($importer_id, $feed_nid)->import();
+        break;
+      case 'clear':
+        $context['finished'] = feeds_source($importer_id, $feed_nid)->clear();
+        break;
+    }
+  }
+  catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+}
+
+/**
+ * @} End of "defgroup batch".
  */
 
 /**

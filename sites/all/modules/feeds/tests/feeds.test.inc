@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.test.inc,v 1.6 2009/12/20 23:48:38 alexb Exp $
+// $Id: feeds.test.inc,v 1.7 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * @file
@@ -182,9 +182,9 @@ class FeedsWebTestCase extends DrupalWebTestCase {
     $this->assertEqual($config['FeedsHTTPFetcher']['source'], $feed_url, t('URL in DB correct.'));
 
     // Check whether feed got properly added to scheduler.
-    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND feed_nid = %d AND callback = "import" AND last_scheduled_time = 0 AND scheduled = 0', $id, $nid)));
+    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND feed_nid = %d AND callback = "import" AND last_executed_time = 0 AND scheduled = 0', $id, $nid)));
     // There must be only one entry for 'expire' - no matter how many actual feed nodes exist.
-    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND callback = "expire" AND last_scheduled_time = 0 AND scheduled = 0', $id)));
+    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND callback = "expire" AND last_executed_time = 0 AND scheduled = 0', $id)));
 
     return $nid;
   }
@@ -248,9 +248,9 @@ class FeedsWebTestCase extends DrupalWebTestCase {
     $this->assertEqual($config['FeedsHTTPFetcher']['source'], $feed_url, t('URL in DB correct.'));
 
     // Check whether feed got properly added to scheduler.
-    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND feed_nid = 0 AND callback = "import" AND last_scheduled_time = 0 AND scheduled = 0', $id)));
+    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND feed_nid = 0 AND callback = "import" AND last_executed_time = 0 AND scheduled = 0', $id)));
     // There must be only one entry for callback 'expire' - no matter what the feed_nid is.
-    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND callback = "expire" AND last_scheduled_time = 0 AND scheduled = 0', $id)));
+    $this->assertEqual(1, db_result(db_query('SELECT COUNT(*) FROM {feeds_schedule} WHERE id = "%s" AND callback = "expire" AND last_executed_time = 0 AND scheduled = 0', $id)));
   }
 
   /**

@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.test,v 1.8 2010/01/18 19:20:40 alexb Exp $
+// $Id: feeds.test,v 1.9 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * @file
@@ -592,7 +592,6 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
    */
   public function setUp() {
     parent::setUp('feeds', 'feeds_ui', 'ctools');
-
     $this->drupalLogin(
       $this->drupalCreateUser(
         array(
@@ -656,7 +655,7 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
 
     // There should be feeds_schedule_num (= 10) feeds updated now.
     $schedule = array();
-    $count = db_result(db_query('select COUNT(*) from {feeds_schedule} WHERE last_scheduled_time <> 0'));
+    $count = db_result(db_query('select COUNT(*) from {feeds_schedule} WHERE last_executed_time <> 0'));
     $this->assertEqual($count, 10, '10 feeds refreshed on cron.');
 
     // There should be 100 story nodes in the database.
@@ -669,7 +668,7 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
 
     // There should be feeds_schedule_num X 2 (= 20) feeds updated now.
     $schedule = array();
-    $result = db_query('select feed_nid, last_scheduled_time, scheduled from {feeds_schedule} WHERE last_scheduled_time <> 0');
+    $result = db_query('select feed_nid, last_executed_time, scheduled from {feeds_schedule} WHERE last_executed_time <> 0');
     while ($row = db_fetch_object($result)) {
       $schedule[$row->feed_nid] = $row;
     }
@@ -691,9 +690,9 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
     // The import_period setting of the feed configuration is 1800, there
     // shouldn't be any change to the database now.
     $equal = TRUE;
-    $result = db_query('select feed_nid, last_scheduled_time, scheduled from {feeds_schedule} WHERE last_scheduled_time <> 0');
+    $result = db_query('select feed_nid, last_executed_time, scheduled from {feeds_schedule} WHERE last_executed_time <> 0');
     while ($row = db_fetch_object($result)) {
-      $equal = $equal && ($row->last_scheduled_time == $schedule[$row->feed_nid]->last_scheduled_time);
+      $equal = $equal && ($row->last_executed_time == $schedule[$row->feed_nid]->last_executed_time);
     }
     $this->assertTrue($equal, 'Schedule did not change.');
 
@@ -712,19 +711,18 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
     $this->assertText('Refresh: as often as possible');
 
     // Hit cron again, 4 times now.
-    $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
-    $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
-    $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
-    $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
+    for ($i = 0; $i < 4; $i++) {
+      $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
+    }
 
     // Refresh period is set to 'as often as possible'. All scheduled times
     // should have changed now.
     // There should not be more nodes than before.
     $equal = FALSE;
     $output = '';
-    $result = db_query('select feed_nid, last_scheduled_time, scheduled from {feeds_schedule} WHERE last_scheduled_time <> 0');
+    $result = db_query('select feed_nid, last_executed_time, scheduled from {feeds_schedule} WHERE last_executed_time <> 0');
     while ($row = db_fetch_object($result)) {
-      $equal = $equal || ($row->last_scheduled_time == $schedule[$row->feed_nid]->last_scheduled_time);
+      $equal = $equal || ($row->last_executed_time == $schedule[$row->feed_nid]->last_executed_time);
     }
     $this->assertFalse($equal, 'Every feed schedule time changed.');
 
@@ -734,6 +732,34 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
 
     // @todo Use debug time feature in FeedsScheduler and test behavior in future.
     // @todo How do I call an API function on the test system from the test script?
+  }
+
+  /**
+   * Test batching on cron.
+   */
+  function testBatching() {
+    // Verify that there are 150 nodes total.
+    $nid = $this->createFeedNode('syndication', $GLOBALS['base_url'] .'/'. drupal_get_path('module', 'feeds') .'/tests/feeds/many_items.rss2');
+    $this->assertText('Created 150 Story nodes.');
+    $this->drupalPost('node/'. $nid .'/delete-items', array(), 'Delete');
+    $this->assertText('Deleted 150 nodes.');
+
+    // Hit cron 3 times, assert correct number of story nodes.
+    for ($i = 0; $i < 3; $i++) {
+      $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
+      // 50 == FEEDS_NODE_BATCH_SIZE
+      $this->assertEqual(50 * ($i + 1), db_result(db_query("SELECT COUNT(*) FROM {node} WHERE type = 'story'")));
+    }
+
+    // Delete a couple of nodes, then hit cron again. They should not be replaced
+    // as the minimum update time is 30 minutes.
+    $result = db_query_range("SELECT nid FROM {node} WHERE type = 'story'", 0, 2);
+    while ($node = db_fetch_object($result)) {
+      $this->drupalPost("node/{$node->nid}/delete", array(), 'Delete');
+    }
+    $this->assertEqual(148, db_result(db_query("SELECT COUNT(*) FROM {node} WHERE type = 'story'")));
+    $this->drupalGet($GLOBALS['base_url'] .'/cron.php');
+    $this->assertEqual(148, db_result(db_query("SELECT COUNT(*) FROM {node} WHERE type = 'story'")));
   }
 }
 

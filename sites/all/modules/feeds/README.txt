@@ -1,4 +1,4 @@
-$Id: README.txt,v 1.15 2009/12/03 21:27:40 alexb Exp $
+$Id: README.txt,v 1.19 2010/02/11 15:57:38 alexb Exp $
 
 
 "It feeds"
@@ -35,9 +35,11 @@ Features
 Requirements
 ============
 
-- CTools 1.1
-- Drupal 6.14 or higher.
-- PHP 5.2.x
+- CTools 1.x
+  http://drupal.org/project/ctools
+- Drupal 6.x
+  http://drupal.org/project/drupal
+- PHP 5.2.x recommended
 
 Installation
 ============
@@ -71,19 +73,16 @@ http://drupal.org/node/622700
 Testing
 =======
 
-For all tests to pass, run tests with the latest releases of these modules
-available in the Drupal search path:
-
-- Views
-- Data
-
-This list does not include modules that are required by Feeds anyway.
+See "The developer's guide to Feeds":
+http://drupal.org/node/622700
 
 Performance
 ===========
 
-Untested. There is support for drupal_queue module in the works.
-http://drupal.org/node/599180
+Use Drupal Queue to improve Feeds' performance when scheduling many very active
+feeds. An example for "many very active feeds" would be 300 news feeds with an
+average of four items a day.
+http://drupal.org/project/drupal_queue
 
 Hidden settings
 ===============
@@ -127,6 +126,11 @@ Description: The table used by FeedsDataProcessor to store feed items. Usually a
              FeedsDataProcessor builds a table name from a prefix (feeds_data_)
              and the importer's id ($importer_id). This default table name can
              be overridden by defining a variable with the same name.
+
+Name:        feeds_node_batch_size
+Default:     50
+             The number of nodes feed node processor creates or deletes in one
+             page load.
 
 Glossary
 ========

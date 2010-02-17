@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsDataProcessor.inc,v 1.8 2010/01/21 20:45:11 alexb Exp $
+// $Id: FeedsDataProcessor.inc,v 1.9 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * @file
@@ -50,6 +50,8 @@ class FeedsDataProcessor extends FeedsProcessor {
     else {
       drupal_set_message(t('There are no new items.'));
     }
+
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
@@ -57,12 +59,13 @@ class FeedsDataProcessor extends FeedsProcessor {
    *
    * Delete all data records for feed_nid in this table.
    */
-  public function clear(FeedsSource $source) {
+  public function clear(FeedsBatch $batch, FeedsSource $source) {
     $clause = array(
       'feed_nid' => $source->feed_nid,
     );
     $num = $this->handler()->delete($clause);
     drupal_set_message(t('Deleted !number items.', array('!number' => $num)));
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
@@ -73,7 +76,7 @@ class FeedsDataProcessor extends FeedsProcessor {
       $time = $this->expiryTime();
     }
     if ($time == FEEDS_EXPIRE_NEVER) {
-      return;
+      return FEEDS_BATCH_COMPLETE;
     }
     $clause = array(
       'timestamp' => array(
@@ -83,6 +86,7 @@ class FeedsDataProcessor extends FeedsProcessor {
     );
     $num = $this->handler()->delete($clause);
     drupal_set_message(t('Expired !number records from !table.', array('!number' => $num, '!table' => $this->tableName())));
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**

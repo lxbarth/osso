@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsUserProcessor.inc,v 1.4 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsUserProcessor.inc,v 1.5 2010/02/10 23:49:35 alexb Exp $
 
 /**
  * @file
@@ -72,16 +72,14 @@ class FeedsUserProcessor extends FeedsProcessor {
     else {
       drupal_set_message(t('There are no new users.'));
     }
+
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
-   * Implement clear.
-   *
-   * @param $source
-   *   FeedsSource of this term. FeedsTermProcessor does not heed this
-   *   parameter, it deletes all terms from a vocabulary.
+   * Implementation of FeedsProcessor::clear().
    */
-  public function clear(FeedsSource $source) {
+  public function clear(FeedsBatch $batch, FeedsSource $source) {
     // Do not support deleting users as we have no way of knowing which ones we
     // imported.
     throw new Exception(t('User processor does not support deleting users.'));

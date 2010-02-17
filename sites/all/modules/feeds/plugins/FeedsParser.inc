@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsParser.inc,v 1.8 2010/01/28 20:08:00 alexb Exp $
+// $Id: FeedsParser.inc,v 1.10 2010/02/09 17:20:18 alexb Exp $
 
 /**
  * Abstract class, defines interface for parsers.
@@ -264,7 +264,7 @@ class FeedsDateTimeElement extends FeedsElement {
 
     // Set timezone if not already in the FeedsDateTime object
     $to_tz = date_get_timezone($field['tz_handling'], date_default_timezone_name());
-    $temp = new FeedsDateTime($to_tz, NULL);
+    $temp = new FeedsDateTime(NULL, new DateTimeZone($to_tz));
 
     $db_tz = '';
     if ($use_start) {
@@ -447,9 +447,10 @@ class FeedsDateTime extends DateTime {
   protected function setGranularityFromTime($time, $tz) {
     $this->granularity = array();
     $temp = date_parse($time);
-    // This PHP method currently doesn't have resolution down to seconds, so if there is some time, all will be set.
+    // This PHP method currently doesn't have resolution down to seconds, so if
+    // there is some time, all will be set.
     foreach (self::$allgranularity AS $g) {
-      if (is_numeric($temp[$g]) || ($g == 'zone' && $temp['zone_type'] > 0)) {
+      if ((isset($temp[$g]) && is_numeric($temp[$g])) || ($g == 'zone' && (isset($temp['zone_type']) && $temp['zone_type'] > 0))) {
         $this->granularity[] = $g;
       }
     }

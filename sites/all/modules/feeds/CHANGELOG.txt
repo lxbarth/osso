@@ -1,8 +1,22 @@
-// $Id: CHANGELOG.txt,v 1.36 2010/01/28 21:00:45 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.42 2010/02/11 00:27:41 alexb Exp $
 
 Feeds 6.x 1.0 xxxxx xx, xxxx-xx-xx
 ----------------------------------
 
+- alex_b: Handle exceptions outside of Importer/Source facade methods.
+- #600584 alexb: Use Batch API. NOTE: third party plugins/extensions
+  implementing FeedsProcessor::process(), FeedsProcessor::clear() or
+  FeedsImporter::expire() need to adjust their implementations. Modules that
+  directly use Feeds' API for importing or clearing sources need may want to
+  use feeds_batch_set() instead of feeds_source()->import() or
+  feeds_source()->clear().
+
+Feeds 6.x 1.0 Alpha 11, 2010-02-10
+----------------------------------
+
+- #701432 pounard, Will White: Fix array_shift() expects parameter 1 is Array
+  error. Note: Parsers are responsible to ensure that the parameter passed to
+  FeedsImportBatch::setItems() is an Array.
 - #698356 alex_b: Refactor and clean up FeedsScheduler::work() to allow more
   scheduled tasks than 'import' and 'expire'.
 

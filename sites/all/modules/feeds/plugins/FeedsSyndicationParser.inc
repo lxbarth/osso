@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSyndicationParser.inc,v 1.12 2010/01/25 20:03:05 alexb Exp $
+// $Id: FeedsSyndicationParser.inc,v 1.13 2010/02/08 19:48:15 alexb Exp $
 
 /**
  * Class definition for Common Syndication Parser.
@@ -17,7 +17,9 @@ class FeedsSyndicationParser extends FeedsParser {
     $batch->setTitle($result['title']);
     $batch->setDescription($result['description']);
     $batch->setLink($result['link']);
-    $batch->setItems($result['items']);
+    if (is_array($result['items'])) {
+      $batch->setItems($result['items']);
+    }
   }
 
   /**
