@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsConfigurable.inc,v 1.4 2010/01/27 15:26:32 alexb Exp $
+// $Id: FeedsConfigurable.inc,v 1.5 2010/02/17 23:31:21 alexb Exp $
 
 /**
  * @file
@@ -200,6 +200,7 @@ function feeds_config_form(&$form_state, $configurable) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
+    '#weight' => 100,
   );
   return $form;
 }
