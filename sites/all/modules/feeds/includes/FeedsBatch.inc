@@ -53,6 +53,9 @@ class FeedsImportBatch extends FeedsBatch {
    *   The raw content of the feed.
    */
   public function getRaw() {
+    if ($this->raw) {
+      return $this->raw;
+    }
     if ($this->file_path) {
       return file_get_contents(realpath($this->file_path));
     }
