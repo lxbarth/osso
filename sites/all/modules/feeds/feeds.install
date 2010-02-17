@@ -382,6 +382,46 @@ function feeds_update_6007() {
  */
 function feeds_update_6008() {
   $ret = array();
+
+  $spec = array(
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => FALSE,
+    'description' => t('Cache for batching.'),
+    'serialize' => TRUE,
+  );
+  db_add_field($ret, 'feeds_source', 'batch', $spec);
+
+  // Make scheduled flag a timestamp.
+  $spec = array(
+    'type' => 'int',
+    'size' => 'normal',
+    'unsigned' => TRUE,
+    'default' => 0,
+    'not null' => TRUE,
+    'description' => 'Timestamp when a job was scheduled. 0 if a job is currently not scheduled.',
+  );
+  db_change_field($ret, 'feeds_schedule', 'scheduled', 'scheduled', $spec);
+
+  // Rename last_scheduled_time to last_executed_time, fix unsigned property.
+  $spec = array(
+    'type' => 'int',
+    'size' => 'normal',
+    'unsigned' => TRUE,
+    'default' => 0,
+    'not null' => TRUE,
+    'description' => 'Timestamp when a job was last executed.',
+  );
+  db_change_field($ret, 'feeds_schedule', 'last_scheduled_time', 'last_executed_time', $spec);
+
+  return $ret;
+}
+
+/**
+ * Add feeds_push_subscriptions tables.
+ */
+function feeds_update_6009() {
+  $ret = array();
   $table = array(
     'description' => 'PubsubHubbub subscriptions.',
     'fields' => array(
@@ -434,38 +474,7 @@ function feeds_update_6008() {
     'indexes' => array(
       'timestamp' => array('timestamp'),
     ),
-
-  $spec = array(
-    'type' => 'text',
-    'size' => 'big',
-    'not null' => FALSE,
-    'description' => t('Cache for batching.'),
-    'serialize' => TRUE,
-  );
-  db_add_field($ret, 'feeds_source', 'batch', $spec);
-
-  // Make scheduled flag a timestamp.
-  $spec = array(
-    'type' => 'int',
-    'size' => 'normal',
-    'unsigned' => TRUE,
-    'default' => 0,
-    'not null' => TRUE,
-    'description' => 'Timestamp when a job was scheduled. 0 if a job is currently not scheduled.',
   );
   db_create_table($ret, 'feeds_push_subscriptions', $table);
-  db_change_field($ret, 'feeds_schedule', 'scheduled', 'scheduled', $spec);
-
-  // Rename last_scheduled_time to last_executed_time, fix unsigned property.
-  $spec = array(
-    'type' => 'int',
-    'size' => 'normal',
-    'unsigned' => TRUE,
-    'default' => 0,
-    'not null' => TRUE,
-    'description' => 'Timestamp when a job was last executed.',
-  );
-  db_change_field($ret, 'feeds_schedule', 'last_scheduled_time', 'last_executed_time', $spec);
-
   return $ret;
 }
