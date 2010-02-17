@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSource.inc,v 1.6 2009/12/20 23:48:38 alexb Exp $
+// $Id: FeedsSource.inc,v 1.8 2010/02/11 00:26:49 alexb Exp $
 
 /**
  * @file
@@ -81,6 +81,9 @@ class FeedsSource extends FeedsConfigurable {
   // The FeedsImporter object that this source is expected to be used with.
   protected $importer;
 
+  // A FeedsBatch object. NULL if there is no active batch.
+  protected $batch;
+
   /**
    * Instantiate a unique object per class/id/feed_nid. Don't use
    * directly, use feeds_source() instead.
@@ -107,56 +110,58 @@ class FeedsSource extends FeedsConfigurable {
   /**
    * Import a feed: execute, fetching, parsing and processing stage.
    *
-   * @todo Iron out and document potential Exceptions.
-   * @todo Support batching.
+   * Lock a source before importing by using FeedsSource::lock(), after
+   * importing, release with FeedsSource::release().
    *
-   * @throws Exception $e
+   * @throws
+   *   Throws Exception if an error occurs when importing.
    */
   public function import() {
-    $feed = $this->importer->fetcher->fetch($this);
-    $this->importer->parser->parse($feed, $this);
-    $this->importer->processor->process($feed, $this);
-    module_invoke_all('feeds_after_import', $this->importer, $this);
+    try {
+      if (!$this->batch || !($this->batch instanceof FeedsImportBatch)) {
+        $this->batch = $this->importer->fetcher->fetch($this);
+        $this->importer->parser->parse($this->batch, $this);
+      }
+      $result = $this->importer->processor->process($this->batch, $this);
+      if ($result == FEEDS_BATCH_COMPLETE) {
+        unset($this->batch);
+        module_invoke_all('feeds_after_import', $this->importer, $this);
+      }
+    }
+    catch (Exception $e) {
+      unset($this->batch);
+      $this->save();
+      throw $e;
+    }
+    $this->save();
+    return $result;
   }
 
   /**
    * Remove all items from a feed.
+   *
+   * @throws
+   *   Throws Exception if an error occurs when clearing.
    */
   public function clear() {
     try {
       $this->importer->fetcher->clear($this);
       $this->importer->parser->clear($this);
-      $this->importer->processor->clear($this);
+      if (!$this->batch) {
+        $this->batch = new FeedsBatch();
+      }
+      $result = $this->importer->processor->clear($this->batch, $this);
+      if ($result == FEEDS_BATCH_COMPLETE) {
+        unset($this->batch);
+      }
     }
     catch (Exception $e) {
-      drupal_set_message($e->getMessage(), 'error');
+      unset($this->batch);
+      $this->save();
+      throw $e;
     }
-  }
-
-  /**
-   * Subscribe a source. Not all sources need to be subscribed, this method
-   * only has an effect if the fetcher in place supports subscription.
-   */
-  public function subscribe() {
-    try {
-      $this->importer->fetcher->subscribe($this);
-    }
-    catch (Exception $e) {
-      drupal_set_message($e->getMessage(), 'error');
-    }
-  }
-
-  /**
-   * Unsubscribe a source. This method  only has an effect if the fetcher in
-   * place supports subscription.
-   */
-  public function unsubscribe() {
-    try {
-      $this->importer->fetcher->unsubscribe($this);
-    }
-    catch (Exception $e) {
-      drupal_set_message($e->getMessage(), 'error');
-    }
+    $this->save();
+    return $result;
   }
 
   /**
@@ -179,6 +184,7 @@ class FeedsSource extends FeedsConfigurable {
       'feed_nid' => $this->feed_nid,
       'config' => $config,
       'source' => $source,
+      'batch' => isset($this->batch) ? $this->batch : FALSE,
     );
     // Make sure a source record is present at all time, try to update first,
     // then insert.
@@ -194,12 +200,13 @@ class FeedsSource extends FeedsConfigurable {
    * @todo Patch CTools to move constants from export.inc to ctools.module.
    */
   public function load() {
-    if ($config = db_result(db_query('SELECT config FROM {feeds_source} WHERE id = "%s" AND feed_nid = %d', $this->id, $this->feed_nid))) {
+    if ($record = db_fetch_object(db_query('SELECT config, batch FROM {feeds_source} WHERE id = "%s" AND feed_nid = %d', $this->id, $this->feed_nid))) {
       // While FeedsSource cannot be exported, we still use CTool's export.inc
       // export definitions.
       ctools_include('export');
       $this->export_type = EXPORT_IN_DATABASE;
-      $this->config = unserialize($config);
+      $this->config = unserialize($record->config);
+      $this->batch = unserialize($record->batch);
     }
   }
 
@@ -208,11 +215,6 @@ class FeedsSource extends FeedsConfigurable {
    * from database, does not delete configuration itself.
    */
   public function delete() {
-    // Alert implementers of FeedsSourceInterface to the fact that we're
-    // deleting.
-    foreach ($this->importer->plugin_types as $type) {
-      $this->importer->$type->sourceDelete($this);
-    }
     db_query('DELETE FROM {feeds_source} WHERE id = "%s" AND feed_nid = %d', $this->id, $this->feed_nid);
   }
 
