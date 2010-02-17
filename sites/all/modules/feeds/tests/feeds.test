@@ -599,13 +599,6 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
         )
       )
     );
-  }
-
-  /**
-   * Test scheduling on cron.
-   */
-  public function testScheduling() {
-    // Create default configuration.
     $this->createFeedConfiguration();
     $this->addMappings('syndication',
       array(
@@ -636,7 +629,12 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
         ),
       )
     );
+  }
 
+  /**
+   * Test scheduling on cron.
+   */
+  public function testScheduling() {
     // Create 10 feed nodes. Turn off import on create before doing that.
     $edit = array(
       'import_on_create' => FALSE,
