@@ -141,7 +141,7 @@ abstract class FeedsConfigurable {
    * Return config defaults merged with the actual form definition. This is
    * used for filtering values in setConfig and addConfig and allows
    * implementers of configForm() to add form elements without necessarily
-   * declaring them in configDefaults.
+   * declaring them in configDefaults().
    *
    * @todo Support nested form trees.
    */
