@@ -17,10 +17,7 @@ class FeedsHTTPFetcher extends FeedsFetcher {
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
     $url = $source_config['source'];
-    if (module_exists('keyauth') && $this->config['use_keyauth']) {
-      keyauth_include();
-      $url = keyauth_sign_url($this->config['keyauth_public'], $url);
-    }
+    drupal_alter('feeds_fetcher_url', $url, $this, $source);
     return new FeedsImportBatch($url);
   }
 
@@ -54,36 +51,7 @@ class FeedsHTTPFetcher extends FeedsFetcher {
    * Override parent::configDefaults().
    */
   public function configDefaults() {
-    return array(
-      'auto_detect_feeds' => FALSE,
-      'use_keyauth' => FALSE,
-      'keyauth_public' => '',
-    );
-  }
-
-  /**
-   * Importer level configuration.
-   */
-  public function configForm(&$form_state) {
-    $form = array();
-    if (module_exists('keyauth')) {
-      keyauth_include();
-      drupal_add_js(drupal_get_path('module', 'feeds_ui') .'/feeds_ui.js');
-      $form['use_keyauth'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Use Key Authentication'),
-        '#description' => t('If checked, uses Key Authentication to sign each request URL.'),
-        '#default_value' => $this->config['use_keyauth'],
-      );
-      $form['keyauth_public'] = array(
-        '#type' => 'select',
-        '#title' => t('Public key'),
-        '#description' => t('Public authentication key. Go to !keyauth to manage keys.', array('!keyauth' => l(t('Authentication key page'), 'admin/build/keys'))),
-        '#default_value' => $this->config['keyauth_public'],
-        '#options' => drupal_map_assoc(array_keys(keyauth_all_keys())),
-      );
-    }
-    return $form;
+    return array('auto_detect_feeds' => FALSE);
   }
 }
 

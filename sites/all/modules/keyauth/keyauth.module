@@ -82,6 +82,41 @@ function keyauth_perm() {
 }
 
 /**
+ * Implementation of hook_form_alter().
+ */
+function keyauth_form_alter(&$form, $form_state, $form_id) {
+  if (in_array($form_id, array('FeedsHTTPFetcher_feeds_config_form', 'FeedsPubSubFetcher_feeds_config_form'))) {
+    drupal_add_js(drupal_get_path('module', 'keyauth') .'/keyauth.js');
+    $configurable = $form['#configurable'];
+    keyauth_include();
+    drupal_add_js(drupal_get_path('module', 'feeds_ui') .'/feeds_ui.js');
+    $form['use_keyauth'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use Key Authentication'),
+      '#description' => t('If checked, uses Key Authentication to sign each request URL.'),
+      '#default_value' => empty($configurable->config['use_keyauth']) ? FALSE : $configurable->config['use_keyauth'],
+    );
+    $form['keyauth_public'] = array(
+      '#type' => 'select',
+      '#title' => t('Public key'),
+      '#description' => t('Public authentication key. Go to !keyauth to manage keys.', array('!keyauth' => l(t('Authentication key page'), 'admin/build/keys'))),
+      '#default_value' => empty($configurable->config['keyauth_public']) ? '' : $configurable->config['keyauth_public'],
+      '#options' => drupal_map_assoc(array_keys(keyauth_all_keys())),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_feeds_fetcher_url_alter().
+ */
+function keyauth_feeds_fetcher_url_alter(&$url, $fetcher) {
+  if ($fetcher->config['use_keyauth']) {
+    keyauth_include();
+    $url = keyauth_sign_url($fetcher->config['keyauth_public'], $url);
+  }
+}
+
+/**
  * Include key auth functions.
  */
 function keyauth_include() {
