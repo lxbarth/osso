@@ -3,6 +3,32 @@
 feeds_include_library('PushSubscriber.inc', 'PushSubscriber');
 
 /**
+ * FeedsImportBatch for PubSub Fetcher.
+ */
+class FeedsPubSubBatch extends FeedsHTTPBatch {
+  protected $raw;
+
+  /**
+   * Constructor
+   *
+   * @param $raw
+   *   The raw content of the fat ping.
+   */
+  function __construct($raw) {
+    $this->raw = $raw;
+    parent::__construct();
+  }
+
+  /**
+   * Override FeedsHTTPBatch::getRaw() and simply return the raw content
+   * populated on instnatiation.
+   */
+  function getRaw() {
+    return $this->raw;
+  }
+}
+
+/**
  * Publish/Subscribe fetcher. Supports at the moment only PubSubHubbub (PuSH).
  */
 class FeedsPubSubFetcher extends FeedsHTTPFetcher {
@@ -14,7 +40,7 @@ class FeedsPubSubFetcher extends FeedsHTTPFetcher {
     $source_config = $source->getConfigFor($this);
     // Handle fat ping if present, otherwise pass up to HTTP fetcher.
     if ($raw = feeds_push_subscriber($this->id, $source->feed_nid)->receive()) {
-      return new FeedsImportBatch($source_config['source'], NULL, $raw);
+      return new FeedsPubSubBatch($raw);
     }
     return parent::fetch($source);
   }
