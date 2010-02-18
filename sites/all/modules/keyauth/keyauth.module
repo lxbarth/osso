@@ -107,12 +107,12 @@ function keyauth_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Implementation of hook_feeds_fetcher_url_alter().
+ * Implementation of hook_feeds_fetcher_prefetch_alter().
  */
-function keyauth_feeds_fetcher_url_alter(&$url, $fetcher) {
+function keyauth_feeds_prefetch_alter(&$source_config, $fetcher) {
   if ($fetcher->config['use_keyauth']) {
     keyauth_include();
-    $url = keyauth_sign_url($fetcher->config['keyauth_public'], $url);
+    $source_config['source'] = keyauth_sign_url($fetcher->config['keyauth_public'], $source_config['source']);
   }
 }
 

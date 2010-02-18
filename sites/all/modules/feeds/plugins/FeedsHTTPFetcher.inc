@@ -16,8 +16,8 @@ class FeedsHTTPFetcher extends FeedsFetcher {
    */
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
+    drupal_alter('feeds_prefetch', $source_config, $this, $source);
     $url = $source_config['source'];
-    drupal_alter('feeds_fetcher_url', $url, $this, $source);
     return new FeedsImportBatch($url);
   }
 
