@@ -1,10 +1,40 @@
 <?php
-// $Id: FeedsFileFetcher.inc,v 1.5 2010/01/18 20:05:53 alexb Exp $
+// $Id: FeedsFileFetcher.inc,v 1.6 2010/02/18 16:01:19 alexb Exp $
 
 /**
  * @file
- * Home of the FeedsFileFetcher.
+ * Home of the FeedsFileFetcher and related classes.
  */
+
+/**
+ * Definition of the import batch object created on the fetching stage by
+ * FeedsFileFetcher.
+ */
+class FeedsFileBatch extends FeedsImportBatch {
+  protected $file_path;
+
+  /**
+   * Constructor.
+   */
+  public function __construct($file_path) {
+    $this->file_path = $file_path;
+    parent::__construct();
+  }
+
+  /**
+   * Implementation of FeedsImportBatch::getRaw();
+   */
+  public function getRaw() {
+    return file_get_contents(realpath($this->file_path));
+  }
+
+  /**
+   * Implementation of FeedsImportBatch::getFilePath().
+   */
+  public function getFilePath() {
+    return $this->file_path;
+  }
+}
 
 /**
  * Fetches data via HTTP.
@@ -16,7 +46,7 @@ class FeedsFileFetcher extends FeedsFetcher {
    */
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    return new FeedsImportBatch(NULL, $source_config['source']);
+    return new FeedsFileBatch($source_config['source']);
   }
 
   /**
