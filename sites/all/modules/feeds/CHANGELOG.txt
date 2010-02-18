@@ -1,8 +1,9 @@
-// $Id: CHANGELOG.txt,v 1.44 2010/02/17 22:58:54 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.45 2010/02/18 16:01:19 alexb Exp $
 
 Feeds 6.x 1.0 xxxxx xx, xxxx-xx-xx
 ----------------------------------
 
+- #708228 Scott Reynolds, alex_b: Break FeedsImportBatch into separate classes.
 - alex_b: Support mapping to OpenID, using OpenID as a unique mapping target.
 - alex_b: Handle exceptions outside of Importer/Source facade methods.
 - #600584 alex_b: Use Batch API. NOTE: third party plugins/extensions
