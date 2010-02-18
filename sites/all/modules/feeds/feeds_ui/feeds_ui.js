@@ -1,4 +1,4 @@
-// $Id: feeds_ui.js,v 1.1 2009/10/20 21:01:35 alexb Exp $
+// $Id: feeds_ui.js,v 1.2 2010/02/18 16:26:40 alexb Exp $
 
 Drupal.behaviors.feeds = function() {
 
@@ -53,7 +53,7 @@ Drupal.behaviors.feeds = function() {
   // Replace checkbox with .feeds-ui-checkbox-link class with a link.
   $('.feeds-ui-checkbox-link:not(.processed)').each(function(i) {
     $(this).addClass('processed').after(
-      '<a href="#" onclick="return false;" class="feeds-ui-trigger-remove">' + $(this).children(' label').text() + '</a>'
+      '<a href="#" onclick="return false;" class="feeds-ui-trigger-remove">' + $('label', this).text() + '</a>'
     ).hide();
   });
 
