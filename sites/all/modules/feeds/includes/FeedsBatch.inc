@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsBatch.inc,v 1.4 2010/02/10 23:49:35 alexb Exp $
+// $Id: FeedsBatch.inc,v 1.5 2010/02/18 16:01:19 alexb Exp $
 
 /**
  * A FeedsBatch object holds the state of an import or clear batch. Used in
@@ -20,80 +20,70 @@ class FeedsBatch {
 }
 
 /**
- * A FeedsImportBatch is the actual content retrieved from a FeedsSource. On
+ * A FeedsImportBatch wraps the actual content retrieved from a FeedsSource. On
  * import, it is created on the fetching stage and passed through the parsing
  * and processing stage where it is normalized and consumed.
  *
- * @see FeedsSource class
- * @see FeedsFetcher class
+ * A Fetcher must return a FeedsImportBatch object on fetch(). To that end it
+ * must use either one of the existing implementations of FeedsImportBatch
+ * (FeedsFileBatch or FeedsHTTPBatch) or it must extend FeedsImportBatch and
+ * implement at least
+ *
+ * - getRaw() returning the raw content from the source as a string and
+ * - getFilePath() returning a path to a file containing the raw content from
+ *   the source.
+ *
+ * A Parser must populate a FeedsImportBatch object through the set methods upon
+ * parse(). For instance:
+ *
+ * $batch->setTitle('My imported document');
+ * $batch->setItems($parsed_rows);
+ *
+ * Finally, a processor can work off the information produced on the parsing
+ * stage by consuming items with $batch->shiftItem().
+ *
+ * while ($item = $batch->shiftItem()) {
+ *   $object = $this->map($item);
+ *   $object->save();
+ * }
+ *
+ * Note: Knowledge of the internal structure of a single item in the $items
+ * array is managed by the mapping API specified in FeedsParser class and
+ * FeedsProcessor class.
+ *
+ * @see FeedsFileBatch
+ * @see FeedsHTTPBatch
  */
-class FeedsImportBatch extends FeedsBatch {
-
-  protected $url;
-  protected $file_path;
-  protected $raw;
-  protected $items;
+abstract class FeedsImportBatch extends FeedsBatch {
+  protected $title;
+  protected $description;
   protected $link;
+  protected $items;
 
-  /**
-   * Constructor.
-   *
-   * Either $url or $file_path must be given.
-   */
-  public function __construct($url = NULL, $file_path = NULL, $raw = NULL) {
-    $this->url = $url;
-    $this->file_path = $file_path;
-    $this->raw = $raw;
+  public function __construct() {
+    $this->title = '';
+    $this->description = '';
+    $this->link = '';
     $this->items = array();
-    parent::__construct();
   }
 
   /**
    * @return
-   *   The raw content of the feed.
+   *   The raw content from the source as a string.
+   *
+   * @throws Exception
+   *   If an unexpected problem occurred.
    */
-  public function getRaw() {
-    if ($this->raw) {
-      return $this->raw;
-    }
-    if ($this->file_path) {
-      return file_get_contents(realpath($this->file_path));
-    }
-    elseif ($this->url) {
-      feeds_include_library('http_request.inc', 'http_request');
-      $result = http_request_get($this->url);
-      if ($result->code != 200) {
-        throw new Exception(t('Download of @url failed with code !code.', array('@url' => $this->url, '!code' => $result->code)));
-      }
-      return $result->data;
-    }
-  }
+  public abstract function getRaw();
 
   /**
    * @return
-   *   Path to the feed. This path is relative to Drupal's root directory.
-   *   If the feed is not local, getFilePath downloads it to file directory.
+   *   A path to a file containing the raw content as a source.
+   *
+   * @throws Exception
+   *   If an unexpected problem occurred.
    */
-  public function getFilePath() {
-    if (!isset($this->file_path)) {
-      $dest = file_destination(file_directory_path() .'/feeds/'. get_class($this) .'_'. md5($this->url) .'_'. time(), FILE_EXISTS_RENAME);
-      $this->file_path = file_save_data($this->getRaw(), $dest);
-      if($this->file_path === 0) {
-        throw new Exception(t('Cannot write content to %dest', array('%dest' => $dest)));
-      }
-    }
-    return $this->file_path;
-  }
-
-  /**
-   * @return
-   *   URL to the document.
-   */
-  public function getURL() {
-    if (!isset($this->url) && isset($this->file)) {
-      return $_GLOBALS['base_url'] .'/'. $this->file;
-    }
-  }
+  public abstract function getFilePath();
 
   /**
    * @return
@@ -117,7 +107,7 @@ class FeedsImportBatch extends FeedsBatch {
    *   feed). Falls back to URL if not available.
    */
   public function getLink() {
-    return isset($this->link) ? $this->link : $this->getURL();
+    return $this->link;
   }
 
   /**
