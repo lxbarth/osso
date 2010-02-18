@@ -1,0 +1,77 @@
+Index: includes/FeedsConfigurable.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/feeds/includes/FeedsConfigurable.inc,v
+retrieving revision 1.5
+diff -u -p -r1.5 FeedsConfigurable.inc
+--- includes/FeedsConfigurable.inc	17 Feb 2010 23:31:21 -0000	1.5
++++ includes/FeedsConfigurable.inc	18 Feb 2010 00:40:13 -0000
+@@ -89,7 +89,7 @@ abstract class FeedsConfigurable {
+    *   returned by configDefaults().
+    */
+   public function setConfig($config) {
+-    $default_keys = $this->configDefaults();
++    $default_keys = $this->configDefaultsMerged();
+     $this->config = array_intersect_key($config, $default_keys);
+   }
+ 
+@@ -102,7 +102,7 @@ abstract class FeedsConfigurable {
+    */
+   public function addConfig($config) {
+     $this->config = array_merge($this->config, $config);
+-    $default_keys = $this->configDefaults();
++    $default_keys = $this->configDefaultsMerged();
+     $this->config = array_intersect_key($this->config, $default_keys);
+   }
+ 
+@@ -134,9 +134,30 @@ abstract class FeedsConfigurable {
+    *   values are their default values.
+    */
+   public function configDefaults() {
+-    $fake_form_state = array();
+-    $form = $this->configForm($fake_form_state);
+-    return element_children($form);
++    return array();
++  }
++
++  /**
++   * Return config defaults merged with the actual form definition. This is
++   * used for filtering values in setConfig and addConfig and allows
++   * implementers of configForm() to add form elements without necessarily
++   * declaring them in configDefaults.
++   *
++   * @todo Support nested form trees.
++   */
++  protected function configDefaultsMerged() {
++    $form_state = array();
++    $form = $this->configForm($form_state);
++    // Mimic Form API behavior.
++    drupal_alter('form_'. get_class($this) .'_feeds_config_form', $form, $form_state);
++    drupal_alter('form', $form, $form_state, get_class($this) .'_feeds_config_form');
++    $defaults = array();
++    foreach (element_children($form) as $e) {
++      if (isset($form[$e]['#default_value'])) {
++        $defaults[$e] = $form[$e]['#default_value'];
++      }
++    }
++    return $this->configDefaults() + $defaults;
+   }
+ 
+   /**
+Index: plugins/FeedsHTTPFetcher.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/feeds/plugins/FeedsHTTPFetcher.inc,v
+retrieving revision 1.8
+diff -u -p -r1.8 FeedsHTTPFetcher.inc
+--- plugins/FeedsHTTPFetcher.inc	20 Dec 2009 23:54:44 -0000	1.8
++++ plugins/FeedsHTTPFetcher.inc	18 Feb 2010 00:40:13 -0000
+@@ -16,7 +16,9 @@ class FeedsHTTPFetcher extends FeedsFetc
+    */
+   public function fetch(FeedsSource $source) {
+     $source_config = $source->getConfigFor($this);
+-    return new FeedsImportBatch($source_config['source']);
++    drupal_alter('feeds_prefetch', $source_config, $this, $source);
++    $url = $source_config['source'];
++    return new FeedsImportBatch($url);
+   }
+ 
+   /**
