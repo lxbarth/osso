@@ -1,10 +1,53 @@
 <?php
-// $Id: FeedsHTTPFetcher.inc,v 1.8 2009/12/20 23:54:44 alexb Exp $
+// $Id: FeedsHTTPFetcher.inc,v 1.9 2010/02/18 16:01:19 alexb Exp $
 
 /**
  * @file
- * Home of the FeedsHTTPFetcher.
+ * Home of the FeedsHTTPFetcher and related classes.
  */
+
+/**
+ * Definition of the import batch object created on the fetching stage by
+ * FeedsHTTPFetcher.
+ */
+class FeedsHTTPBatch extends FeedsImportBatch {
+  protected $url;
+  protected $file_path;
+
+  /**
+   * Constructor.
+   */
+  public function __construct($url = NULL) {
+    $this->url = $url;
+    parent::__construct();
+  }
+
+  /**
+   * Implementation of FeedsImportBatch::getRaw();
+   */
+  public function getRaw() {
+    feeds_include_library('http_request.inc', 'http_request');
+    $result = http_request_get($this->url);
+    if ($result->code != 200) {
+      throw new Exception(t('Download of @url failed with code !code.', array('@url' => $this->url, '!code' => $result->code)));
+    }
+    return $result->data;
+  }
+
+  /**
+   * Implementation of FeedsImportBatch::getFilePath().
+   */
+  public function getFilePath() {
+    if (!isset($this->file_path)) {
+      $dest = file_destination(file_directory_path() .'/feeds/'. get_class($this) .'_'. md5($this->url) .'_'. time(), FILE_EXISTS_RENAME);
+      $this->file_path = file_save_data($this->getRaw(), $dest);
+      if($this->file_path === 0) {
+        throw new Exception(t('Cannot write content to %dest', array('%dest' => $dest)));
+      }
+    }
+    return $this->file_path;
+  }
+}
 
 /**
  * Fetches data via HTTP.
@@ -18,7 +61,7 @@ class FeedsHTTPFetcher extends FeedsFetcher {
     $source_config = $source->getConfigFor($this);
     drupal_alter('feeds_prefetch', $source_config, $this, $source);
     $url = $source_config['source'];
-    return new FeedsImportBatch($url);
+    return new FeedsHTTPBatch($url);
   }
 
   /**
