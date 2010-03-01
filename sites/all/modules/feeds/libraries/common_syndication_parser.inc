@@ -1,5 +1,5 @@
 <?php
-// $Id: common_syndication_parser.inc,v 1.7 2010/01/28 19:57:54 alexb Exp $
+// $Id: common_syndication_parser.inc,v 1.8 2010/02/27 04:45:17 alexb Exp $
 
 /**
  * @file
@@ -346,6 +346,7 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
   $parsed_source['items'] = array();
 
   foreach ($feed_XML->xpath('//item') as $news) {
+    $title = $body = $original_author = $original_url = $guid = '';
     $category = $news->xpath('category');
     // Get children for current namespace.
     if (version_compare(phpversion(), '5.1.2', '>')) {
@@ -357,9 +358,6 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
 
     if (isset($news['title'])) {
       $title = "{$news['title']}";
-    }
-    else {
-      $title = '';
     }
 
     if (isset($news['description'])) {
@@ -387,23 +385,14 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
     elseif (isset($dc["creator"])) {
       $original_author = (string)$dc["creator"];
     }
-    else {
-      $original_author = NULL;
-    }
 
     if (!empty($news['link'])) {
       $original_url = "{$news['link']}";
-    }
-    else {
-      $original_url = NULL;
+      $guid = $original_url;
     }
 
     if (isset($news['guid'])) {
       $guid = "{$news['guid']}";
-    }
-    else {
-      // Attempt to fall back on original URL if GUID is not present.
-      $guid = $original_url;
     }
 
     $additional_taxonomies = array();

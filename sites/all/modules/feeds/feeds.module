@@ -1,28 +1,27 @@
 <?php
-// $Id: feeds.module,v 1.29 2010/02/10 23:49:35 alexb Exp $
+// $Id: feeds.module,v 1.40 2010/02/28 17:16:25 alexb Exp $
 
 /**
  * @file
  * Feeds - basic API functions and hook implementations.
  */
 
-// Vague request time. Use as common point of reference and to avoid costly
-// calls to time().
+// Common request time, use as point of reference and to avoid calls to time().
 define('FEEDS_REQUEST_TIME', time());
 // Do not schedule a feed for refresh.
 define('FEEDS_SCHEDULE_NEVER', -1);
 // Never expire feed items.
-// @todo Use FEEDS_NEVER instead of FEEDS_SCHEDULE_NEVER and FEEDS_EXPIRE_NEVER.
 define('FEEDS_EXPIRE_NEVER', -1);
-// An object is not persistent at all. Compare to EXPORT_IN_DATABASE OR
-// EXPORT_IN_CODE.
+// An object that is not persistent. Compare EXPORT_IN_DATABASE, EXPORT_IN_CODE.
 define('FEEDS_EXPORT_NONE', 0x0);
 // The Drupal Queue FeedsScheduler may use for scheduling importing or expiry.
 define('FEEDS_SCHEDULER_QUEUE', 'feeds_queue');
-
+// Status of batched operations.
+define('FEEDS_BATCH_COMPLETE', 1);
+define('FEEDS_BATCH_ACTIVE', 0);
 
 /**
- * @defgroup hooks Hooks and callbacks
+ * @defgroup hooks Hook and callback implementations
  * @{
  */
 
@@ -60,14 +59,14 @@ function feeds_perm() {
 
 /**
  * Implementation of hook_forms().
+ *
+ * Declare form callbacks for all known classes derived from FeedsConfigurable.
  */
 function feeds_forms() {
-  // Declare form callbacks for all known classes derived from FeedsConfigurable.
   $forms = array();
   $forms['FeedsImporter_feeds_config_form']['callback'] = 'feeds_config_form';
   $plugins = feeds_get_plugins();
   foreach ($plugins as $plugin) {
-    // See feeds_get_config_form().
     $forms[$plugin['handler']['class'] .'_feeds_config_form']['callback'] = 'feeds_config_form';
   }
   return $forms;
@@ -126,6 +125,7 @@ function feeds_menu() {
         'weight' => 11,
       );
     }
+    $items += $importer->fetcher->menuItem();
   }
   if (count($items)) {
     $items['import'] = array(
@@ -135,13 +135,6 @@ function feeds_menu() {
       'file' => 'feeds.pages.inc',
     );
   }
-  $items['feeds/pubsubhubbub/notify/%feeds_importer'] = array(
-   'page callback' => 'feeds_push_receive',
-   'page arguments' => array(3, 4),
-   'access callback' => TRUE,
-   'file' => 'feeds.pages.inc',
-   'type' => MENU_CALLBACK,
-  );
   return $items;
 }
 
@@ -190,16 +183,13 @@ function feeds_access($action, $param) {
 
 /**
  * Menu access callback.
- *
- * @todo Create cached function that returns available configurations
- * and use it for enumerating feed configuration ids.
  */
 function feeds_page_access() {
   if (user_access('administer feeds')) {
     return TRUE;
   }
-  foreach (feeds_importer_load_all() as $importer) {
-    if (user_access('import '. $importer->id .' feed')) {
+  foreach (feeds_enabled_importers() as $id) {
+    if (user_access("import $id feed")) {
       return TRUE;
     }
   }
@@ -223,6 +213,18 @@ function feeds_ctools_plugin_api($owner, $api) {
   if ($owner == 'feeds' && $api == 'plugins') {
     return array('version' => 1);
   }
+}
+
+/**
+ * Implementation of hook_ctools_plugin_plugins().
+ *
+ * Psuedo hook defintion plugin system options and defaults.
+ */
+function feeds_ctools_plugin_plugins() {
+  return array(
+    'cache' => TRUE,
+    'use hooks' => TRUE,
+  );
 }
 
 /**
@@ -292,9 +294,8 @@ function feeds_nodeapi(&$node, $op, $form) {
         if ($op == 'insert' && feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
           feeds_batch_set(t('Importing'), 'import', $importer_id, $node->nid);
         }
-        // Add import and subscribe to scheduler.
+        // Add import to scheduler.
         feeds_scheduler()->add($importer_id, 'import', $node->nid);
-        feeds_scheduler()->add($importer_id, 'subscribe', $node->nid);
         // Add expiry to schedule, in case this is the first feed of this
         // configuration.
         feeds_scheduler()->add($importer_id, 'expire');
@@ -302,7 +303,6 @@ function feeds_nodeapi(&$node, $op, $form) {
       case 'delete':
         // Remove feed from scheduler and delete source.
         feeds_scheduler()->remove($importer_id, 'import', $node->nid);
-        feeds_scheduler()->remove($importer_id, 'subscribe', $node->nid);
         feeds_source($importer_id, $node->nid)->delete();
         break;
     }
@@ -375,11 +375,11 @@ function feeds_scheduler_work($feed_info) {
 }
 
 /**
- * @} End of "defgroup hooks".
+ * @}
  */
 
 /**
- * @defgroup batch Batch functions.
+ * @defgroup batch Batch functions
  */
 
 /**
@@ -422,14 +422,7 @@ function feeds_batch_set($title, $method, $importer_id, $feed_nid = 0) {
 function feeds_batch($method, $importer_id, $feed_nid = 0, &$context) {
   $context['finished'] = 1;
   try {
-    switch ($method) {
-      case 'import':
-        $context['finished'] = feeds_source($importer_id, $feed_nid)->import();
-        break;
-      case 'clear':
-        $context['finished'] = feeds_source($importer_id, $feed_nid)->clear();
-        break;
-    }
+    $context['finished'] = feeds_source($importer_id, $feed_nid)->$method();
   }
   catch (Exception $e) {
     drupal_set_message($e->getMessage(), 'error');
@@ -437,7 +430,7 @@ function feeds_batch($method, $importer_id, $feed_nid = 0, &$context) {
 }
 
 /**
- * @} End of "defgroup batch".
+ * @}
  */
 
 /**
@@ -472,38 +465,17 @@ function feeds_importer_load_all($load_disabled = FALSE) {
 }
 
 /**
- * Return whether a importer is enabled or not.
- *
- * Use only for importer configurations that ship with feeds. This function
- * assumes that importers are initially off and then enabled manually on
- * admin/build/feeds.
+ * Get an array of enabled importer ids.
  *
  * @return
- *   TRUE if the importer is enabled, FALSE if not.
+ *   An array where the values contain ids of enabled importers.
  */
-function feeds_importer_enabled($id) {
-  // 'default_feeds_importer' variable is used internally by CTools to determine
-  // the enabled/disabled state of a configuration. This variable may not be
-  // completely populated.
-  $disabled = variable_get('default_feeds_importer', FALSE);
-  if ($disabled === FALSE) {
-    $disabled = array();
-    foreach (feeds_importer_load_all() as $importer) {
-      $disabled[$importer->id] = $disabled->disabled;
-    }
-    variable_set('default_feeds_importer', $disabled);
-  }
-  // If disabled is not present, assume that importer configuration is disabled.
-  if (!isset($disabled[$id])) {
-    return FALSE;
-  }
-  return !$disabled[$id];
+function feeds_enabled_importers() {
+  return array_keys(_feeds_importer_digest());
 }
 
 /**
  * Get a an enabled importer configuration by content type.
- *
- * @todo speed this up by DB caching the result.
  *
  * @param $content_type
  *   A node type string.
@@ -513,17 +485,42 @@ function feeds_importer_enabled($id) {
  *   FALSE otherwise.
  */
 function feeds_get_importer_id($content_type) {
-  static $ids = array();
-  if (!isset($ids[$content_type])) {
-    $ids[$content_type] = FALSE;
-    foreach (feeds_importer_load_all() as $importer) {
-      if ((!$importer->disabled) && $importer->config['content_type'] == $content_type) {
-        $ids[$content_type] = $importer->id;
-        break;
+  $importers = array_flip(_feeds_importer_digest());
+  return isset($importers[$content_type]) ? $importers[$content_type] : FALSE;
+}
+
+/**
+ * Helper function for feeds_get_importer_id() and feeds_enabled_importers().
+ */
+function _feeds_importer_digest() {
+  $importers = &ctools_static(__FUNCTION__);
+  if ($importers === NULL) {
+    if ($cache = cache_get(__FUNCTION__)) {
+      $importers = $cache->data;
+    }
+    else {
+      $importers = array();
+      foreach (feeds_importer_load_all() as $importer) {
+        $importers[$importer->id] = $importer->config['content_type'];
       }
+      cache_set(__FUNCTION__, $importers);
     }
   }
-  return $ids[$content_type];
+  return $importers;
+}
+
+/**
+ * Reset importer caches. Call when enabling/disabling importers.
+ */
+function feeds_cache_clear($rebuild_menu = TRUE) {
+  cache_clear_all('_feeds_importer_digest', 'cache');
+  ctools_static_reset('_feeds_importer_digest');
+  ctools_include('export');
+  ctools_export_load_object_reset('feeds_importer');
+  node_get_types('types', NULL, TRUE);
+  if ($rebuild_menu) {
+    menu_rebuild();
+  }
 }
 
 /**
@@ -538,7 +535,22 @@ function feeds_export($importer_id, $indent = '') {
 }
 
 /**
- * @} End of "defgroup utility".
+ * Log to a file like /mytmp/feeds_my_domain_org.log in temporary directory.
+ */
+function feeds_dbg($msg) {
+  if (variable_get('feeds_debug', false)) {
+    if (!is_string($msg)) {
+      $msg = var_export($msg, true);
+    }
+    $filename = trim(str_replace('/', '_', $_SERVER['HTTP_HOST'] . base_path()), '_');
+    $handle = fopen(file_directory_temp() ."/feeds_$filename.log", 'a');
+    fwrite($handle, date('c') ."\t$msg\n");
+    fclose($handle);
+  }
+}
+
+/**
+ * @}
  */
 
 /**
@@ -593,7 +605,7 @@ function feeds_scheduler() {
 }
 
 /**
- * @} End of "defgroup instantiators".
+ * @}
  */
 
 /**
@@ -673,9 +685,6 @@ function feeds_plugin_instance($plugin, $id) {
   if ($class = ctools_plugin_load_class('feeds', 'plugins', $plugin, 'handler')) {
     return FeedsConfigurable::instance($class, $id);
   }
-
-  // Return FeedsMissingPlugin if no plugin was found.
-  // @todo Better error handling.
   drupal_set_message(t('Missing Feeds plugin. Check whether all required libraries and modules are installed properly.'), 'warning');
   $class = ctools_plugin_load_class('feeds', 'plugins', 'FeedsMissingPlugin', 'handler');
   return FeedsConfigurable::instance($class, $id);
@@ -684,9 +693,7 @@ function feeds_plugin_instance($plugin, $id) {
 /**
  * Determines whether given plugin is derived from given base plugin.
  *
- * @todo Update variable names. Should be $plugin_key if it is a key string.
- *
- * @param $plugin
+ * @param $plugin_key
  *   String that identifies a Feeds plugin key.
  * @param $parent_plugin
  *   String that identifies a Feeds plugin key to be tested against.
@@ -695,10 +702,10 @@ function feeds_plugin_instance($plugin, $id) {
  *   TRUE if $parent_plugin is directly *or indirectly* a parent of $plugin,
  *   FALSE otherwise.
  */
-function feeds_plugin_child($plugin, $parent_plugin) {
+function feeds_plugin_child($plugin_key, $parent_plugin) {
   ctools_include('plugins');
   $plugins = ctools_get_plugins('feeds', 'plugins');
-  $info = $plugins[$plugin];
+  $info = $plugins[$plugin_key];
 
   if (empty($info['handler']['parent'])) {
     return FALSE;
@@ -715,7 +722,7 @@ function feeds_plugin_child($plugin, $parent_plugin) {
  * Determine the type of a plugin.
  *
  * @param $plugin_key
- *   String that is a Feeds plugin key.
+ *   String that identifies a Feeds plugin key.
  *
  * @return
  *   One of the following values:
@@ -738,7 +745,7 @@ function feeds_plugin_type($plugin_key) {
 }
 
 /**
- * @} End of "defgroup plugins".
+ * @}
  */
 
 /**
@@ -809,5 +816,5 @@ function feeds_library_exists($file, $library) {
 }
 
 /**
- * @} End of "defgroup include".
+ * @}
  */

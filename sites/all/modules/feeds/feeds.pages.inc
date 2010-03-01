@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.pages.inc,v 1.9 2010/02/10 23:49:35 alexb Exp $
+// $Id: feeds.pages.inc,v 1.13 2010/02/24 00:08:47 alexb Exp $
 
 /**
  * @file
@@ -7,15 +7,16 @@
  */
 
 /**
- * Render a page of available feed configuration.
- *
- * @todo Respect permissions.
+ * Render a page of available importers.
  */
 function feeds_page() {
   $rows = array();
   if ($importers = feeds_importer_load_all()) {
     foreach ($importers as $importer) {
       if ($importer->disabled) {
+        continue;
+      }
+      if (!(user_access('import '. $importer->id .' feeds') || user_access('administer feeds'))) {
         continue;
       }
       if (empty($importer->config['content_type'])) {
@@ -88,7 +89,6 @@ function feeds_import_form_submit($form, &$form_state) {
 
   // Add importer to schedule.
   feeds_scheduler()->add($form['#importer_id'], 'import');
-  feeds_scheduler()->add($form['#importer_id'], 'subscribe');
   feeds_scheduler()->add($form['#importer_id'], 'expire');
 }
 
@@ -142,24 +142,11 @@ function feeds_delete_tab_form_submit($form, &$form_state) {
 }
 
 /**
- * Handle a PubsubHubbub notification.
+ * Handle a fetcher callback.
  */
-function feeds_push_receive($importer, $feed_nid = 0) {
-  if ($importer->fetcher instanceof FeedsPubSubFetcher) {
-    // A subscription verification has been sent, verify.
-    if ($_GET['hub_challenge']) {
-      $importer->fetcher->pushVerifySubscriptionRequest($_GET, $feed_nid);
-    }
-    // No subscription notification has ben sent, we are being notified.
-    else {
-      try {
-        feeds_source($importer->id, $feed_nid)->import();
-      }
-      catch (Exception $e) {
-        // In case of an error, respond with a 503 Service (temporary) unavailable.
-        header('HTTP/1.1 503 "Not Found"', null, 503);
-        exit();
-      }
-    }
+function feeds_fetcher_callback($importer, $feed_nid = 0) {
+  if ($importer instanceof FeedsImporter) {
+    return $importer->fetcher->request($feed_nid);
   }
+  drupal_access_denied();
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsTermProcessor.inc,v 1.4 2010/02/10 23:49:35 alexb Exp $
+// $Id: FeedsTermProcessor.inc,v 1.5 2010/02/27 03:20:25 alexb Exp $
 
 /**
  * @file
@@ -70,7 +70,7 @@ class FeedsTermProcessor extends FeedsProcessor {
       drupal_set_message(t('There are no new terms.'));
     }
 
-    return FEEDS_NODE_BATCH_SIZE;
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**

@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsParser.inc,v 1.10 2010/02/09 17:20:18 alexb Exp $
+// $Id: FeedsParser.inc,v 1.11 2010/02/24 01:19:33 alexb Exp $
 
 /**
  * Abstract class, defines interface for parsers.
@@ -30,17 +30,21 @@ abstract class FeedsParser extends FeedsPlugin {
   /**
    * Declare the possible mapping sources that this parser produces.
    *
+   * @ingroup mappingapi
+   *
    * @return
    *   An array of mapping sources, or FALSE if the sources can be defined by
    *   typing a value in a text field.
    *
    *   Example:
+   *   @code
    *   array(
    *     'title' => t('Title'),
    *     'created' => t('Published date'),
    *     'url' => t('Feed item URL'),
    *     'guid' => t('Feed item GUID'),
    *   )
+   *   @endcode
    */
   public function getMappingSources() {
     return FALSE;
@@ -50,6 +54,22 @@ abstract class FeedsParser extends FeedsPlugin {
    * Get an element identified by $element_key of the given item.
    * The element key corresponds to the values in the array returned by
    * FeedsParser::getMappingSources().
+   *
+   * This method is invoked from FeedsProcessor::map() when a concrete item is
+   * processed.
+   *
+   * @ingroup mappingapi
+   *
+   * @param $item
+   *   The source item that the source element should be retrieved from.
+   * @param $element_key
+   *   The key identifying the element that should be retrieved from $source
+   *
+   * @return
+   *   The source element from $item identified by $element_key.
+   *
+   * @see FeedsProcessor::map()
+   * @see FeedsCSVParser::getSourceElement().
    */
   public function getSourceElement($item, $element_key) {
     return isset($item[$element_key]) ? $item[$element_key] : '';

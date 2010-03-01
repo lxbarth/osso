@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_defaults.module,v 1.2 2009/10/23 22:57:16 alexb Exp $
+// $Id: feeds_defaults.module,v 1.3 2010/02/28 17:16:25 alexb Exp $
 
 /**
  * @file
@@ -13,7 +13,7 @@ require_once(dirname(__FILE__) .'/feeds_defaults.features.inc');
  */
 function feeds_defaults_node_info() {
   $items = array();
-  if (feeds_importer_enabled('feed')) {
+  if (in_array('feed', feeds_enabled_importers())) {
     $items['feed'] = array(
       'name' => t('Feed'),
       'module' => 'node',
@@ -35,7 +35,7 @@ function feeds_defaults_node_info() {
       'locked' => TRUE,
     );
   }
-  if (feeds_importer_enabled('feed_fast')) {
+  if (in_array('feed_fast', feeds_enabled_importers())) {
     $items['feed_fast'] = array(
       'name' => t('Fast feed'),
       'module' => 'node',

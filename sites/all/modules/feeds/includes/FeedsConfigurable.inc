@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsConfigurable.inc,v 1.6 2010/02/18 16:43:40 alexb Exp $
+// $Id: FeedsConfigurable.inc,v 1.12 2010/02/28 17:16:25 alexb Exp $
 
 /**
  * @file
@@ -7,7 +7,15 @@
  */
 
 /**
- * A configurable class.
+ * Used when an object does not exist in the DB or code but should.
+ */
+class FeedsNotExistingException extends Exception {
+}
+
+/**
+ * Base class for configurable classes. Captures configuration handling, form
+ * handling and distinguishes between in-memory configuration and persistent
+ * configuration.
  */
 abstract class FeedsConfigurable {
 
@@ -69,6 +77,17 @@ abstract class FeedsConfigurable {
   }
 
   /**
+   * Determine whether this object is persistent. I. e. it is defined either
+   * in code or in the database.
+   */
+  public function existing() {
+    if ($this->export_type == FEEDS_EXPORT_NONE) {
+      throw new FeedsNotExistingException(t('Object is not persistent.'));
+    }
+    return $this;
+  }
+
+  /**
    * Save a configuration. Concrete extending classes must implement a save
    * operation.
    */
@@ -85,12 +104,13 @@ abstract class FeedsConfigurable {
    * Set configuration.
    *
    * @param $config
-   *   Array containing configuration information. Will be filtered by the keys
-   *   returned by configDefaults().
+   *   Array containing configuration information. Config array will be filtered
+   *   by the keys returned by configDefaults() and populated with default
+   *   values that are not included in $config.
    */
   public function setConfig($config) {
-    $default_keys = $this->configDefaultsMerged();
-    $this->config = array_intersect_key($config, $default_keys);
+    $defaults = $this->configDefaults();
+    $this->config = array_intersect_key($config, $defaults) + $defaults;
   }
 
   /**
@@ -102,7 +122,7 @@ abstract class FeedsConfigurable {
    */
   public function addConfig($config) {
     $this->config = array_merge($this->config, $config);
-    $default_keys = $this->configDefaultsMerged();
+    $default_keys = $this->configDefaults();
     $this->config = array_intersect_key($this->config, $default_keys);
   }
 
@@ -135,29 +155,6 @@ abstract class FeedsConfigurable {
    */
   public function configDefaults() {
     return array();
-  }
-
-  /**
-   * Return config defaults merged with the actual form definition. This is
-   * used for filtering values in setConfig and addConfig and allows
-   * implementers of configForm() to add form elements without necessarily
-   * declaring them in configDefaults().
-   *
-   * @todo Support nested form trees.
-   */
-  protected function configDefaultsMerged() {
-    $form_state = array();
-    $form = $this->configForm($form_state);
-    // Mimic Form API behavior.
-    drupal_alter('form_'. get_class($this) .'_feeds_config_form', $form, $form_state);
-    drupal_alter('form', $form, $form_state, get_class($this) .'_feeds_config_form');
-    $defaults = array();
-    foreach (element_children($form) as $e) {
-      if (isset($form[$e]['#default_value'])) {
-        $defaults[$e] = $form[$e]['#default_value'];
-      }
-    }
-    return $this->configDefaults() + $defaults;
   }
 
   /**
@@ -196,6 +193,7 @@ abstract class FeedsConfigurable {
  *   Rendered config form, if available. Empty string otherwise.
  */
 function feeds_get_config_form($configurable) {
+  $form_state = array();
   if ($configurable->configForm($form_state)) {
     return drupal_get_form(get_class($configurable) .'_feeds_config_form', $configurable);
   }
@@ -240,4 +238,5 @@ function feeds_config_form_submit($form, &$form_state) {
   $form['#configurable']->addConfig($form_state['values']);
   $form['#configurable']->save();
   drupal_set_message(t('Your changes have been saved.'));
+  feeds_cache_clear(FALSE);
 }

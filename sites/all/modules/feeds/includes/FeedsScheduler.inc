@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsScheduler.inc,v 1.14 2010/02/11 00:26:49 alexb Exp $
+// $Id: FeedsScheduler.inc,v 1.17 2010/03/01 14:33:27 alexb Exp $
 
 /**
  * @file
@@ -50,14 +50,16 @@ interface FeedsSchedulerInterface {
 /**
  * Implementation of FeedsSchedulerInterface.
  *
- * This scheduler uses the last_scheduled_time paradigm: By storing the time
- * when a particular feed was scheduled to be refreshed last rather than
- * storing when a feed should be _refreshed_ next, we gain two advantages:
+ * This scheduler uses the last_refreshed_time paradigm: By storing the time
+ * when a particular feed was refreshed last rather than storing when a feed
+ * should be refreshed next, we gain two advantages:
  *
  * 1) If a feed's import_period setting changes, it has immediate effects -
  *    without batch updating an existing schedule.
  * 2) The time between refreshes will always be scheduled based on when it
  *    has been scheduled last. Less drift occurs.
+ *
+ * This behavior may change soon: http://drupal.org/node/721428
  */
 class FeedsScheduler implements FeedsSchedulerInterface {
 
@@ -159,7 +161,7 @@ class FeedsScheduler implements FeedsSchedulerInterface {
   public function work($job) {
     $importer = feeds_importer($job['id']);
     try {
-      if (FEEDS_BATCH_COMPLETE == $importer->work($job)) {
+      if (FEEDS_BATCH_COMPLETE == $importer->existing()->work($job)) {
         $this->finished($job);
       }
     }
@@ -197,7 +199,7 @@ class FeedsScheduler implements FeedsSchedulerInterface {
      db_query("UPDATE {feeds_schedule} SET scheduled = %d WHERE id = '%s' AND feed_nid = %d AND callback = '%s'", FEEDS_REQUEST_TIME, $job['id'], $job['feed_nid'], $job['callback']);
      if (db_affected_rows()) {
        if ($this->queue()) {
-         if (!$queue->createItem($job)) {
+         if (!$this->queue()->createItem($job)) {
            $this->unschedule($job);
            watchdog('FeedsScheduler', 'Error adding item to queue.', WATCHDOG_CRITICAL);
            return;

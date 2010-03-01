@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSource.inc,v 1.8 2010/02/11 00:26:49 alexb Exp $
+// $Id: FeedsSource.inc,v 1.11 2010/02/27 02:51:19 alexb Exp $
 
 /**
  * @file
@@ -61,10 +61,10 @@ interface FeedsSourceInterface {
  * therefore a FeedsImporter never holds a pointer to a FeedsSource object, nor
  * does it hold any other information for a particular FeedsSource object.
  *
- * FeedsPlugins that implement FeedsSourceInterface and return TRUE on
- * hasSourceConfig() can define default values and forms that allow for
- * configuration of the FeedsSource. For an example, see FeedsFetcher and
- * FeedsHTTPFetcher.
+ * Classes extending FeedsPlugin can implement a sourceForm to expose
+ * configuration for a FeedsSource object. This is for instance how FeedsFetcher
+ * exposes a text field for a feed URL or how FeedsCSVParser exposes a select
+ * field for choosing between colon or semicolon delimiters.
  *
  * It is important that a FeedsPlugin does not directly hold information about
  * a source but leave all storage up to FeedsSource. An instance of a
@@ -72,9 +72,7 @@ interface FeedsSourceInterface {
  * instance of a FeedsSource class exists once per feed_nid to be imported.
  *
  * As with FeedsImporter, the idea with FeedsSource is that it can be used
- * without actually saving the object to the database (
- *
- * @todo Test whether FeedsSource can be used without saving it.
+ * without actually saving the object to the database.
  */
 class FeedsSource extends FeedsConfigurable {
 
@@ -118,6 +116,10 @@ class FeedsSource extends FeedsConfigurable {
    * Lock a source before importing by using FeedsSource::lock(), after
    * importing, release with FeedsSource::release().
    *
+   * @return
+   *   FEEDS_BATCH_COMPLETE if the import process finished. A decimal between
+   *   0.0 and 0.9 periodic if import is still in progress.
+   *
    * @throws
    *   Throws Exception if an error occurs when importing.
    */
@@ -144,6 +146,10 @@ class FeedsSource extends FeedsConfigurable {
 
   /**
    * Remove all items from a feed.
+   *
+   * @return
+   *   FEEDS_BATCH_COMPLETE if the clearing process finished. A decimal between
+   *   0.0 and 0.9 periodic if clearing is still in progress.
    *
    * @throws
    *   Throws Exception if an error occurs when clearing.

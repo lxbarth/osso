@@ -1,13 +1,33 @@
-// $Id: CHANGELOG.txt,v 1.47 2010/02/18 16:27:25 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.62 2010/03/01 14:33:27 alexb Exp $
 
-Feeds 6.x 1.0 xxxxx xx, xxxx-xx-xx
+
+Feeds 6.x 1.0 xxxxx xx, 2010-xx-xx
 ----------------------------------
 
+- #728854 Scott Reynolds: Fix $queue->createItem() fails.
+- #707098 alex_b: Improve performance of nodeapi and access checks.
+- #726012 alex_b: Fix RSS descriptions not being reset in
+  common_syndication_parser.inc.
+- alex_b: Fix a typo in the return value of process() in FeedsTermProcessor.
+- alex_b: Stop PubSubHubbub from subscribing if it is not enabled.
+- #711664 neclimdul: guarantee compatibility with CTools 1.4  by declaring that
+  Feeds uses hooks to define plugins via hook_ctools_plugin_plugins().
+- #718460 jerdavis: In FeedsNodeProcessor, clear items only for the current
+  importer id.
+- #718474 jerdavis: In FeedsNodeProcessor, check for duplicate items within
+  same importer id.
+
+Feeds 6.x 1.0 Alpha 12, 2010-02-23
+----------------------------------
+
+- #600584 alex_b: PubSubHubbub support.
+- alex_b: Debug log.
+- alex_b: Add sourceSave() and sourceDelete() methods notifying plugin
+  implementers of a source being saved or deleted.
 - #717168 nicholasThompson: Fix feeds UI JS doesn't select labels correctly.
 - #708228 Scott Reynolds, alex_b: Break FeedsImportBatch into separate classes.
-  NOTE: FeedsFetcher implementations cannot use FeedsImportBatch directly
-  anymore but most provide their own implementation of FeedsImportBatch. See
-  FeedsHTTPFetcher.inc for an example.
+  NOTE: Review your FeedsFetcher implementation for changes in the
+  FeedsImportBatch class, small adjustments may be necessary.
 - alex_b: Support mapping to OpenID, using OpenID as a unique mapping target.
 - alex_b: Handle exceptions outside of Importer/Source facade methods.
 - #600584 alex_b: Use Batch API.

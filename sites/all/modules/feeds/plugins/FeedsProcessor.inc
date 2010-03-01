@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsProcessor.inc,v 1.7 2010/02/10 23:49:35 alexb Exp $
+// $Id: FeedsProcessor.inc,v 1.8 2010/02/24 01:19:33 alexb Exp $
 
 /**
  * Abstract class, defines interface for processors.
@@ -62,7 +62,23 @@ abstract class FeedsProcessor extends FeedsPlugin {
   }
 
   /**
-   * Execute mapping on an item.
+   * Execute mapping on an item. This method encapsulates the central mapping
+   * functionality. When an item is processed, it is passed through map() where
+   * the properties of $source_item are mapped onto $target_item following
+   * the processor's mapping configuration.
+   *
+   * For each mapping FeedsParser::getSourceElement() is executed to retrieve
+   * the source element, then FeedsProcessor::setTargetElement() is invoked
+   * to populate the target item properly. Alternatively a
+   * hook_x_targets_alter() may have specified a callback for a mapping target
+   * in which case the callback is asked to populate the target item instead of
+   * FeedsProcessor::setTargetElement().
+   *
+   * @ingroup mappingapi
+   *
+   * @see hook_feeds_node_processor_targets_alter()
+   * @see hook_feeds_term_processor_targets_alter()
+   * @see hook_feeds_data_processor_targets_alter()
    */
   protected function map($source_item, $target_item = NULL) {
 
@@ -170,7 +186,9 @@ abstract class FeedsProcessor extends FeedsPlugin {
   }
 
   /**
-   * Declare possible mapping targets.
+   * Declare possible mapping targets that this processor exposes.
+   *
+   * @ingroup mappingapi
    *
    * @return
    *   An array of mapping targets. Keys are paths to targets
@@ -182,7 +200,9 @@ abstract class FeedsProcessor extends FeedsPlugin {
   }
 
   /**
-   * Set target element.
+   * Set a concrete target element. Invoked from FeedsProcessor::map().
+   *
+   * @ingroup mappingapi
    */
   public function setTargetElement(&$target_item, $target_element, $value) {
     $target_item[$target_element] = $value;
@@ -190,6 +210,8 @@ abstract class FeedsProcessor extends FeedsPlugin {
 
   /**
    * Retrieve the target item's existing id if available. Otherwise return 0.
+   *
+   * @ingroup mappingapi
    *
    * @param $source_item
    *   A single item that has been aggregated from a feed.

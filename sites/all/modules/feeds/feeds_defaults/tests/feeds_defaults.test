@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds_defaults.test,v 1.4 2010/01/12 15:19:43 alexb Exp $
+// $Id: feeds_defaults.test,v 1.5 2010/02/22 22:19:28 alexb Exp $
 
 /**
  * @file
@@ -320,17 +320,29 @@ class FeedsDefaultsNodeTestCase extends FeedsDefaultsTestCase {
     $this->importFile('node', $this->absolutePath() .'/tests/feeds/nodes_changes.csv');
     $this->assertText('Updated 6 Story nodes.');
 
+    // Import a larger file with more records.
+    $this->importFile('node', $this->absolutePath() .'/tests/feeds/many_nodes.csv');
+    $this->assertText('Created 71 Story nodes.');
+
+    // Remove all nodes.
+    $this->drupalPost('import/node/delete-items', array(), 'Delete');
+    $this->assertText('Deleted 79 nodes.');
+
+    // Import once again.
+    $this->drupalPost('import/node/import', array(), 'Import');
+    $this->assertText('Created 79 Story nodes.');
+
     // Disable.
     $this->disable('node');
 
     // Nodes should be still present.
     $count = db_result(db_query('SELECT COUNT(*) FROM {feeds_node_item}'));
-    $this->assertEqual($count, 8, 'Found correct number of items.');
+    $this->assertEqual($count, 79, 'Found correct number of items.');
     $count = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE type = "story" AND status = 1 AND uid = 0'));
-    $this->assertEqual($count, 8, 'Found correct number of items.');
+    $this->assertEqual($count, 79, 'Found correct number of items.');
     // Do not filter on type intentionally. There shouldn't be more than 8 nodes total.
     $count = db_result(db_query('SELECT COUNT(*) FROM {node_revisions}'));
-    $this->assertEqual($count, 8, 'Found correct number of items.');
+    $this->assertEqual($count, 79, 'Found correct number of items.');
   }
 }
 
