@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsHTTPFetcher.inc,v 1.19 2010/02/27 02:09:57 alexb Exp $
+// $Id: FeedsHTTPFetcher.inc,v 1.20 2010/03/01 21:48:02 alexb Exp $
 
 /**
  * @file
@@ -85,7 +85,8 @@ class FeedsHTTPFetcher extends FeedsFetcher {
       }
     }
     // Will generate the default 200 response.
-    return '';
+    header('HTTP/1.1 200 "OK"', null, 200);
+    exit();
   }
 
   /**
