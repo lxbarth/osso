@@ -20,6 +20,13 @@ function push_hub_schema() {
         'not null' => TRUE,
         'description' => 'Created timestamp.',
       ),
+      'secret' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Shared secret for message authentication.',
+      ),
       'topic' => array(
         'type' => 'text',
         'not null' => TRUE,

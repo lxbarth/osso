@@ -48,6 +48,8 @@ class PuSHHub {
    * Notify a specific subscriber of a change in a topic. API user is
    * responsible for handling failed requests.
    *
+   * @param $topic
+   *   The topic that changed.
    * @param $subscriber
    *   A subscriber callback.
    * @param $changed
@@ -59,11 +61,11 @@ class PuSHHub {
    * @return
    *   TRUE if subscriber was successfully notified, FALSE otherwise.
    */
-  public function notify($subscriber, $changed = NULL) {
+  public function notify($topic, $subscriber, $changed = NULL) {
     if ($changed === NULL) {
       return $this->lightPing($subscriber);
     }
-    return $this->fatPing($subscriber, $changed);
+    return $this->fatPing($subscriber, $changed, $this->subscriptions->secret($topic, $subscriber));
   }
 
   /**
@@ -99,8 +101,9 @@ class PuSHHub {
    *   A valid PubSubHubbub subscription request.
    */
   public function subscribe($post) {
+    error_log(print_r($post, true));
     if (isset($post['hub_topic']) && isset($post['hub_callback']) && $this->verify($post)) {
-      $this->subscriptions->save($post['hub_topic'], $post['hub_callback']);
+      $this->subscriptions->save($post['hub_topic'], $post['hub_callback'], isset($post['secret']) ? $post['secret'] : '');
       header('HTTP/1.1 204 "No Content"', null, 204);
       exit();
     }
@@ -119,7 +122,7 @@ class PuSHHub {
    * Helper for posting a fat ping. Uses stream wrappers instead of cURL for
    * posting a message body that is not "application/x-www-form-urlencoded".
    */
-  protected function fatPing($url, $content) {
+  protected function fatPing($url, $content, $secret) {
     $result = FALSE;
     $params = array('http' =>
                 array(
@@ -129,6 +132,9 @@ class PuSHHub {
                               "Content-Length: ". strlen($content) ."\n\n",
                 ),
               );
+    if (!empty($secret)) {
+      $params['http']['header']['X-Hub-Signature'] = hash_hmac('sha1', $content, $secret);
+    }
     $ctx = stream_context_create($params);
     if ($fp = @fopen($url, 'rb', false, $ctx)) {
       $response = @stream_get_contents($fp);
@@ -165,6 +171,14 @@ class PuSHHub {
  */
 interface PuSHHubSubscriptionsInterface {
   /**
+   * Get the secret for a given topic/subscriber pair.
+   *
+   * @return
+   *   Shared secret to sign a notification with.
+   */
+  public function secret($topic, $subscriber);
+
+  /**
    * Save a subscription.
    *
    * @param $topic
@@ -172,8 +186,10 @@ interface PuSHHubSubscriptionsInterface {
    * @param $subscriber
    *   The subscriber URL that is the callback to be invoked when the topic
    *   changes.
+   * @param $secret
+   *   Secret for message authentication.
    */
-  public function save($topic, $subscriber);
+  public function save($topic, $subscriber, $secret);
 
   /**
    * Delete a subscription.

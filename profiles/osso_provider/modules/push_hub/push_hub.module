@@ -80,7 +80,7 @@ function push_hub_notify($topic, $changed = NULL, $batch = FALSE) {
     $operations = array();
     foreach (push_hub()->allSubscribers($topic) as $subscriber) {
       $operations[] = array(
-        'push_hub_notify_subscriber_batchapi', array(array('subscriber' => $subscriber, 'changed' => $changed)),
+        'push_hub_notify_subscriber_batchapi', array(array('topic' => $topic, 'subscriber' => $subscriber, 'changed' => $changed)),
       );
     }
     $batch = array(
@@ -114,7 +114,7 @@ function push_hub_notify_subscriber_batchapi($info, &$context) {
  *   an optional key 'changed' containing the changed content.
  */
 function push_hub_notify_subscriber($info) {
-  if (!push_hub()->notify($info['subscriber'], isset($info['content']) ? $info['content'] : NULL)) {
+  if (!push_hub()->notify($info['topic'], $info['subscriber'], isset($info['content']) ? $info['content'] : NULL)) {
     // On failure, queue for later notification.
     push_hub_queue()->createItem($info, time() + 5 * 60);
   }
@@ -159,11 +159,12 @@ class PuSHHubSubscriptions implements PuSHHubSubscriptionsInterface {
   /**
    * Save a subscription.
    */
-  public function save($topic, $subscriber) {
+  public function save($topic, $subscriber, $secret) {
     $this->delete($topic, $subscriber);
     $subscription = array(
       'topic' => $topic,
       'subscriber' => $subscriber,
+      'secret' => $secret,
       'timestamp' => time(),
     );
     drupal_write_record('push_hub_subscriptions', $subscription);
@@ -189,6 +190,13 @@ class PuSHHubSubscriptions implements PuSHHubSubscriptionsInterface {
       $subscribers[] = $row->subscriber;
     }
     return $subscribers;
+  }
+
+  /**
+   * Retrieve a shared secret.
+   */
+  public function secret($topic, $subscriber) {
+    return db_result(db_query("SELECT secret FROM {push_hub_subscriptions} WHERE topic = '%s' AND subscriber = '%s'", $topic, $subscriber));
   }
 
   /**
