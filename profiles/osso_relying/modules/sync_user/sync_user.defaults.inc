@@ -28,9 +28,10 @@ function _sync_user_feeds_importer_default() {
     'name' => 'User updates',
     'description' => 'Synchronizes users on this site to users on OpenID Provider.',
     'fetcher' => array(
-      'plugin_key' => 'FeedsPubSubFetcher',
+      'plugin_key' => 'KeyAuthHTTPFetcher',
       'config' => array(
-        'subscription_period' => '43200',
+        'use_pubsubhubbub' => 1,
+        'designated_hub' => '',
         'use_keyauth' => 1,
         'keyauth_public' => '7fb5490cce31840608ec635a931c00aa',
       ),
