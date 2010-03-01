@@ -186,7 +186,7 @@ function osso_provider_block_login_message() {
 function osso_provider_block_welcome_message() {
   $relying_parties = array();
 
-  foreach (variable_get('openid_provider_sso_rps', array()) as $rp) {
+  foreach (openid_provider_sso_relying_parties() as $rp) {
     $relying_parties[] = $rp['name'];
   }
 
