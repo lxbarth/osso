@@ -11,12 +11,15 @@ class KeyAuthHTTPFetcher extends FeedsHTTPFetcher {
    */
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    $url = $source_config['source'];
-    if ($this->config['use_keyauth']) {
-      keyauth_include();
-      $url = keyauth_sign_url($this->config['keyauth_public'], $url);
-    }
-    return new FeedsHTTPBatch($url);
+    return new FeedsHTTPBatch($this->signURL($source_config['source']));
+  }
+
+  /**
+   * Override subscribe method to use key authentication as well.
+   */
+  public function subscribe(FeedsSource $source) {
+    $source_config = $source->getConfigFor($this);
+    $this->subscriber($source->feed_nid)->subscribe($this->signURL($source_config['source']), url($this->path($source->feed_nid), array('absolute' => TRUE)), valid_url($this->config['designated_hub']) ? $this->config['designated_hub'] : '');
   }
 
   /**
@@ -50,5 +53,17 @@ class KeyAuthHTTPFetcher extends FeedsHTTPFetcher {
       '#options' => drupal_map_assoc(array_keys(keyauth_all_keys())),
     );
     return $form;
+  }
+
+  /**
+   * Helper for signing a URL. Uses KeyAuth to sign a URL if the fetcher is
+   * configured to do so, otherwise returns the URL exactly as supplied.
+   */
+  protected function signURL($url) {
+    if ($this->config['use_keyauth']) {
+      keyauth_include();
+      return keyauth_sign_url($this->config['keyauth_public'], $url);
+    }
+    return $url;
   }
 }
