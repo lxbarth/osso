@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSimplePieParser.inc,v 1.10 2010/01/28 20:07:46 alexb Exp $
+// $Id: FeedsSimplePieParser.inc,v 1.11 2010/03/02 14:41:21 alexb Exp $
 
 /**
  * Adapter to present SimplePie_Enclosure as FeedsEnclosure object.
@@ -110,13 +110,21 @@ class FeedsSimplePieParser extends FeedsParser {
       }
       $item['domains'] = $domains;
       $item['tags'] = $tags;
-      // Stick the raw data onto the feed item.
+
+      // Allow parsing to be extended.
+      $this->parseExtensions($item, $simplepie_item);
       $item['raw'] = $simplepie_item->data;
+
       $batch->addItem($item);
     }
     // Release parser.
     unset($parser);
   }
+
+  /**
+   * Allow extension of FeedsSimplePie item parsing.
+   */
+  protected function parseExtensions(&$item, $simplepie_item) {}
 
   /**
    * Return mapping sources.

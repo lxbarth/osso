@@ -1,9 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.62 2010/03/01 14:33:27 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.64 2010/03/02 14:54:35 alexb Exp $
 
 
 Feeds 6.x 1.0 xxxxx xx, 2010-xx-xx
 ----------------------------------
 
+- #724184 ekes: catch failures when parsing for PubSubHubbub hub and self.
+- #706984 lyricnz: Add FeedsSimplePie::parseExtensions() to allow parsing to be
+  customized.
 - #728854 Scott Reynolds: Fix $queue->createItem() fails.
 - #707098 alex_b: Improve performance of nodeapi and access checks.
 - #726012 alex_b: Fix RSS descriptions not being reset in
