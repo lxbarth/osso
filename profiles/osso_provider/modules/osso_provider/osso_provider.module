@@ -33,9 +33,15 @@ function osso_provider_block($op = 'list', $delta = '') {
 function osso_provider_user($op, &$edit, &$account) {
   switch ($op) {
     case 'update':
-      path_set_alias('user/'. $account->uid);
+      if (!empty($edit['name'])) {
+        path_set_alias('user/'. $account->uid);
+      }
     case 'insert':
-      path_set_alias('user/'. $account->uid, 'user/'. urlencode($edit['name']));
+      if (!empty($edit['name'])) {
+        error_log('Name: ' . var_export($edit['name'], TRUE));
+        error_log('setting alias');
+        path_set_alias('user/'. $account->uid, 'user/'. urlencode($edit['name']));
+      }
       break;
     case 'delete':
       path_set_alias('user/'. $account->uid);
