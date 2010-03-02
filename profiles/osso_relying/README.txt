@@ -19,7 +19,7 @@ SSO module README.
 
 2.
 
-Go to admin/sync/user and enter OpenID Provider URL.
+Go to admin/settings/openid-sso and enter OpenID Provider URL.
 
 3.
 
