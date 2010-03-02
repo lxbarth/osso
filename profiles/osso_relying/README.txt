@@ -12,6 +12,9 @@ Use together with OpenID SSO Demo (Provider) profile.
 Installation
 ------------
 
+NOTE: Use login/direct login directly to a relaying and avoid being sent to the
+      SSO provider. This is useful when you need to login as an admin.
+
 1.
 
 Run install profile, set up OpenID Provider information as described in OpenID
