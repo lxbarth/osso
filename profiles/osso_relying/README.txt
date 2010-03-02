@@ -1,4 +1,3 @@
-
 OpenID SSO Demo (Relying Party)
 -------------------------------
 
@@ -15,16 +14,10 @@ Installation
 NOTE: Use login/direct login directly to a relaying and avoid being sent to the
       SSO provider. This is useful when you need to login as an admin.
 
-1.
+1. Run install profile, set up OpenID Provider information as described in OpenID
+   SSO module README.
 
-Run install profile, set up OpenID Provider information as described in OpenID
-SSO module README.
+2. Go to admin/settings/openid-sso and enter OpenID Provider URL.
 
-2.
-
-Go to admin/settings/openid-sso and enter OpenID Provider URL.
-
-3.
-
-To distinguish particular sites better, use admin/build/themes/settings/hubnet
-to customize a site's color.
+3. To distinguish particular sites better, use admin/build/themes/settings/hubnet
+   to customize a site's color.
